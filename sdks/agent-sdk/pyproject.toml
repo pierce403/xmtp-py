@@ -9,7 +9,18 @@ description = "Unofficial XMTP agent SDK for Python."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
-dependencies = []
+dependencies = [
+  "xmtp-py",
+  "xmtp-content-type-group-updated",
+  "xmtp-content-type-markdown",
+  "xmtp-content-type-reaction",
+  "xmtp-content-type-read-receipt",
+  "xmtp-content-type-remote-attachment",
+  "xmtp-content-type-reply",
+  "xmtp-content-type-text",
+  "xmtp-content-type-transaction-reference",
+  "xmtp-content-type-wallet-send-calls",
+]
 
 [project.optional-dependencies]
 dev = [

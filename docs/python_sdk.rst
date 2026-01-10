@@ -28,3 +28,7 @@ Python SDK
 .. automodule:: xmtp.signers
    :members:
    :undoc-members:
+
+.. automodule:: xmtp.env
+   :members:
+   :undoc-members:

@@ -9,3 +9,11 @@ This documentation is generated from code docstrings.
 
    python_sdk
    agent_sdk
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Guides
+
+   migration_guide
+   examples
+   contributing

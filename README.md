@@ -44,12 +44,13 @@ pip install xmtp
 ```python
 from xmtp import Client
 from xmtp.signers import create_signer
+from xmtp.types import ClientOptions
 
 # Create a signer from a private key
 signer = create_signer(private_key)
 
 # Create the client
-client = await Client.create(signer, env="dev")
+client = await Client.create(signer, ClientOptions(env='dev'))
 
 # Create a conversation
 dm = await client.conversations.new_dm("0x...")
@@ -65,13 +66,14 @@ async for message in client.conversations.stream_all_messages():
 ```python
 from xmtp.agent import Agent
 from xmtp.agent.user import create_user, create_signer
+from xmtp.types import ClientOptions
 
 # Create a user and signer
 user = create_user()
 signer = create_signer(user)
 
 # Create the agent
-agent = await Agent.create(signer, env="dev", db_path=None)
+agent = await Agent.create(signer, ClientOptions(env='dev', db_path=None))
 
 # Handle text messages
 @agent.on("text")

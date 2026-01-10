@@ -83,9 +83,11 @@ ruff format .               # Formatting
 
 ## Known issues & solutions
 
-- As of 2026-01-10, libxmtp repo ships ffi/wasm bindings and QA tools diagrams reference Napi, but no Python bindings; plan to build with PyO3/maturin.
+- As of 2026-01-10, libxmtp repo ships ffi/wasm bindings and QA tools diagrams reference Napi; Python bindings are built via UniFFI against `bindings_ffi`.
 - Agent SDK is scaffolded under `xmtp_agent` for now; decide later if we move to a shared `xmtp.agent` namespace.
 - Docstrings are wired into Sphinx autodoc (with napoleon + autodoc-typehints), and static typing is strict (mypy/pyright + ruff ANN rules).
+- Python bindings now use UniFFI via libxmtp `bindings_ffi`; generate in `bindings/python` and keep native libs out of git.
+- `FfiContentTypeId.__str__` is not the canonical content type string; convert to `ContentTypeId` and use its `__str__` for comparisons.
 
 ## Agent tips
 

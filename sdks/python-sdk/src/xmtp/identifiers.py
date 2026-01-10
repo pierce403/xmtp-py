@@ -10,6 +10,7 @@ class IdentifierKind(str, Enum):
     """Supported identifier kinds."""
 
     ETHEREUM = 'ethereum'
+    PASSKEY = 'passkey'
 
 
 @dataclass(frozen=True, slots=True)

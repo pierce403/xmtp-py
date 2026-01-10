@@ -1,5 +1,6 @@
 # Ignore local vendor/monorepo checkout
 /code/
+/.deps/
 
 # ---------------------------
 # Python
@@ -19,6 +20,9 @@ build/
 dist/
 *.egg-info/
 *.egg
+
+# Native bindings artifacts
+bindings/python/src/xmtp_bindings/libxmtpv3.*
 
 # Test / coverage
 .pytest_cache/
