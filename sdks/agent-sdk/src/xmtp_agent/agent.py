@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 from xmtp_agent.errors import AgentError
 from xmtp_agent.middleware import ErrorMiddleware, Middleware
@@ -16,13 +16,17 @@ class Agent:
         self._error_middlewares: list[ErrorMiddleware] = []
 
     @classmethod
-    async def create(cls, signer: object, options: object | None = None) -> 'Agent':
+    async def create(
+        cls,
+        signer: object,
+        options: object | None = None,
+    ) -> Agent:
         """Create an agent with a signer."""
 
         raise AgentError('Agent.create not implemented')
 
     @classmethod
-    async def create_from_env(cls) -> 'Agent':
+    async def create_from_env(cls) -> Agent:
         """Create an agent from environment variables."""
 
         raise AgentError('Agent.create_from_env not implemented')
@@ -48,7 +52,7 @@ class Agent:
         self._middlewares.append(middleware)
 
     @property
-    def errors(self) -> 'Agent':
+    def errors(self) -> Agent:
         """Return an object to register error middleware."""
 
         return self

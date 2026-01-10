@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import AsyncIterator, Generic, TypeVar
+from collections.abc import AsyncIterator
+from typing import Generic, TypeVar
 
 T = TypeVar('T')
 
@@ -13,7 +14,7 @@ class AsyncStream(AsyncIterator[T], Generic[T]):
     def __init__(self, iterator: AsyncIterator[T]) -> None:
         self._iterator = iterator
 
-    def __aiter__(self) -> 'AsyncStream[T]':
+    def __aiter__(self) -> AsyncStream[T]:
         return self
 
     async def __anext__(self) -> T:

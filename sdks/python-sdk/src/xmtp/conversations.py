@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import builtins
+
 from xmtp.async_stream import AsyncStream
 from xmtp.conversation import Conversation, Dm, Group
 from xmtp.errors import NotImplementedXmtpError
@@ -34,17 +36,17 @@ class Conversations:
             'Conversations.new_group_with_identifiers not implemented'
         )
 
-    async def list(self) -> list[Conversation]:
+    async def list(self) -> builtins.list[Conversation]:
         """List all conversations."""
 
         raise NotImplementedXmtpError('Conversations.list not implemented')
 
-    async def list_dms(self) -> list[Dm]:
+    async def list_dms(self) -> builtins.list[Dm]:
         """List direct message conversations."""
 
         raise NotImplementedXmtpError('Conversations.list_dms not implemented')
 
-    async def list_groups(self) -> list[Group]:
+    async def list_groups(self) -> builtins.list[Group]:
         """List group conversations."""
 
         raise NotImplementedXmtpError('Conversations.list_groups not implemented')

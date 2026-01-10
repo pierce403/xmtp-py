@@ -23,13 +23,21 @@ class Client:
         self._preferences = Preferences()
 
     @classmethod
-    async def create(cls, signer: Signer, options: ClientOptions | None = None) -> 'Client':
+    async def create(
+        cls,
+        signer: Signer,
+        options: ClientOptions | None = None,
+    ) -> Client:
         """Create a client with a signer."""
 
         raise NotImplementedXmtpError('Client.create not implemented')
 
     @classmethod
-    async def build(cls, identifier: str, options: ClientOptions | None = None) -> 'Client':
+    async def build(
+        cls,
+        identifier: str,
+        options: ClientOptions | None = None,
+    ) -> Client:
         """Create a client with an identifier (no signer)."""
 
         raise NotImplementedXmtpError('Client.build not implemented')

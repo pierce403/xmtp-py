@@ -11,5 +11,9 @@ class Signer(Protocol):
     async def get_address(self) -> str:
         """Return the wallet address for this signer."""
 
+        ...
+
     async def sign_message(self, message: bytes) -> bytes:
         """Sign a message and return the signature bytes."""
+
+        ...
