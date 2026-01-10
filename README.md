@@ -2,6 +2,8 @@
 
 Unofficial Python client SDKs for the XMTP network.
 
+Primary goal: feature parity with xmtp-js.
+
 This is a community project that mirrors the structure and interfaces of the official [xmtp-js](https://github.com/xmtp/xmtp-js) SDK, adapted for Python.
 
 ## What's inside?
