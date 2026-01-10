@@ -101,23 +101,15 @@ def content_type_to_string(content_type: ContentTypeId) -> str:
 
 def content_type_from_string(content_type_string: str) -> ContentTypeId:
     """Parse content type ID from string form."""
+    import re
 
-    parts = content_type_string.split('/')
-    if len(parts) != 2:
+    match = re.match(r'^([^/]+)/([^:]+):(\d+)\.(\d+)$', content_type_string)
+    if not match:
         raise ValueError(
-            'Invalid content type string; expected authority/type:major.minor'
+            f'Invalid content type string: "{content_type_string}". '
+            'Expected format: "authorityId/typeId:majorVersion.minorVersion"'
         )
-    authority_id, rest = parts
-    if ':' not in rest:
-        raise ValueError(
-            'Invalid content type string; expected authority/type:major.minor'
-        )
-    type_id, version_part = rest.split(':', 1)
-    if '.' not in version_part:
-        raise ValueError(
-            'Invalid content type string; expected authority/type:major.minor'
-        )
-    major_str, minor_str = version_part.split('.', 1)
+    authority_id, type_id, major_str, minor_str = match.groups()
     return ContentTypeId(
         authority_id=authority_id,
         type_id=type_id,

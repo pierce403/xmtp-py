@@ -29,7 +29,24 @@ jobs:
           mypy sdks/python-sdk/src sdks/agent-sdk/src
       - name: Tests
         run: |
-          pytest sdks/python-sdk/tests sdks/agent-sdk/tests
+          pytest \
+            --cov=sdks/python-sdk/src \
+            --cov=sdks/agent-sdk/src \
+            --cov=content-types \
+            --cov=bindings/python/src \
+            --cov-branch \
+            --cov-report=term-missing:skip-covered \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-fail-under=100 \
+            --cov-config=.coveragerc
+      - name: Coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            htmlcov
+            coverage.xml
       - name: LLM reference files
         run: |
           python scripts/generate_llms.py --check

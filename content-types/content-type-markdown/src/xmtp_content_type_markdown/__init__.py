@@ -42,7 +42,14 @@ class MarkdownCodec(ContentCodec[str]):
         )
 
     def decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> str:
-        return xmtpv3.decode_markdown(content.content)
+        encoding = content.parameters.get('encoding')
+        if encoding is None:
+            raise ValueError('Missing encoding for markdown content')
+        if encoding.upper() != Encoding.UTF8.value:
+            raise ValueError(f'unrecognized encoding {encoding}')
+        if not isinstance(content.content, (bytes, bytearray)):
+            raise TypeError('Markdown content payload must be bytes')
+        return xmtpv3.decode_markdown(bytes(content.content))
 
     def fallback(self, content: str) -> str | None:
         return None

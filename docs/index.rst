@@ -17,3 +17,4 @@ This documentation is generated from code docstrings.
    migration_guide
    examples
    contributing
+   test_parity

@@ -1,3 +1,5 @@
+import pytest
+
 from xmtp.utils import coerce_db_encryption_key, hex_to_bytes, is_hex_string
 
 
@@ -17,3 +19,10 @@ def test_hex_to_bytes() -> None:
 def test_coerce_db_encryption_key() -> None:
     assert coerce_db_encryption_key(b'abc') == b'abc'
     assert coerce_db_encryption_key('0x0a0b') == b'\x0a\x0b'
+    assert coerce_db_encryption_key('0a0b') == b'\x0a\x0b'
+    assert coerce_db_encryption_key(None) is None
+
+
+def test_coerce_db_encryption_key_invalid() -> None:
+    with pytest.raises(ValueError, match='db_encryption_key'):
+        coerce_db_encryption_key('not-hex')

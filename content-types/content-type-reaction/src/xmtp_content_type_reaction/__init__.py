@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from enum import Enum
 
@@ -71,6 +72,38 @@ class ReactionCodec(ContentCodec[Reaction]):
         return EncodedContent(type_id=self.content_type, parameters={}, content=encoded)
 
     def decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> Reaction:
+        decoded_text: str | None = None
+        if isinstance(content.content, (bytes, bytearray)):
+            try:
+                decoded_text = bytes(content.content).decode('utf-8')
+            except UnicodeDecodeError:
+                decoded_text = None
+
+        if decoded_text:
+            try:
+                payload = json.loads(decoded_text)
+                reference_inbox_id = payload.get('referenceInboxId', payload.get('reference_inbox_id'))
+                return Reaction(
+                    reference=payload['reference'],
+                    reference_inbox_id=reference_inbox_id,
+                    action=ReactionAction(payload['action']),
+                    content=payload['content'],
+                    schema=ReactionSchema(payload['schema']),
+                )
+            except (ValueError, KeyError, TypeError):
+                pass
+
+        if decoded_text is not None:
+            params = content.parameters
+            if 'action' in params and 'reference' in params and 'schema' in params:
+                return Reaction(
+                    reference=params['reference'],
+                    reference_inbox_id=None,
+                    action=ReactionAction(params['action']),
+                    content=decoded_text,
+                    schema=ReactionSchema(params['schema']),
+                )
+
         payload = xmtpv3.decode_reaction(content.content)
         action = (
             ReactionAction.ADDED
@@ -94,9 +127,9 @@ class ReactionCodec(ContentCodec[Reaction]):
 
     def fallback(self, content: Reaction) -> str | None:
         if content.action == ReactionAction.ADDED:
-            return f'Reacted “{content.content}” to an earlier message'
+            return f'Reacted "{content.content}" to an earlier message'
         if content.action == ReactionAction.REMOVED:
-            return f'Removed “{content.content}” from an earlier message'
+            return f'Removed "{content.content}" from an earlier message'
         return None
 
     def should_push(self, content: Reaction) -> bool:

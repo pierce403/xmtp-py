@@ -42,7 +42,14 @@ class TextCodec(ContentCodec[str]):
         )
 
     def decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> str:
-        return xmtpv3.decode_text(content.content)
+        encoding = content.parameters.get('encoding')
+        if encoding is None:
+            raise ValueError('Missing encoding for text content')
+        if encoding.upper() != Encoding.UTF8.value:
+            raise ValueError(f'unrecognized encoding {encoding}')
+        if not isinstance(content.content, (bytes, bytearray)):
+            raise TypeError('Text content payload must be bytes')
+        return xmtpv3.decode_text(bytes(content.content))
 
     def fallback(self, content: str) -> str | None:
         return None

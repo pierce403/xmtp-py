@@ -1,0 +1,14 @@
+[run]
+branch = True
+source =
+    sdks/python-sdk/src
+    sdks/agent-sdk/src
+    content-types
+    bindings/python/src
+
+[report]
+show_missing = True
+skip_covered = True
+omit =
+    */xmtp_bindings/xmtpv3.py
+    */*.egg-info/*
