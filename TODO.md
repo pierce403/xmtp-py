@@ -59,9 +59,12 @@ Tracking progress for building Python SDKs that mirror the xmtp-js interfaces.
 ## agent-sdk
 
 ### Infrastructure
-- [ ] Set up package structure (`sdks/agent-sdk/`)
-- [ ] Configure as separate installable package
-- [ ] Set up testing infrastructure
+- [x] Set up package structure (`sdks/agent-sdk/`)
+- [x] Configure as separate installable package
+- [x] Set up testing infrastructure
+
+### Scaffolding
+- [x] Create stub agent SDK modules under `sdks/agent-sdk/src/xmtp_agent/`
 
 ### Core classes
 - [ ] `Agent` - Main agent class with EventEmitter pattern
