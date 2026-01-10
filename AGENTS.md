@@ -95,4 +95,4 @@ ruff format .               # Formatting
 
 ## Collaborator preferences
 
-(add observations about communication style, preferences here)
+- Project must remain Apache 2.0 licensed.
