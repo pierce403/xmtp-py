@@ -4,7 +4,8 @@ Tracking progress for building Python SDKs that mirror the xmtp-js interfaces.
 
 ## libxmtp bindings
 
-- [ ] Identify or create Python bindings for libxmtp >= 1.7.0-r3
+- [x] Survey libxmtp repo bindings (node/wasm/ffi); no Python bindings found as of 2026-01-10
+- [ ] Create Python bindings package (PyO3/maturin) for libxmtp >= 1.7.0-r3
 - [ ] Verify binding API compatibility with node-bindings interface
 - [ ] Document binding installation and setup
 
