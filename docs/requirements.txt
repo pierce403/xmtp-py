@@ -1,0 +1,2 @@
+sphinx>=7
+sphinx-autodoc-typehints>=1.24

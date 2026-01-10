@@ -1,0 +1,12 @@
+{
+  "typeCheckingMode": "strict",
+  "pythonVersion": "3.10",
+  "include": [
+    "sdks/python-sdk/src",
+    "sdks/agent-sdk/src"
+  ],
+  "exclude": [
+    "code",
+    "**/__pycache__"
+  ]
+}

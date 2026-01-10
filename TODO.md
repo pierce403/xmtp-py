@@ -148,6 +148,11 @@ Support for configuration via environment:
 - [ ] Example applications
 - [ ] Contributing guidelines
 
+## Tooling
+
+- [x] Enable strict type checking (mypy/pyright) and typing lint rules (ruff)
+- [x] Set up Sphinx autodoc for docstring-generated docs
+
 ---
 
 ## Notes

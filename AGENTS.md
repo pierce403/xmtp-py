@@ -85,6 +85,7 @@ ruff format .               # Formatting
 
 - As of 2026-01-10, libxmtp repo ships ffi/wasm bindings and QA tools diagrams reference Napi, but no Python bindings; plan to build with PyO3/maturin.
 - Agent SDK is scaffolded under `xmtp_agent` for now; decide later if we move to a shared `xmtp.agent` namespace.
+- Docstrings are wired into Sphinx autodoc (with napoleon + autodoc-typehints), and static typing is strict (mypy/pyright + ruff ANN rules).
 
 ## Agent tips
 
