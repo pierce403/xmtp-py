@@ -13,7 +13,7 @@ class FfiIdentifierKind(str, Enum):
     PASSKEY = 'passkey'
 
 
-@dataclass
+@dataclass(frozen=True)
 class FfiIdentifier:
     identifier: str
     identifier_kind: FfiIdentifierKind
@@ -55,6 +55,22 @@ class FfiConsentState(str, Enum):
 class FfiGroupQueryOrderBy(str, Enum):
     LAST_ACTIVITY = 'last_activity'
     CREATED_AT = 'created_at'
+
+
+@dataclass
+class FfiCreateDmOptions:
+    message_disappearing_settings: object | None
+
+
+@dataclass
+class FfiCreateGroupOptions:
+    permissions: object | None
+    group_name: str | None
+    group_image_url_square: str | None
+    group_description: str | None
+    custom_permission_policy_set: object | None
+    message_disappearing_settings: object | None
+    app_data: object | None
 
 
 @dataclass
@@ -112,6 +128,8 @@ def fake_bindings(monkeypatch: pytest.MonkeyPatch):
         FfiConversationType=FfiConversationType,
         FfiConsentState=FfiConsentState,
         FfiGroupQueryOrderBy=FfiGroupQueryOrderBy,
+        FfiCreateDmOptions=FfiCreateDmOptions,
+        FfiCreateGroupOptions=FfiCreateGroupOptions,
         FfiListConversationsOptions=FfiListConversationsOptions,
         FfiSubscribeError=FfiSubscribeError,
         FfiConversationCallback=FfiConversationCallback,

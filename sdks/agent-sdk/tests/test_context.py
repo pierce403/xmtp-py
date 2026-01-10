@@ -12,7 +12,7 @@ from xmtp_agent.context import ClientContext, ConversationContext, MessageContex
 from xmtp_content_type_markdown import ContentTypeMarkdown
 from xmtp_content_type_reaction import ContentTypeReaction, Reaction
 from xmtp_content_type_remote_attachment import ContentTypeRemoteAttachment, RemoteAttachment
-from xmtp_content_type_reply import ContentTypeReply
+from xmtp_content_type_reply import ContentTypeReply, Reply
 from xmtp_content_type_text import ContentTypeText, TextCodec
 
 
@@ -123,8 +123,15 @@ async def test_message_context_helpers(fake_bindings) -> None:
     await ctx.send_reaction(':)')
 
     assert convo.sent[0][1] == ContentTypeReply
-    assert isinstance(convo.sent[1][0], str)
+    assert isinstance(convo.sent[0][0], Reply)
+    assert convo.sent[0][0].content == 'reply'
+    assert convo.sent[0][0].content_type == ContentTypeText
+
     assert convo.sent[1][1] == ContentTypeReply
+    assert isinstance(convo.sent[1][0], Reply)
+    assert convo.sent[1][0].content == 'md'
+    assert convo.sent[1][0].content_type == ContentTypeMarkdown
+
     assert isinstance(convo.sent[2][0], Reaction)
     assert convo.sent[2][1] == ContentTypeReaction
 

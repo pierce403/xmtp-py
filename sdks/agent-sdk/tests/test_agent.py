@@ -136,7 +136,7 @@ async def test_agent_create_defaults(monkeypatch) -> None:
         conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
         return _FakeClient(conversations)
 
-    monkeypatch.setattr('xmtp_agent.agent.Client.create', fake_create)
+    monkeypatch.setattr('xmtp_agent.agent.Client.create', classmethod(fake_create))
 
     agent = await Agent.create(object(), ClientOptions())
     assert isinstance(agent, Agent)
@@ -155,7 +155,7 @@ async def test_agent_create_debug_env(monkeypatch) -> None:
 
     monkeypatch.setenv('XMTP_FORCE_DEBUG', '1')
     monkeypatch.setenv('XMTP_FORCE_DEBUG_LEVEL', 'debug')
-    monkeypatch.setattr('xmtp_agent.agent.Client.create', fake_create)
+    monkeypatch.setattr('xmtp_agent.agent.Client.create', classmethod(fake_create))
 
     agent = await Agent.create(object(), ClientOptions())
     assert isinstance(agent, Agent)
@@ -172,7 +172,7 @@ async def test_agent_create_from_env(monkeypatch) -> None:
 
     monkeypatch.setattr('xmtp_agent.agent.load_signer_from_env', lambda: object())
     monkeypatch.setattr('xmtp_agent.agent.load_client_options_from_env', lambda opts=None: ClientOptions())
-    monkeypatch.setattr(Agent, 'create', classmethod(fake_create))
+    monkeypatch.setattr('xmtp_agent.agent.Client.create', classmethod(fake_create))
 
     agent = await Agent.create_from_env()
     assert isinstance(agent, Agent)

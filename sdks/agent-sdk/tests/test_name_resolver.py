@@ -80,7 +80,8 @@ async def test_name_resolver_api_key(monkeypatch) -> None:
     payload = json.dumps([{'address': '0x' + '3' * 40}]).encode('utf-8')
 
     def fake_urlopen(request, timeout=10):
-        assert request.get_header('X-API-KEY') == 'Bearer token'
+        header = request.headers.get('X-API-KEY') or request.headers.get('X-api-key')
+        assert header == 'Bearer token'
         return _Response(200, payload)
 
     async def fake_to_thread(fn):

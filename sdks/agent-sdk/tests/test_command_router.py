@@ -1,7 +1,7 @@
 import pytest
 
 from xmtp_agent.command_router import CommandRouter
-from .helpers import DummyContext
+from .helpers import DummyContext, DummyMessage
 
 
 @pytest.mark.asyncio

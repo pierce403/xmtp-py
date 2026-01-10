@@ -114,12 +114,12 @@ class Group(Conversation):
     async def is_admin(self, inbox_id: str) -> bool:
         """Return True if inbox_id is an admin."""
 
-        return self._ffi.is_admin(inbox_id)
+        return await self._ffi.is_admin(inbox_id)
 
     async def is_super_admin(self, inbox_id: str) -> bool:
         """Return True if inbox_id is a super admin."""
 
-        return self._ffi.is_super_admin(inbox_id)
+        return await self._ffi.is_super_admin(inbox_id)
 
     @property
     def name(self) -> str | None:
