@@ -11,10 +11,10 @@ Tracking progress for building Python SDKs that mirror the xmtp-js interfaces.
 ## python-sdk (core client)
 
 ### Infrastructure
-- [ ] Set up package structure (`sdks/python-sdk/`)
-- [ ] Configure pyproject.toml with dependencies
-- [ ] Set up pytest for testing
-- [ ] Configure mypy for type checking
+- [x] Set up package structure (`sdks/python-sdk/`)
+- [x] Configure pyproject.toml with dependencies
+- [x] Set up pytest for testing
+- [x] Configure mypy for type checking
 
 ### Core classes
 - [ ] `Client` - Main client for interacting with XMTP network
