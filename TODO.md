@@ -17,6 +17,9 @@ Tracking progress for building Python SDKs that mirror the xmtp-js interfaces.
 - [x] Set up pytest for testing
 - [x] Configure mypy for type checking
 
+### Scaffolding
+- [x] Create stub modules for core classes, signers, and utilities under `sdks/python-sdk/src/xmtp/`
+
 ### Core classes
 - [ ] `Client` - Main client for interacting with XMTP network
   - [ ] `Client.create(signer, options)` - Create client with signer
