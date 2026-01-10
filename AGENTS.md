@@ -93,6 +93,7 @@ ruff format .               # Formatting
 
 - Always check `TODO.md` before starting work to see what's done
 - If you edit `TODO.md`, make a commit and push as part of the same task
+- LLM reference files live in `llms/` and are generated via `scripts/generate_llms.py`; regenerate after API/docs changes to satisfy CI `--check`
 - The xmtp-js reference in `code/` is comprehensive—use it
 - libxmtp Python bindings may not exist yet; this is a key first step
 - When in doubt about interface design, match xmtp-js closely

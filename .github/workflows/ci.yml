@@ -30,3 +30,6 @@ jobs:
       - name: Tests
         run: |
           pytest sdks/python-sdk/tests sdks/agent-sdk/tests
+      - name: LLM reference files
+        run: |
+          python scripts/generate_llms.py --check

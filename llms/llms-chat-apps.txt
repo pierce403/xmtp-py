@@ -1,0 +1,745 @@
+---
+description: >
+  LLM reference for building chat apps with the xmtp-py Python SDK.
+---
+
+# xmtp-py LLM Reference (Chat Apps)
+
+> NOTE
+> This file is generated automatically from the xmtp-py repository.
+> Generated at: 7:13 PM UTC / January 10, 2026
+> Included Sections:
+> - README.md
+> - sdks/python-sdk/README.md
+> - docs/python_sdk.rst
+> - docs/examples.rst
+> - content-types/content-type-group-updated/README.md
+> - content-types/content-type-markdown/README.md
+> - content-types/content-type-primitives/README.md
+> - content-types/content-type-reaction/README.md
+> - content-types/content-type-read-receipt/README.md
+> - content-types/content-type-remote-attachment/README.md
+> - content-types/content-type-reply/README.md
+> - content-types/content-type-text/README.md
+> - content-types/content-type-transaction-reference/README.md
+> - content-types/content-type-wallet-send-calls/README.md
+> - api:Python SDK
+> - api:Content Types
+
+## Chat App Documentation
+
+### README.md
+
+# xmtp-py
+
+Unofficial Python client SDKs for the XMTP network.
+
+Primary goal: feature parity with xmtp-js.
+
+This is a community project that mirrors the structure and interfaces of the official [xmtp-js](https://github.com/xmtp/xmtp-js) SDK, adapted for Python.
+
+## What's inside?
+
+### SDKs
+
+- [`python-sdk`](sdks/python-sdk): XMTP client SDK for Python
+- [`agent-sdk`](sdks/agent-sdk): XMTP agent SDK for Python (event-driven, middleware-powered)
+
+### Content types
+
+- [`content-type-primitives`](content-types/content-type-primitives): Primitives for building custom XMTP content types
+- [`content-type-group-updated`](content-types/content-type-group-updated): Content type for group update messages
+- [`content-type-reaction`](content-types/content-type-reaction): Content type for reactions to messages
+- [`content-type-read-receipt`](content-types/content-type-read-receipt): Content type for read receipts
+- [`content-type-remote-attachment`](content-types/content-type-remote-attachment): Content type for file attachments stored off-network
+- [`content-type-reply`](content-types/content-type-reply): Content type for direct replies to messages
+- [`content-type-text`](content-types/content-type-text): Content type for plain text messages
+- [`content-type-transaction-reference`](content-types/content-type-transaction-reference): Content type for on-chain transaction references
+- [`content-type-markdown`](content-types/content-type-markdown): Content type for markdown-formatted messages
+- [`content-type-wallet-send-calls`](content-types/content-type-wallet-send-calls): Content type for wallet transaction requests
+
+## Requirements
+
+- Python 3.10+
+- libxmtp bindings >= 1.7.0-r3
+
+## Installation
+
+```bash
+pip install xmtp
+```
+
+## Quick start
+
+### Python SDK
+
+```python
+from xmtp import Client
+from xmtp.signers import create_signer
+from xmtp.types import ClientOptions
+
+# Create a signer from a private key
+signer = create_signer(private_key)
+
+# Create the client
+client = await Client.create(signer, ClientOptions(env='dev'))
+
+# Create a conversation
+dm = await client.conversations.new_dm("0x...")
+await dm.send("Hello from Python!")
+
+# Stream messages
+async for message in client.conversations.stream_all_messages():
+    print(f"Received: {message.content}")
+```
+
+### Agent SDK
+
+```python
+from xmtp.agent import Agent
+from xmtp.agent.user import create_user, create_signer
+from xmtp.types import ClientOptions
+
+# Create a user and signer
+user = create_user()
+signer = create_signer(user)
+
+# Create the agent
+agent = await Agent.create(signer, ClientOptions(env='dev', db_path=None))
+
+# Handle text messages
+@agent.on("text")
+async def handle_text(ctx):
+    await ctx.send_text("Hello from my XMTP Agent! ")
+
+# Start the agent
+await agent.start()
+```
+
+## LibXMTP bindings
+
+This SDK uses [libxmtp](https://github.com/xmtp/libxmtp) Python bindings for core XMTP functionality including cryptography, networking, and protocol implementation.
+
+**Minimum version**: 1.7.0-r3
+
+## Documentation
+
+- [XMTP Documentation](https://docs.xmtp.org/)
+- [Build an XMTP Agent](https://docs.xmtp.org/agents/get-started/build-an-agent)
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+## License
+
+Apache 2.0
+
+### sdks/python-sdk/README.md
+
+# xmtp-py (python-sdk)
+
+Unofficial Python SDK for the XMTP network.
+
+This package mirrors the xmtp-js node SDK, adapted to Python idioms.
+
+## Quick start
+
+```python
+from xmtp import Client
+from xmtp.signers import create_signer
+from xmtp.types import ClientOptions
+
+signer = create_signer('0xYOUR_PRIVATE_KEY')
+client = await Client.create(signer, ClientOptions(env='dev'))
+
+dm = await client.conversations.new_dm('0x...')
+await dm.send('Hello from Python!')
+```
+
+### docs/python_sdk.rst
+
+Python SDK
+==========
+
+.. automodule:: xmtp.client
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp.conversations
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp.conversation
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp.messages
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp.preferences
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp.types
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp.signers
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp.env
+   :members:
+   :undoc-members:
+
+### docs/examples.rst
+
+Examples
+========
+
+Python SDK
+----------
+
+.. code-block:: python
+
+   import asyncio
+
+   from xmtp import Client
+   from xmtp.signers import create_signer
+   from xmtp.types import ClientOptions
+
+
+   async def main() -> None:
+       signer = create_signer('0xYOUR_PRIVATE_KEY')
+       options = ClientOptions(env='dev')
+       client = await Client.create(signer, options)
+
+       dm = await client.conversations.new_dm('0x...')
+       await dm.send('Hello from Python!')
+
+
+   asyncio.run(main())
+
+Agent SDK
+---------
+
+.. code-block:: python
+
+   import asyncio
+
+   from xmtp_agent import Agent
+   from xmtp_agent.user import create_signer, create_user
+
+
+   async def main() -> None:
+       user = create_user()
+       signer = create_signer(user)
+       agent = await Agent.create(signer)
+
+       @agent.on('text')
+       async def handle_text(ctx):
+           await ctx.send_text('Hello from my XMTP Agent!')
+
+       await agent.start()
+
+
+   asyncio.run(main())
+
+### content-types/content-type-group-updated/README.md
+
+# xmtp-content-type-group-updated
+
+Group updated content type implementation for XMTP Python SDKs.
+
+### content-types/content-type-markdown/README.md
+
+# xmtp-content-type-markdown
+
+Markdown content type codec for XMTP.
+
+### content-types/content-type-primitives/README.md
+
+# xmtp-content-type-primitives
+
+Shared content type primitives for XMTP Python SDKs.
+
+### content-types/content-type-reaction/README.md
+
+# xmtp-content-type-reaction
+
+Reaction content type codec for XMTP.
+
+### content-types/content-type-read-receipt/README.md
+
+# xmtp-content-type-read-receipt
+
+Read receipt content type codec for XMTP.
+
+### content-types/content-type-remote-attachment/README.md
+
+# xmtp-content-type-remote-attachment
+
+Attachment and remote attachment content types for XMTP Python SDKs.
+
+### content-types/content-type-reply/README.md
+
+# xmtp-content-type-reply
+
+Reply content type implementation for XMTP Python SDKs.
+
+### content-types/content-type-text/README.md
+
+# xmtp-content-type-text
+
+Text content type codec for XMTP.
+
+### content-types/content-type-transaction-reference/README.md
+
+# xmtp-content-type-transaction-reference
+
+Transaction reference content type implementation for XMTP Python SDKs.
+
+### content-types/content-type-wallet-send-calls/README.md
+
+# xmtp-content-type-wallet-send-calls
+
+Wallet send calls content type implementation for XMTP Python SDKs.
+
+## Python SDK API Reference
+
+### Module: xmtp
+
+Doc: XMTP Python SDK (unofficial).
+
+Exports: Client, ClientOptions, Conversation, Conversations, DecodedMessage, Dm, Group, Identifier, IdentifierKind, LogLevel, load_client_options_from_env, load_signer_from_env, Preferences, XmtpEnv
+
+### Module: xmtp.async_stream
+
+Doc: Async stream helper.
+
+Constants:
+- T = TypeVar('T')
+
+Classes:
+- class AsyncStream(AsyncIterator[T], Generic[T]): Async stream backed by an asyncio queue.
+  - async close(self) -> None: Close the underlying stream if possible.
+
+### Module: xmtp.bindings
+
+Doc: Bindings loader for libxmtp (UniFFI).
+
+Constants:
+- NativeBindings = xmtpv3
+
+### Module: xmtp.client
+
+Doc: XMTP client entry point.
+
+Classes:
+- class Client: Main client for interacting with the XMTP network.
+  - async create(cls, signer: Signer, options: ClientOptions | None = None) -> Client: Create a client with a signer.
+  - async create_from_env(cls, options: ClientOptions | None = None) -> Client: Create a client using XMTP environment variables.
+  - async build(cls, identifier: Identifier, options: ClientOptions | None = None) -> Client: Create a client with an identifier (no signer).
+  - inbox_id(self) -> str | None: Inbox identifier for the user.
+  - installation_id(self) -> bytes | None: Installation identifier for the user.
+  - account_identifier(self) -> Identifier | None: Return the account identifier used to initialize the client.
+  - is_registered(self) -> bool: Return True if the user is registered with XMTP.
+  - conversations(self) -> Conversations: Conversation manager for the client.
+  - options(self) -> ClientOptions: Return the client options.
+  - preferences(self) -> Preferences: Preferences manager for the client.
+  - async register(self) -> None: Register the user on XMTP.
+  - async can_message(self, identifiers: list[Identifier]) -> dict[str, bool]: Return a map of identifiers to messageability.
+  - async get_inbox_id_by_identifier(self, identifier: Identifier) -> str | None: Resolve an identifier to an inbox id.
+  - register_codec(self, codec: ContentCodec[Any]) -> None: Register a content codec for encoding/decoding.
+  - register_codecs(self, codecs: Sequence[ContentCodec[Any]]) -> None: Register multiple content codecs.
+  - codec_for(self, content_type: ContentTypeId | str) -> ContentCodec[Any] | None: Return the codec for a content type, if registered.
+  - encode_content(self, content: Any, content_type: ContentTypeId | str) -> bytes: Encode content for sending.
+
+### Module: xmtp.constants
+
+Doc: XMTP network constants.
+
+Constants:
+- API_URLS = {'local': 'http://localhost:5556', 'dev': 'https://grpc.dev.xmtp.network:443', 'production': 'https://grpc.production...
+- HISTORY_SYNC_URLS = {'local': 'http://localhost:5558', 'dev': 'https://message-history.dev.ephemera.network', 'production': 'https://mess...
+
+### Module: xmtp.conversation
+
+Doc: Conversation models.
+
+Classes:
+- class Conversation: Base conversation class.
+  - id(self) -> bytes: Conversation identifier bytes.
+  - consent_state(self) -> NativeBindings.FfiConsentState | None: Return the conversation consent state if available.
+  - async update_consent_state(self, state: NativeBindings.FfiConsentState) -> None: Update the conversation consent state.
+  - async send(self, content: str | bytes | Any, content_type: Any | None = None) -> bytes: Send a message in the conversation.
+- class Dm(Conversation): Direct message conversation.
+  - peer_inbox_id(self) -> str | None: Inbox ID of the DM peer, if available.
+- class Group(Conversation): Group conversation.
+  - async add_members(self, inbox_ids: list[str]) -> None: Add members to the group by inbox ID.
+  - async remove_members(self, inbox_ids: list[str]) -> None: Remove members from the group by inbox ID.
+  - async add_members_by_identifiers(self, identifiers: list[Identifier]) -> None: Add members to the group by identifier.
+  - async remove_members_by_identifiers(self, identifiers: list[Identifier]) -> None: Remove members from the group by identifier.
+  - async members(self) -> list[str]: Return group member inbox IDs.
+  - async add_admin(self, inbox_id: str) -> None: Add an admin to the group.
+  - async remove_admin(self, inbox_id: str) -> None: Remove an admin from the group.
+  - async is_admin(self, inbox_id: str) -> bool: Return True if inbox_id is an admin.
+  - async is_super_admin(self, inbox_id: str) -> bool: Return True if inbox_id is a super admin.
+  - name(self) -> str | None: Group name.
+  - description(self) -> str | None: Group description.
+  - image_url(self) -> str | None: Group image URL.
+
+### Module: xmtp.conversations
+
+Doc: Conversation management.
+
+Classes:
+- class ListConversationsOptions: Options for listing conversations.
+  - to_ffi(self) -> NativeBindings.FfiListConversationsOptions
+- class Conversations: Manage XMTP conversations.
+  - async new_dm(self, address: str) -> Dm: Create a new direct message conversation by address.
+  - async new_dm_with_identifier(self, identifier: Identifier) -> Dm: Create a new direct message using an identifier.
+  - async new_group(self, members: list[str]) -> Group: Create a new group conversation by member addresses.
+  - async new_group_with_identifiers(self, identifiers: list[Identifier]) -> Group: Create a new group conversation using identifiers.
+  - async list(self, options: ListConversationsOptions | None = None) -> list[Conversation]: List all conversations.
+  - async list_dms(self, options: ListConversationsOptions | None = None) -> list[Dm]: List direct message conversations.
+  - async list_groups(self, options: ListConversationsOptions | None = None) -> list[Group]: List group conversations.
+  - async get_conversation_by_id(self, conversation_id: bytes) -> Conversation | None: Return a conversation by identifier.
+  - stream(self) -> AsyncStream[Conversation]: Stream new conversations.
+  - stream_all_messages(self) -> AsyncStream[Any]: Stream all messages across conversations.
+  - async sync(self) -> None: Sync new conversations.
+  - async sync_all_conversations(self) -> None: Sync all conversations.
+
+### Module: xmtp.env
+
+Doc: Environment variable helpers for XMTP.
+
+Exports: load_client_options_from_env, load_signer_from_env
+
+Functions:
+- load_client_options_from_env(options: ClientOptions | None = None) -> ClientOptions: Load client options overrides from environment variables.
+- load_signer_from_env() -> Signer: Create an EOA signer from XMTP_WALLET_KEY.
+
+### Module: xmtp.errors
+
+Doc: Error types for XMTP.
+
+Classes:
+- class XmtpError(Exception): Base class for XMTP errors.
+- class CodecNotFoundError(XmtpError): Raised when a codec is missing for a content type.
+- class MissingContentTypeError(XmtpError): Raised when content type is required but missing.
+- class SignerUnavailableError(XmtpError): Raised when a signer is required but not provided.
+- class ClientNotInitializedError(XmtpError): Raised when client is used before initialization.
+- class AccountAlreadyAssociatedError(XmtpError): Raised when account is already associated with an inbox.
+- class InboxReassignError(XmtpError): Raised when inbox reassignment is disallowed.
+- class StreamFailedError(XmtpError): Raised when a stream fails after retries.
+- class StreamInvalidRetryAttemptsError(XmtpError): Raised when retry attempts are invalid.
+- class NotImplementedXmtpError(XmtpError): Raised when a feature has not been implemented yet.
+- class InvalidGroupMembershipChangeError(XmtpError): Raised when group membership changes are invalid.
+
+### Module: xmtp.identifiers
+
+Doc: Identifier types for XMTP.
+
+Classes:
+- class IdentifierKind(str, Enum): Supported identifier kinds.
+- class Identifier: Identifier for XMTP inbox lookups.
+
+### Module: xmtp.messages
+
+Doc: Message models for XMTP.
+
+Constants:
+- ContentT = TypeVar('ContentT')
+
+Classes:
+- class DecodedMessage(Generic[ContentT]): Decoded message representation.
+
+### Module: xmtp.preferences
+
+Doc: User preferences management.
+
+Classes:
+- class Preferences: Manage user preferences for the XMTP client.
+  - async refresh(self) -> None: Refresh preferences from the network.
+  - async inbox_state(self, refresh_from_network: bool = False) -> NativeBindings.FfiInboxState: Return the current inbox state.
+  - async get_latest_inbox_state(self, inbox_id: str) -> NativeBindings.FfiInboxState: Return the latest inbox state for a specific inbox.
+  - async inbox_state_from_inbox_ids(self, inbox_ids: list[str], refresh_from_network: bool = False) -> list[NativeBindings.FfiInboxState]: Return inbox state for the specified inbox IDs.
+  - async set_consent_states(self, records: list[NativeBindings.FfiConsent]) -> None: Update consent states for multiple records.
+  - async get_consent_state(self, entity_type: NativeBindings.FfiConsentEntityType, entity: str) -> NativeBindings.FfiConsentState: Get consent state for a specific entity.
+
+### Module: xmtp.signers
+
+Doc: Signer helpers for XMTP.
+
+Exports: Signer, SignerType, EoaSigner, ScwSigner, create_signer
+
+### Module: xmtp.signers.base
+
+Doc: Signer protocol for XMTP.
+
+Classes:
+- class SignerType(str, Enum): Supported signer types.
+- class Signer(Protocol): Signer interface for XMTP clients.
+  - async get_address(self) -> str: Return the wallet address for this signer.
+  - async get_identifier(self) -> Identifier: Return the XMTP identifier for this signer.
+  - async sign_message(self, message: bytes) -> bytes: Sign a message and return the signature bytes.
+  - async get_chain_id(self) -> int: Return the chain ID (SCW only).
+  - async get_block_number(self) -> int | None: Return the block number for SCW signatures, if needed.
+
+### Module: xmtp.signers.eoa
+
+Doc: Externally owned account signer.
+
+Classes:
+- class EoaSigner(Signer): EOA signer created from a private key.
+  - async get_address(self) -> str: Return the wallet address for this signer.
+  - async get_identifier(self) -> Identifier: Return the XMTP identifier for this signer.
+  - async sign_message(self, message: bytes) -> bytes: Sign a message and return the signature bytes.
+  - async get_chain_id(self) -> int: Return the chain ID (not applicable for EOA).
+  - async get_block_number(self) -> int | None: Return block number (not applicable for EOA).
+
+Functions:
+- create_signer(private_key: str) -> EoaSigner: Create an EOA signer from a private key string.
+
+### Module: xmtp.signers.scw
+
+Doc: Smart contract wallet signer.
+
+Classes:
+- class ScwSigner(Signer): Signer for smart contract wallets.
+  - async get_address(self) -> str: Return the wallet address for this signer.
+  - async get_identifier(self) -> Identifier: Return the XMTP identifier for this signer.
+  - async sign_message(self, message: bytes) -> bytes: Sign a message and return the signature bytes.
+  - async get_chain_id(self) -> int: Return the chain ID for SCW signatures.
+  - async get_block_number(self) -> int | None: Return the block number for SCW signatures, if any.
+
+### Module: xmtp.types
+
+Doc: Shared XMTP type definitions.
+
+Constants:
+- XmtpEnv = Literal['local', 'dev', 'production']
+
+Classes:
+- class LogLevel(str, Enum): Logging levels for libxmtp.
+- class ClientOptions: Options for constructing an XMTP client.
+  - resolved_api_url(self) -> str: Return the API URL based on env and overrides.
+  - resolved_history_sync_url(self) -> str | None: Return the history sync URL based on env and overrides.
+
+### Module: xmtp.utils
+
+Doc: Utility helpers for XMTP.
+
+Functions:
+- is_hex_string(value: str, length: int | None = None) -> bool: Return True if value is a hex string.
+- hex_to_bytes(value: str) -> bytes: Convert a hex string (with or without 0x prefix) to bytes.
+- coerce_db_encryption_key(value: bytes | str | None) -> bytes | None: Normalize the database encryption key to bytes if provided.
+
+## Content Types API Reference
+
+### Module: xmtp_content_type_group_updated
+
+Doc: Group updated content type for XMTP.
+
+Exports: ContentTypeGroupUpdated, GroupUpdated, GroupUpdatedCodec
+
+Constants:
+- ContentTypeGroupUpdated = ContentTypeId(authority_id='xmtp.org', type_id='group_updated', version_major=1, version_minor=0)
+- GroupUpdated = xmtpv3.FfiGroupUpdated
+
+Classes:
+- class GroupUpdatedCodec(ContentCodec[GroupUpdated]): Codec for group updated messages.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: GroupUpdated, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> GroupUpdated
+  - fallback(self, content: GroupUpdated) -> str | None
+  - should_push(self, content: GroupUpdated) -> bool
+
+### Module: xmtp_content_type_markdown
+
+Doc: Markdown content type for XMTP.
+
+Exports: ContentTypeMarkdown, Encoding, MarkdownCodec
+
+Constants:
+- ContentTypeMarkdown = ContentTypeId(authority_id='xmtp.org', type_id='markdown', version_major=1, version_minor=0)
+
+Classes:
+- class Encoding(str, Enum)
+- class MarkdownCodec(ContentCodec[str]): Codec for markdown messages.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: str, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> str
+  - fallback(self, content: str) -> str | None
+  - should_push(self, content: str) -> bool
+
+### Module: xmtp_content_type_primitives
+
+Doc: Content type primitives for XMTP.
+
+Exports: BaseContentCodec, CodecRegistry, ContentCodec, ContentTypeId, EncodedContent, content_type_from_string, content_type_to_string, content_types_are_equal
+
+Classes:
+- class ContentTypeId: Content type identifier.
+  - same_as(self, other: ContentTypeId) -> bool
+- class EncodedContent: Encoded content payload.
+- class CodecRegistry(Protocol): Registry for content codecs.
+  - codec_for(self, content_type: ContentTypeId) -> ContentCodec[Any] | None
+- class ContentCodec(Protocol[TContent]): Protocol for content codecs.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: TContent, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> TContent
+  - fallback(self, content: TContent) -> str | None
+  - should_push(self, content: TContent) -> bool
+- class BaseContentCodec(Generic[TContent]): Base class for content codecs with default behaviors.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: TContent, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> TContent
+  - fallback(self, content: TContent) -> str | None
+  - should_push(self, content: TContent) -> bool
+
+Functions:
+- content_types_are_equal(a: ContentTypeId, b: ContentTypeId) -> bool: Return True if content type IDs are equal.
+- content_type_to_string(content_type: ContentTypeId) -> str: Convert content type ID to string form.
+- content_type_from_string(content_type_string: str) -> ContentTypeId: Parse content type ID from string form.
+
+### Module: xmtp_content_type_reaction
+
+Doc: Reaction content type for XMTP.
+
+Exports: ContentTypeReaction, Reaction, ReactionAction, ReactionSchema, ReactionCodec
+
+Constants:
+- ContentTypeReaction = ContentTypeId(authority_id='xmtp.org', type_id='reaction', version_major=1, version_minor=0)
+
+Classes:
+- class ReactionAction(str, Enum)
+- class ReactionSchema(str, Enum)
+- class Reaction
+- class ReactionCodec(ContentCodec[Reaction]): Codec for reaction messages.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: Reaction, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> Reaction
+  - fallback(self, content: Reaction) -> str | None
+  - should_push(self, content: Reaction) -> bool
+
+### Module: xmtp_content_type_read_receipt
+
+Doc: Read receipt content type for XMTP.
+
+Exports: ContentTypeReadReceipt, ReadReceiptCodec
+
+Constants:
+- ContentTypeReadReceipt = ContentTypeId(authority_id='xmtp.org', type_id='readReceipt', version_major=1, version_minor=0)
+
+Classes:
+- class ReadReceiptCodec(ContentCodec[dict]): Codec for read receipt messages.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: dict, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> dict
+  - fallback(self, content: dict) -> str | None
+  - should_push(self, content: dict) -> bool
+
+### Module: xmtp_content_type_remote_attachment
+
+Doc: Attachment content types for XMTP.
+
+Exports: Attachment, AttachmentCodec, ContentTypeAttachment, ContentTypeRemoteAttachment, RemoteAttachment, RemoteAttachmentCodec
+
+Constants:
+- ContentTypeAttachment = ContentTypeId(authority_id='xmtp.org', type_id='attachment', version_major=1, version_minor=0)
+- ContentTypeRemoteAttachment = ContentTypeId(authority_id='xmtp.org', type_id='remoteStaticAttachment', version_major=1, version_minor=0)
+
+Classes:
+- class Attachment: Attachment payload.
+- class RemoteAttachment: Remote attachment metadata.
+- class AttachmentCodec(ContentCodec[Attachment]): Codec for attachment payloads.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: Attachment, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> Attachment
+  - fallback(self, content: Attachment) -> str | None
+  - should_push(self, content: Attachment) -> bool
+- class RemoteAttachmentCodec(ContentCodec[RemoteAttachment]): Codec for remote attachment metadata.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: RemoteAttachment, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> RemoteAttachment
+  - fallback(self, content: RemoteAttachment) -> str | None
+  - should_push(self, content: RemoteAttachment) -> bool
+
+### Module: xmtp_content_type_reply
+
+Doc: Reply content type for XMTP.
+
+Exports: ContentTypeReply, Reply, ReplyCodec
+
+Constants:
+- ContentTypeReply = ContentTypeId(authority_id='xmtp.org', type_id='reply', version_major=1, version_minor=0)
+
+Classes:
+- class Reply: Reply content wrapper.
+- class ReplyCodec(ContentCodec[Reply]): Codec for reply messages.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: Reply, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> Reply
+  - fallback(self, content: Reply) -> str | None
+  - should_push(self, content: Reply) -> bool
+
+### Module: xmtp_content_type_text
+
+Doc: Text content type for XMTP.
+
+Exports: ContentTypeText, Encoding, TextCodec
+
+Constants:
+- ContentTypeText = ContentTypeId(authority_id='xmtp.org', type_id='text', version_major=1, version_minor=0)
+
+Classes:
+- class Encoding(str, Enum)
+- class TextCodec(ContentCodec[str]): Codec for plain text messages.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: str, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> str
+  - fallback(self, content: str) -> str | None
+  - should_push(self, content: str) -> bool
+
+### Module: xmtp_content_type_transaction_reference
+
+Doc: Transaction reference content type for XMTP.
+
+Exports: ContentTypeTransactionReference, TransactionMetadata, TransactionReference, TransactionReferenceCodec
+
+Constants:
+- ContentTypeTransactionReference = ContentTypeId(authority_id='xmtp.org', type_id='transactionReference', version_major=1, version_minor=0)
+
+Classes:
+- class TransactionMetadata: Optional transaction metadata.
+- class TransactionReference: Transaction reference content.
+- class TransactionReferenceCodec(ContentCodec[TransactionReference]): Codec for transaction references.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: TransactionReference, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> TransactionReference
+  - fallback(self, content: TransactionReference) -> str | None
+  - should_push(self, content: TransactionReference) -> bool
+
+### Module: xmtp_content_type_wallet_send_calls
+
+Doc: Wallet send calls content type for XMTP.
+
+Exports: ContentTypeWalletSendCalls, WalletCall, WalletCallMetadata, WalletSendCalls, WalletSendCallsCodec
+
+Constants:
+- ContentTypeWalletSendCalls = ContentTypeId(authority_id='xmtp.org', type_id='walletSendCalls', version_major=1, version_minor=0)
+
+Classes:
+- class WalletCallMetadata: Metadata describing a wallet call.
+- class WalletCall: Wallet call fields.
+- class WalletSendCalls: Wallet send calls payload.
+- class WalletSendCallsCodec(ContentCodec[WalletSendCalls]): Codec for wallet send calls.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: WalletSendCalls, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> WalletSendCalls
+  - fallback(self, content: WalletSendCalls) -> str | None
+  - should_push(self, content: WalletSendCalls) -> bool

@@ -1,0 +1,680 @@
+---
+description: >
+  LLM reference for building agents with the xmtp-py agent SDK.
+---
+
+# xmtp-py LLM Reference (Agents)
+
+> NOTE
+> This file is generated automatically from the xmtp-py repository.
+> Generated at: 7:13 PM UTC / January 10, 2026
+> Included Sections:
+> - README.md
+> - sdks/agent-sdk/README.md
+> - docs/agent_sdk.rst
+> - docs/examples.rst
+> - content-types/content-type-group-updated/README.md
+> - content-types/content-type-markdown/README.md
+> - content-types/content-type-primitives/README.md
+> - content-types/content-type-reaction/README.md
+> - content-types/content-type-read-receipt/README.md
+> - content-types/content-type-remote-attachment/README.md
+> - content-types/content-type-reply/README.md
+> - content-types/content-type-text/README.md
+> - content-types/content-type-transaction-reference/README.md
+> - content-types/content-type-wallet-send-calls/README.md
+> - api:Agent SDK
+> - api:Content Types
+
+## Agent Documentation
+
+### README.md
+
+# xmtp-py
+
+Unofficial Python client SDKs for the XMTP network.
+
+Primary goal: feature parity with xmtp-js.
+
+This is a community project that mirrors the structure and interfaces of the official [xmtp-js](https://github.com/xmtp/xmtp-js) SDK, adapted for Python.
+
+## What's inside?
+
+### SDKs
+
+- [`python-sdk`](sdks/python-sdk): XMTP client SDK for Python
+- [`agent-sdk`](sdks/agent-sdk): XMTP agent SDK for Python (event-driven, middleware-powered)
+
+### Content types
+
+- [`content-type-primitives`](content-types/content-type-primitives): Primitives for building custom XMTP content types
+- [`content-type-group-updated`](content-types/content-type-group-updated): Content type for group update messages
+- [`content-type-reaction`](content-types/content-type-reaction): Content type for reactions to messages
+- [`content-type-read-receipt`](content-types/content-type-read-receipt): Content type for read receipts
+- [`content-type-remote-attachment`](content-types/content-type-remote-attachment): Content type for file attachments stored off-network
+- [`content-type-reply`](content-types/content-type-reply): Content type for direct replies to messages
+- [`content-type-text`](content-types/content-type-text): Content type for plain text messages
+- [`content-type-transaction-reference`](content-types/content-type-transaction-reference): Content type for on-chain transaction references
+- [`content-type-markdown`](content-types/content-type-markdown): Content type for markdown-formatted messages
+- [`content-type-wallet-send-calls`](content-types/content-type-wallet-send-calls): Content type for wallet transaction requests
+
+## Requirements
+
+- Python 3.10+
+- libxmtp bindings >= 1.7.0-r3
+
+## Installation
+
+```bash
+pip install xmtp
+```
+
+## Quick start
+
+### Python SDK
+
+```python
+from xmtp import Client
+from xmtp.signers import create_signer
+from xmtp.types import ClientOptions
+
+# Create a signer from a private key
+signer = create_signer(private_key)
+
+# Create the client
+client = await Client.create(signer, ClientOptions(env='dev'))
+
+# Create a conversation
+dm = await client.conversations.new_dm("0x...")
+await dm.send("Hello from Python!")
+
+# Stream messages
+async for message in client.conversations.stream_all_messages():
+    print(f"Received: {message.content}")
+```
+
+### Agent SDK
+
+```python
+from xmtp.agent import Agent
+from xmtp.agent.user import create_user, create_signer
+from xmtp.types import ClientOptions
+
+# Create a user and signer
+user = create_user()
+signer = create_signer(user)
+
+# Create the agent
+agent = await Agent.create(signer, ClientOptions(env='dev', db_path=None))
+
+# Handle text messages
+@agent.on("text")
+async def handle_text(ctx):
+    await ctx.send_text("Hello from my XMTP Agent! ")
+
+# Start the agent
+await agent.start()
+```
+
+## LibXMTP bindings
+
+This SDK uses [libxmtp](https://github.com/xmtp/libxmtp) Python bindings for core XMTP functionality including cryptography, networking, and protocol implementation.
+
+**Minimum version**: 1.7.0-r3
+
+## Documentation
+
+- [XMTP Documentation](https://docs.xmtp.org/)
+- [Build an XMTP Agent](https://docs.xmtp.org/agents/get-started/build-an-agent)
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+## License
+
+Apache 2.0
+
+### sdks/agent-sdk/README.md
+
+# xmtp-agent-sdk
+
+Unofficial XMTP agent SDK for Python.
+
+This package provides an event-driven agent framework inspired by xmtp-js.
+
+## Quick start
+
+```python
+from xmtp_agent import Agent
+from xmtp_agent.user import create_signer, create_user
+
+user = create_user()
+signer = create_signer(user)
+agent = await Agent.create(signer)
+
+@agent.on('text')
+async def on_text(ctx):
+    await ctx.send_text('Hello from my agent!')
+
+await agent.start()
+```
+
+### docs/agent_sdk.rst
+
+Agent SDK
+=========
+
+.. automodule:: xmtp_agent.agent
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp_agent.context
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp_agent.filters
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp_agent.middleware
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp_agent.command_router
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp_agent.user
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp_agent.name_resolver
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp_agent.attachments
+   :members:
+   :undoc-members:
+
+.. automodule:: xmtp_agent.debug
+   :members:
+   :undoc-members:
+
+### docs/examples.rst
+
+Examples
+========
+
+Python SDK
+----------
+
+.. code-block:: python
+
+   import asyncio
+
+   from xmtp import Client
+   from xmtp.signers import create_signer
+   from xmtp.types import ClientOptions
+
+
+   async def main() -> None:
+       signer = create_signer('0xYOUR_PRIVATE_KEY')
+       options = ClientOptions(env='dev')
+       client = await Client.create(signer, options)
+
+       dm = await client.conversations.new_dm('0x...')
+       await dm.send('Hello from Python!')
+
+
+   asyncio.run(main())
+
+Agent SDK
+---------
+
+.. code-block:: python
+
+   import asyncio
+
+   from xmtp_agent import Agent
+   from xmtp_agent.user import create_signer, create_user
+
+
+   async def main() -> None:
+       user = create_user()
+       signer = create_signer(user)
+       agent = await Agent.create(signer)
+
+       @agent.on('text')
+       async def handle_text(ctx):
+           await ctx.send_text('Hello from my XMTP Agent!')
+
+       await agent.start()
+
+
+   asyncio.run(main())
+
+### content-types/content-type-group-updated/README.md
+
+# xmtp-content-type-group-updated
+
+Group updated content type implementation for XMTP Python SDKs.
+
+### content-types/content-type-markdown/README.md
+
+# xmtp-content-type-markdown
+
+Markdown content type codec for XMTP.
+
+### content-types/content-type-primitives/README.md
+
+# xmtp-content-type-primitives
+
+Shared content type primitives for XMTP Python SDKs.
+
+### content-types/content-type-reaction/README.md
+
+# xmtp-content-type-reaction
+
+Reaction content type codec for XMTP.
+
+### content-types/content-type-read-receipt/README.md
+
+# xmtp-content-type-read-receipt
+
+Read receipt content type codec for XMTP.
+
+### content-types/content-type-remote-attachment/README.md
+
+# xmtp-content-type-remote-attachment
+
+Attachment and remote attachment content types for XMTP Python SDKs.
+
+### content-types/content-type-reply/README.md
+
+# xmtp-content-type-reply
+
+Reply content type implementation for XMTP Python SDKs.
+
+### content-types/content-type-text/README.md
+
+# xmtp-content-type-text
+
+Text content type codec for XMTP.
+
+### content-types/content-type-transaction-reference/README.md
+
+# xmtp-content-type-transaction-reference
+
+Transaction reference content type implementation for XMTP Python SDKs.
+
+### content-types/content-type-wallet-send-calls/README.md
+
+# xmtp-content-type-wallet-send-calls
+
+Wallet send calls content type implementation for XMTP Python SDKs.
+
+## Agent SDK API Reference
+
+### Module: xmtp_agent
+
+Doc: XMTP agent SDK (unofficial).
+
+Exports: Agent, ClientContext, ConversationContext, CommandRouter, MessageContext, create_name_resolver, create_signer, create_user, download_remote_attachment, filter, get_test_url, log_details
+
+### Module: xmtp_agent.agent
+
+Doc: Agent class for XMTP.
+
+Constants:
+- EventHandler = Callable[[Any], Awaitable[None] | None]
+
+Classes:
+- class Agent: Main agent class with an event-driven API.
+  - async create(cls, signer: object, options: ClientOptions | None = None) -> Agent: Create an agent with a signer.
+  - async create_from_env(cls, options: ClientOptions | None = None) -> Agent: Create an agent from environment variables.
+  - on(self, event: str, handler: EventHandler | None = None) -> EventHandler | Callable[[EventHandler], EventHandler]: Register an event handler.
+  - use(self, *middlewares: Middleware | list[Middleware]) -> Agent: Register middleware for message handling.
+  - errors(self) -> _ErrorRegistrar: Return an object to register error middleware.
+  - client(self) -> Client
+  - async start(self) -> None: Start the agent.
+  - async stop(self) -> None: Stop the agent.
+
+### Module: xmtp_agent.attachments
+
+Doc: Attachment utilities for agents.
+
+Exports: download_remote_attachment
+
+Functions:
+- async download_remote_attachment(remote_attachment: RemoteAttachment) -> bytes: Download a remote attachment and verify its digest.
+
+### Module: xmtp_agent.command_router
+
+Doc: Command router middleware for XMTP agents.
+
+Exports: CommandRouter
+
+Classes:
+- class CommandRouter: Route slash commands to handlers for text messages.
+  - command_list(self) -> list[str]
+  - command(self, command: str, handler: Handler) -> CommandRouter
+  - default(self, handler: Handler) -> CommandRouter
+  - async handle(self, ctx: MessageContext) -> bool
+  - middleware(self) -> Middleware
+
+### Module: xmtp_agent.context
+
+Doc: Context objects for agent handlers.
+
+Classes:
+- class ClientContext: Context passed to lifecycle handlers.
+  - client(self) -> Client
+  - get_client_address(self) -> str | None
+- class ConversationContext(ClientContext): Context passed to conversation handlers.
+  - is_dm(self) -> bool
+  - is_group(self) -> bool
+  - async send_markdown(self, markdown: str) -> None
+  - async send_text(self, text: str) -> None
+  - async send_remote_attachment(self, attachment: RemoteAttachment) -> None
+  - conversation(self) -> Conversation
+  - is_allowed(self) -> bool
+  - is_denied(self) -> bool
+  - is_unknown(self) -> bool
+- class MessageContext(ConversationContext): Context passed to message handlers.
+  - uses_codec(self, codec_class: type[ContentCodec[Any]]) -> bool
+  - is_markdown(self) -> bool
+  - is_text(self) -> bool
+  - is_reply(self) -> bool
+  - is_reaction(self) -> bool
+  - is_remote_attachment(self) -> bool
+  - async send_reaction(self, content: str, schema: ReactionSchema = ReactionSchema.UNICODE) -> None
+  - async send_text_reply(self, text: str) -> None
+  - async send_markdown_reply(self, markdown: str) -> None
+  - async get_sender_address(self) -> str | None
+  - message(self) -> DecodedMessage[Any]
+
+### Module: xmtp_agent.debug
+
+Doc: Debug helpers for agent development.
+
+Exports: get_test_url, log_details
+
+Functions:
+- get_test_url(client: Client) -> str: Return a URL to test the agent on xmtp.chat.
+- async log_details(agent: Agent) -> None: Log basic agent details for debugging.
+
+### Module: xmtp_agent.errors
+
+Doc: Agent SDK errors.
+
+Classes:
+- class AgentError(Exception): Base error for the agent SDK.
+- class AgentStreamingError(AgentError): Error raised when streaming fails.
+
+### Module: xmtp_agent.filters
+
+Doc: Message filter helpers.
+
+Exports: filter, f, from_self, has_content, is_dm, is_group, is_group_update, is_markdown, is_reaction, is_read_receipt, is_remote_attachment, is_reply, is_text, is_transaction_reference, is_wallet_send_calls, uses_codec
+
+Constants:
+- filter = _Filter()
+- f = filter
+
+Functions:
+- from_self(message: DecodedMessage[Any], client: Client) -> bool
+- has_content(message: DecodedMessage[Any]) -> bool
+- is_dm(conversation: Conversation) -> bool
+- is_group(conversation: Conversation) -> bool
+- is_group_update(message: DecodedMessage[Any]) -> bool
+- is_markdown(message: DecodedMessage[Any]) -> bool
+- is_reaction(message: DecodedMessage[Any]) -> bool
+- is_read_receipt(message: DecodedMessage[Any]) -> bool
+- is_remote_attachment(message: DecodedMessage[Any]) -> bool
+- is_reply(message: DecodedMessage[Any]) -> bool
+- is_text(message: DecodedMessage[Any]) -> bool
+- is_transaction_reference(message: DecodedMessage[Any]) -> bool
+- is_wallet_send_calls(message: DecodedMessage[Any]) -> bool
+- uses_codec(message: DecodedMessage[Any], codec_class: type[ContentCodec[Any]]) -> bool
+
+### Module: xmtp_agent.middleware
+
+Doc: Middleware interfaces for the agent SDK.
+
+Constants:
+- Handler = Callable[[Any], Awaitable[None]]
+- ConversationHandler = Callable[[Any], Awaitable[None]]
+- LifecycleHandler = Callable[[Any], Awaitable[None]]
+- NextHandler = Callable[[], Awaitable[None]]
+- ErrorNextHandler = Callable[[Exception | None], Awaitable[None]]
+- Middleware = Callable[[Any, NextHandler], Awaitable[None]]
+- ErrorMiddleware = Callable[[Exception, Any, ErrorNextHandler], Awaitable[None]]
+
+### Module: xmtp_agent.name_resolver
+
+Doc: Name resolution utilities.
+
+Exports: create_name_resolver
+
+Functions:
+- create_name_resolver(api_key: str | None = None) -> Callable[[str], Awaitable[str | None]]: Create an async name resolver backed by web3.bio.
+
+### Module: xmtp_agent.user
+
+Doc: User helpers for XMTP agents.
+
+Exports: User, create_user, create_signer
+
+Classes:
+- class User: User wallet wrapper.
+
+Functions:
+- create_user(private_key: str | None = None) -> User: Create a user from an optional private key.
+- create_signer(user_or_key: User | str) -> EoaSigner: Create an EOA signer from a user or private key.
+
+## Content Types API Reference
+
+### Module: xmtp_content_type_group_updated
+
+Doc: Group updated content type for XMTP.
+
+Exports: ContentTypeGroupUpdated, GroupUpdated, GroupUpdatedCodec
+
+Constants:
+- ContentTypeGroupUpdated = ContentTypeId(authority_id='xmtp.org', type_id='group_updated', version_major=1, version_minor=0)
+- GroupUpdated = xmtpv3.FfiGroupUpdated
+
+Classes:
+- class GroupUpdatedCodec(ContentCodec[GroupUpdated]): Codec for group updated messages.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: GroupUpdated, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> GroupUpdated
+  - fallback(self, content: GroupUpdated) -> str | None
+  - should_push(self, content: GroupUpdated) -> bool
+
+### Module: xmtp_content_type_markdown
+
+Doc: Markdown content type for XMTP.
+
+Exports: ContentTypeMarkdown, Encoding, MarkdownCodec
+
+Constants:
+- ContentTypeMarkdown = ContentTypeId(authority_id='xmtp.org', type_id='markdown', version_major=1, version_minor=0)
+
+Classes:
+- class Encoding(str, Enum)
+- class MarkdownCodec(ContentCodec[str]): Codec for markdown messages.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: str, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> str
+  - fallback(self, content: str) -> str | None
+  - should_push(self, content: str) -> bool
+
+### Module: xmtp_content_type_primitives
+
+Doc: Content type primitives for XMTP.
+
+Exports: BaseContentCodec, CodecRegistry, ContentCodec, ContentTypeId, EncodedContent, content_type_from_string, content_type_to_string, content_types_are_equal
+
+Classes:
+- class ContentTypeId: Content type identifier.
+  - same_as(self, other: ContentTypeId) -> bool
+- class EncodedContent: Encoded content payload.
+- class CodecRegistry(Protocol): Registry for content codecs.
+  - codec_for(self, content_type: ContentTypeId) -> ContentCodec[Any] | None
+- class ContentCodec(Protocol[TContent]): Protocol for content codecs.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: TContent, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> TContent
+  - fallback(self, content: TContent) -> str | None
+  - should_push(self, content: TContent) -> bool
+- class BaseContentCodec(Generic[TContent]): Base class for content codecs with default behaviors.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: TContent, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> TContent
+  - fallback(self, content: TContent) -> str | None
+  - should_push(self, content: TContent) -> bool
+
+Functions:
+- content_types_are_equal(a: ContentTypeId, b: ContentTypeId) -> bool: Return True if content type IDs are equal.
+- content_type_to_string(content_type: ContentTypeId) -> str: Convert content type ID to string form.
+- content_type_from_string(content_type_string: str) -> ContentTypeId: Parse content type ID from string form.
+
+### Module: xmtp_content_type_reaction
+
+Doc: Reaction content type for XMTP.
+
+Exports: ContentTypeReaction, Reaction, ReactionAction, ReactionSchema, ReactionCodec
+
+Constants:
+- ContentTypeReaction = ContentTypeId(authority_id='xmtp.org', type_id='reaction', version_major=1, version_minor=0)
+
+Classes:
+- class ReactionAction(str, Enum)
+- class ReactionSchema(str, Enum)
+- class Reaction
+- class ReactionCodec(ContentCodec[Reaction]): Codec for reaction messages.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: Reaction, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> Reaction
+  - fallback(self, content: Reaction) -> str | None
+  - should_push(self, content: Reaction) -> bool
+
+### Module: xmtp_content_type_read_receipt
+
+Doc: Read receipt content type for XMTP.
+
+Exports: ContentTypeReadReceipt, ReadReceiptCodec
+
+Constants:
+- ContentTypeReadReceipt = ContentTypeId(authority_id='xmtp.org', type_id='readReceipt', version_major=1, version_minor=0)
+
+Classes:
+- class ReadReceiptCodec(ContentCodec[dict]): Codec for read receipt messages.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: dict, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> dict
+  - fallback(self, content: dict) -> str | None
+  - should_push(self, content: dict) -> bool
+
+### Module: xmtp_content_type_remote_attachment
+
+Doc: Attachment content types for XMTP.
+
+Exports: Attachment, AttachmentCodec, ContentTypeAttachment, ContentTypeRemoteAttachment, RemoteAttachment, RemoteAttachmentCodec
+
+Constants:
+- ContentTypeAttachment = ContentTypeId(authority_id='xmtp.org', type_id='attachment', version_major=1, version_minor=0)
+- ContentTypeRemoteAttachment = ContentTypeId(authority_id='xmtp.org', type_id='remoteStaticAttachment', version_major=1, version_minor=0)
+
+Classes:
+- class Attachment: Attachment payload.
+- class RemoteAttachment: Remote attachment metadata.
+- class AttachmentCodec(ContentCodec[Attachment]): Codec for attachment payloads.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: Attachment, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> Attachment
+  - fallback(self, content: Attachment) -> str | None
+  - should_push(self, content: Attachment) -> bool
+- class RemoteAttachmentCodec(ContentCodec[RemoteAttachment]): Codec for remote attachment metadata.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: RemoteAttachment, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> RemoteAttachment
+  - fallback(self, content: RemoteAttachment) -> str | None
+  - should_push(self, content: RemoteAttachment) -> bool
+
+### Module: xmtp_content_type_reply
+
+Doc: Reply content type for XMTP.
+
+Exports: ContentTypeReply, Reply, ReplyCodec
+
+Constants:
+- ContentTypeReply = ContentTypeId(authority_id='xmtp.org', type_id='reply', version_major=1, version_minor=0)
+
+Classes:
+- class Reply: Reply content wrapper.
+- class ReplyCodec(ContentCodec[Reply]): Codec for reply messages.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: Reply, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> Reply
+  - fallback(self, content: Reply) -> str | None
+  - should_push(self, content: Reply) -> bool
+
+### Module: xmtp_content_type_text
+
+Doc: Text content type for XMTP.
+
+Exports: ContentTypeText, Encoding, TextCodec
+
+Constants:
+- ContentTypeText = ContentTypeId(authority_id='xmtp.org', type_id='text', version_major=1, version_minor=0)
+
+Classes:
+- class Encoding(str, Enum)
+- class TextCodec(ContentCodec[str]): Codec for plain text messages.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: str, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> str
+  - fallback(self, content: str) -> str | None
+  - should_push(self, content: str) -> bool
+
+### Module: xmtp_content_type_transaction_reference
+
+Doc: Transaction reference content type for XMTP.
+
+Exports: ContentTypeTransactionReference, TransactionMetadata, TransactionReference, TransactionReferenceCodec
+
+Constants:
+- ContentTypeTransactionReference = ContentTypeId(authority_id='xmtp.org', type_id='transactionReference', version_major=1, version_minor=0)
+
+Classes:
+- class TransactionMetadata: Optional transaction metadata.
+- class TransactionReference: Transaction reference content.
+- class TransactionReferenceCodec(ContentCodec[TransactionReference]): Codec for transaction references.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: TransactionReference, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> TransactionReference
+  - fallback(self, content: TransactionReference) -> str | None
+  - should_push(self, content: TransactionReference) -> bool
+
+### Module: xmtp_content_type_wallet_send_calls
+
+Doc: Wallet send calls content type for XMTP.
+
+Exports: ContentTypeWalletSendCalls, WalletCall, WalletCallMetadata, WalletSendCalls, WalletSendCallsCodec
+
+Constants:
+- ContentTypeWalletSendCalls = ContentTypeId(authority_id='xmtp.org', type_id='walletSendCalls', version_major=1, version_minor=0)
+
+Classes:
+- class WalletCallMetadata: Metadata describing a wallet call.
+- class WalletCall: Wallet call fields.
+- class WalletSendCalls: Wallet send calls payload.
+- class WalletSendCallsCodec(ContentCodec[WalletSendCalls]): Codec for wallet send calls.
+  - content_type(self) -> ContentTypeId
+  - encode(self, content: WalletSendCalls, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> WalletSendCalls
+  - fallback(self, content: WalletSendCalls) -> str | None
+  - should_push(self, content: WalletSendCalls) -> bool
