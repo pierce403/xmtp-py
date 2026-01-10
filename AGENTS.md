@@ -83,7 +83,7 @@ ruff format .               # Formatting
 
 ## Known issues & solutions
 
-- As of 2026-01-10, libxmtp repo ships bindings for node/wasm/ffi but no Python bindings; plan to build with PyO3/maturin.
+- As of 2026-01-10, libxmtp repo ships ffi/wasm bindings and QA tools diagrams reference Napi, but no Python bindings; plan to build with PyO3/maturin.
 - Agent SDK is scaffolded under `xmtp_agent` for now; decide later if we move to a shared `xmtp.agent` namespace.
 
 ## Agent tips
