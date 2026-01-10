@@ -16,11 +16,15 @@ Current open work to keep parity with xmtp-js and enforce full coverage.
 - [ ] Add coverage reporting in CI and fail if coverage < 100%
 - [ ] Add binding-level coverage targets (generate tests that exercise xmtp-bindings code paths)
 - [ ] Investigate Rust/FFI coverage for libxmtp (e.g., cargo llvm-cov) and document how to run it
+- [ ] Document coverage strategy (branch vs line, excludes, and why)
+- [ ] Add a coverage dashboard/report artifact (HTML + XML) for CI visibility
 
 ---
 
 ## Notes
 
+- Coverage tracking is not wired up yet; we need pytest-cov + CI fail-under plus bindings/FFI coverage guidance.
+- Maximize coverage by: using branch coverage, avoiding blanket excludes, adding regression tests for error paths, and ensuring each public API path is exercised (including bindings wrappers).
 - Target libxmtp version: >= 1.7.0-r3 (nothing from 1.6.x line)
 - Interface parity with xmtp-js is the goal
 - Python-idiomatic API where it makes sense (snake_case, async/await patterns)
