@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from eth_account import Account
-from xmtp.signers import create_signer as _create_signer, EoaSigner
+from xmtp.signers import EoaSigner
+from xmtp.signers import create_signer as _create_signer
 from xmtp.utils import is_hex_string
 
 
