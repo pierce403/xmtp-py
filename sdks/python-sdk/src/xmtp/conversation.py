@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from xmtp_content_type_primitives import ContentTypeId
 
@@ -63,7 +63,7 @@ class Conversation:
     async def update_consent_state(self, state: NativeBindings.FfiConsentState) -> None:
         """Update the conversation consent state."""
 
-        result = self._ffi.update_consent_state(state)
+        result = cast(Any, self._ffi).update_consent_state(state)
         if inspect.isawaitable(result):
             await result
 
@@ -82,7 +82,7 @@ class Conversation:
 
         encoded = self._client.encode_content(content, content_type)
         opts = _default_send_opts(should_push=True)
-        return await self._ffi.send(encoded, opts)
+        return await self._ffi.send(encoded, cast(NativeBindings.FfiSendMessageOpts, opts))
 
 
 class Dm(Conversation):

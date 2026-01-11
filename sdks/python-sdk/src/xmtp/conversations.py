@@ -6,7 +6,7 @@ import asyncio
 import builtins
 import inspect
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from xmtp.async_stream import AsyncStream
 from xmtp.bindings import NativeBindings
@@ -257,7 +257,7 @@ class Conversations:
                 await ffi.sync_all_conversations(consent_states)
                 return
             if len(signature.parameters) == 0:
-                await ffi.sync_all_conversations()
+                await cast(Any, ffi).sync_all_conversations()
                 return
         await ffi.sync_all_conversations(consent_states)
 

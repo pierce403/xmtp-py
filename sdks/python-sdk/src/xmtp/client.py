@@ -6,7 +6,7 @@ import inspect
 import os
 from collections.abc import Sequence
 from datetime import datetime, timezone
-from typing import TypeVar, cast
+from typing import Any, TypeVar, cast
 
 from xmtp_content_type_primitives import ContentCodec, ContentTypeId, EncodedContent
 
@@ -279,9 +279,11 @@ class Client:
         if signature_request is None:
             return
 
-        signature_text = signature_request.signature_text()
-        if inspect.isawaitable(signature_text):
-            signature_text = await signature_text
+        signature_text_result = cast(Any, signature_request).signature_text()
+        if inspect.isawaitable(signature_text_result):
+            signature_text = await signature_text_result
+        else:
+            signature_text = signature_text_result
         signature = await self._signer.sign_message(signature_text.encode())
 
         if self._signer.type == SignerType.SCW:
