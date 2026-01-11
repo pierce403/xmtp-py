@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Sequence
 from datetime import datetime, timezone
-from typing import Any, Sequence
 
 from xmtp.bindings import NativeBindings
 from xmtp.conversations import Conversations
@@ -67,7 +67,7 @@ class Client:
         self._client: NativeBindings.FfiXmtpClient | None = None
         self._conversations: Conversations | None = None
         self._preferences: Preferences | None = None
-        self._codecs: dict[str, ContentCodec[Any]] = {}
+        self._codecs: dict[str, ContentCodec[object]] = {}
         self._register_default_codecs()
         if self._options.codecs:
             for codec in self._options.codecs:
@@ -297,23 +297,23 @@ class Client:
             raise ClientNotInitializedError()
         return await self._client.find_inbox_id(_identifier_to_ffi(identifier))
 
-    def register_codec(self, codec: ContentCodec[Any]) -> None:
+    def register_codec(self, codec: ContentCodec[object]) -> None:
         """Register a content codec for encoding/decoding."""
 
         self._codecs[str(codec.content_type)] = codec
 
-    def register_codecs(self, codecs: Sequence[ContentCodec[Any]]) -> None:
+    def register_codecs(self, codecs: Sequence[ContentCodec[object]]) -> None:
         """Register multiple content codecs."""
 
         for codec in codecs:
             self.register_codec(codec)
 
-    def codec_for(self, content_type: ContentTypeId | str) -> ContentCodec[Any] | None:
+    def codec_for(self, content_type: ContentTypeId | str) -> ContentCodec[object] | None:
         """Return the codec for a content type, if registered."""
 
         return self._codecs.get(str(content_type))
 
-    def encode_content(self, content: Any, content_type: ContentTypeId | str) -> bytes:
+    def encode_content(self, content: object, content_type: ContentTypeId | str) -> bytes:
         """Encode content for sending."""
 
         codec = self.codec_for(content_type)
@@ -322,7 +322,7 @@ class Client:
         encoded = codec.encode(content, self)
         return encoded.content
 
-    def _decode_message(self, message: NativeBindings.FfiMessage) -> DecodedMessage[Any]:
+    def _decode_message(self, message: NativeBindings.FfiMessage) -> DecodedMessage[object]:
         if self._client is None:
             raise ClientNotInitializedError()
 
@@ -340,7 +340,7 @@ class Client:
             content_type_id=content_type_id,
         )
 
-    def _decode_ffi_content(self, content: NativeBindings.FfiDecodedMessageContent) -> Any:
+    def _decode_ffi_content(self, content: NativeBindings.FfiDecodedMessageContent) -> object:
         if content.is_TEXT():
             return content[0].content
         if content.is_MARKDOWN():

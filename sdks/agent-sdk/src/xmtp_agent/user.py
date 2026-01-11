@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from eth_account import Account
 
-from xmtp.signers import EoaSigner, create_signer as _create_signer
+from xmtp.signers import create_signer as _create_signer, EoaSigner
 from xmtp.utils import is_hex_string
 
 

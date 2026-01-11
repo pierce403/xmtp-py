@@ -5,7 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 from collections import OrderedDict
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Generic, TypeVar
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
@@ -13,21 +14,26 @@ from xmtp_agent.errors import AgentError
 from xmtp.utils import is_hex_string
 
 
-_MISSING = object()
+class _MissingType:
+    __slots__ = ()
 
 
-class _LimitedCache:
+_MISSING = _MissingType()
+T = TypeVar('T')
+
+
+class _LimitedCache(Generic[T]):
     def __init__(self, limit: int = 1000) -> None:
         self._limit = limit
-        self._data: OrderedDict[str, Any] = OrderedDict()
+        self._data: OrderedDict[str, T] = OrderedDict()
 
-    def get(self, key: str) -> Any:
+    def get(self, key: str) -> T | _MissingType:
         if key not in self._data:
             return _MISSING
         self._data.move_to_end(key)
         return self._data[key]
 
-    def set(self, key: str, value: Any) -> None:
+    def set(self, key: str, value: T) -> None:
         self._data[key] = value
         self._data.move_to_end(key)
         if len(self._data) > self._limit:
@@ -37,7 +43,7 @@ class _LimitedCache:
 def create_name_resolver(api_key: str | None = None) -> Callable[[str], Awaitable[str | None]]:
     """Create an async name resolver backed by web3.bio."""
 
-    cache = _LimitedCache(1000)
+    cache: _LimitedCache[str | None] = _LimitedCache(1000)
 
     async def resolve_name(name: str) -> str | None:
         if is_hex_string(name, length=40):
@@ -47,7 +53,7 @@ def create_name_resolver(api_key: str | None = None) -> Callable[[str], Awaitabl
         if cached is not _MISSING:
             return cached
 
-        def fetch() -> list[dict[str, Any]]:
+        def fetch() -> list[dict[str, object]]:
             endpoint = f'https://api.web3.bio/ns/{quote(name)}'
             headers = {'Content-Type': 'application/json'}
             if api_key:
@@ -63,7 +69,8 @@ def create_name_resolver(api_key: str | None = None) -> Callable[[str], Awaitabl
             return json.loads(data.decode('utf-8'))
 
         results = await asyncio.to_thread(fetch)
-        address = results[0].get('address') if results else None
+        address_value = results[0].get('address') if results else None
+        address = address_value if isinstance(address_value, str) else None
         cache.set(name, address)
         return address
 

@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 from xmtp.bindings import NativeBindings
 from xmtp.errors import MissingContentTypeError
 from xmtp.identifiers import Identifier, IdentifierKind
+from xmtp_content_type_primitives import ContentTypeId
+
+if TYPE_CHECKING:
+    from xmtp.client import Client
+
 
 
 def _identifier_to_ffi(identifier: Identifier) -> NativeBindings.FfiIdentifier:
@@ -20,7 +25,7 @@ def _identifier_to_ffi(identifier: Identifier) -> NativeBindings.FfiIdentifier:
 class Conversation:
     """Base conversation class."""
 
-    def __init__(self, client: Any, ffi_conversation: NativeBindings.FfiConversation) -> None:
+    def __init__(self, client: Client, ffi_conversation: NativeBindings.FfiConversation) -> None:
         self._client = client
         self._ffi = ffi_conversation
 
@@ -46,8 +51,8 @@ class Conversation:
 
     async def send(
         self,
-        content: str | bytes | Any,
-        content_type: Any | None = None,
+        content: object,
+        content_type: ContentTypeId | str | None = None,
     ) -> bytes:
         """Send a message in the conversation."""
 
@@ -88,12 +93,14 @@ class Group(Conversation):
     async def add_members_by_identifiers(self, identifiers: list[Identifier]) -> None:
         """Add members to the group by identifier."""
 
-        await self._ffi.add_members([_identifier_to_ffi(identifier) for identifier in identifiers])
+        members = [_identifier_to_ffi(identifier) for identifier in identifiers]
+        await self._ffi.add_members(members)
 
     async def remove_members_by_identifiers(self, identifiers: list[Identifier]) -> None:
         """Remove members from the group by identifier."""
 
-        await self._ffi.remove_members([_identifier_to_ffi(identifier) for identifier in identifiers])
+        members = [_identifier_to_ffi(identifier) for identifier in identifiers]
+        await self._ffi.remove_members(members)
 
     async def members(self) -> list[str]:
         """Return group member inbox IDs."""

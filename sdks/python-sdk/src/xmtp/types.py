@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Literal, Sequence
+from typing import Literal
 
 from xmtp.constants import API_URLS, HISTORY_SYNC_URLS
 from xmtp_content_type_primitives import ContentCodec
@@ -56,7 +57,7 @@ class ClientOptions:
     app_version: str | None = None
     debug_events_enabled: bool = False
     nonce: int | None = None
-    codecs: Sequence[ContentCodec[Any]] | None = None
+    codecs: Sequence[ContentCodec[object]] | None = None
 
     def resolved_api_url(self) -> str:
         """Return the API URL based on env and overrides."""

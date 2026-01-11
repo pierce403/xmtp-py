@@ -95,6 +95,7 @@ ruff format .               # Formatting
 - If you edit `TODO.md`, make a commit and push as part of the same task
 - LLM reference files live in `llms/` and are generated via `scripts/generate_llms.py`; regenerate after API/docs changes to satisfy CI `--check`
 - CI enforces 100% branch coverage with pytest-cov and `.coveragerc`; `xmtp_bindings/xmtpv3.py` is omitted but bindings smoke tests are required
+- CI runs ruff with `ANN`, `I`, and `UP` rules; avoid `Any`, import abstract types from `collections.abc`, and keep imports isort-ordered
 - Pytest runs with `--import-mode=importlib`; keep `sdks/python-sdk/tests` without `__init__.py` to avoid `tests.conftest` collisions
 - The xmtp-js reference in `code/` is comprehensive—use it
 - libxmtp Python bindings may not exist yet; this is a key first step

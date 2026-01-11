@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING
 
 from xmtp.async_stream import AsyncStream
 from xmtp.bindings import NativeBindings
 from xmtp.conversation import Conversation, Dm, Group
 from xmtp.errors import ClientNotInitializedError
 from xmtp.identifiers import Identifier, IdentifierKind
+
+if TYPE_CHECKING:
+    from xmtp.client import Client
 
 
 @dataclass(slots=True)
@@ -72,7 +75,7 @@ class Conversations:
 
     def __init__(
         self,
-        client: Any,
+        client: Client,
         ffi_conversations: NativeBindings.FfiConversations | None,
     ) -> None:
         self._client = client
@@ -174,7 +177,7 @@ class Conversations:
         asyncio.create_task(start())
         return stream
 
-    def stream_all_messages(self) -> AsyncStream[Any]:
+    def stream_all_messages(self) -> AsyncStream[object]:
         """Stream all messages across conversations."""
 
         queue: asyncio.Queue[object] = asyncio.Queue()
