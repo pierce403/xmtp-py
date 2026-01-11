@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -11,6 +12,7 @@ from xmtp.bindings import NativeBindings
 from xmtp.conversation import Conversation, Dm, Group
 from xmtp.errors import ClientNotInitializedError
 from xmtp.identifiers import Identifier, IdentifierKind
+from xmtp.messages import DecodedMessage
 
 if TYPE_CHECKING:
     from xmtp.client import Client
@@ -116,19 +118,28 @@ class Conversations:
         )
         return Group(self._client, group)
 
-    async def list(self, options: ListConversationsOptions | None = None) -> list[Conversation]:
+    async def list(
+        self,
+        options: ListConversationsOptions | None = None,
+    ) -> builtins.list[Conversation]:
         """List all conversations."""
 
         items = self._ensure().list((options or ListConversationsOptions()).to_ffi())
         return [self._wrap_conversation(item.conversation()) for item in items]
 
-    async def list_dms(self, options: ListConversationsOptions | None = None) -> list[Dm]:
+    async def list_dms(
+        self,
+        options: ListConversationsOptions | None = None,
+    ) -> builtins.list[Dm]:
         """List direct message conversations."""
 
         items = self._ensure().list_dms((options or ListConversationsOptions()).to_ffi())
         return [Dm(self._client, item.conversation()) for item in items]
 
-    async def list_groups(self, options: ListConversationsOptions | None = None) -> list[Group]:
+    async def list_groups(
+        self,
+        options: ListConversationsOptions | None = None,
+    ) -> builtins.list[Group]:
         """List group conversations."""
 
         items = self._ensure().list_groups((options or ListConversationsOptions()).to_ffi())
@@ -152,11 +163,17 @@ class Conversations:
         loop = asyncio.get_event_loop()
 
         class Callback(NativeBindings.FfiConversationCallback):
-            def on_conversation(self, conversation: NativeBindings.FfiConversation) -> None:  # type: ignore[override]
+            def on_conversation(
+                self,
+                conversation: NativeBindings.FfiConversation,
+            ) -> None:  # type: ignore[override]
                 conv = self_outer._wrap_conversation(conversation)
                 loop.call_soon_threadsafe(queue.put_nowait, conv)
 
-            def on_error(self, error: NativeBindings.FfiSubscribeError) -> None:  # type: ignore[override]
+            def on_error(
+                self,
+                error: NativeBindings.FfiSubscribeError,
+            ) -> None:  # type: ignore[override]
                 loop.call_soon_threadsafe(queue.put_nowait, error)
 
             def on_close(self) -> None:  # type: ignore[override]
@@ -164,7 +181,9 @@ class Conversations:
 
         self_outer = self
         callback = Callback()
-        stream = AsyncStream(queue)
+        stream: AsyncStream[
+            Conversation | NativeBindings.FfiSubscribeError
+        ] = AsyncStream(queue)
 
         async def start() -> None:
             closer = await self._ensure().stream(callback)
@@ -177,7 +196,9 @@ class Conversations:
         asyncio.create_task(start())
         return stream
 
-    def stream_all_messages(self) -> AsyncStream[object]:
+    def stream_all_messages(
+        self,
+    ) -> AsyncStream[DecodedMessage[object] | NativeBindings.FfiSubscribeError]:
         """Stream all messages across conversations."""
 
         queue: asyncio.Queue[object] = asyncio.Queue()
@@ -185,18 +206,26 @@ class Conversations:
         client = self._client
 
         class Callback(NativeBindings.FfiMessageCallback):
-            def on_message(self, message: NativeBindings.FfiMessage) -> None:  # type: ignore[override]
+            def on_message(
+                self,
+                message: NativeBindings.FfiMessage,
+            ) -> None:  # type: ignore[override]
                 decoded = client._decode_message(message)
                 loop.call_soon_threadsafe(queue.put_nowait, decoded)
 
-            def on_error(self, error: NativeBindings.FfiSubscribeError) -> None:  # type: ignore[override]
+            def on_error(
+                self,
+                error: NativeBindings.FfiSubscribeError,
+            ) -> None:  # type: ignore[override]
                 loop.call_soon_threadsafe(queue.put_nowait, error)
 
             def on_close(self) -> None:  # type: ignore[override]
                 loop.call_soon_threadsafe(stream._end)
 
         callback = Callback()
-        stream = AsyncStream(queue)
+        stream: AsyncStream[
+            DecodedMessage[object] | NativeBindings.FfiSubscribeError
+        ] = AsyncStream(queue)
 
         async def start() -> None:
             closer = await self._ensure().stream_all_messages(callback, None)
@@ -214,10 +243,13 @@ class Conversations:
 
         await self._ensure().sync()
 
-    async def sync_all_conversations(self) -> None:
+    async def sync_all_conversations(
+        self,
+        consent_states: list[NativeBindings.FfiConsentState] | None = None,
+    ) -> None:
         """Sync all conversations."""
 
-        await self._ensure().sync_all_conversations()
+        await self._ensure().sync_all_conversations(consent_states)
 
     def _wrap_conversation(self, convo: NativeBindings.FfiConversation) -> Conversation:
         convo_type = convo.conversation_type()

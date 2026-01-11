@@ -21,6 +21,7 @@ async def log_details(agent: Agent) -> None:
     client = agent.client
     inbox_id = client.inbox_id
     installation_id = client.installation_id
+    installation_id_display = installation_id.hex() if installation_id else None
     address = client.account_identifier.value if client.account_identifier else None
     env = client.options.env
 
@@ -29,7 +30,7 @@ async def log_details(agent: Agent) -> None:
 
     print('XMTP Agent Details')
     print(f'- Inbox ID: {inbox_id}')
-    print(f'- Installation ID: {installation_id}')
+    print(f'- Installation ID: {installation_id_display}')
     print(f'- Address: {address}')
     print(f'- Conversations: {len(conversations)}')
     print(f'- Installations: {len(inbox_state.installations)}')

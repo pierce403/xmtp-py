@@ -48,7 +48,7 @@ class Conversation:
     async def update_consent_state(self, state: NativeBindings.FfiConsentState) -> None:
         """Update the conversation consent state."""
 
-        await self._ffi.update_consent_state(state)
+        self._ffi.update_consent_state(state)
 
     async def send(
         self,
@@ -122,12 +122,12 @@ class Group(Conversation):
     async def is_admin(self, inbox_id: str) -> bool:
         """Return True if inbox_id is an admin."""
 
-        return await self._ffi.is_admin(inbox_id)
+        return self._ffi.is_admin(inbox_id)
 
     async def is_super_admin(self, inbox_id: str) -> bool:
         """Return True if inbox_id is a super admin."""
 
-        return await self._ffi.is_super_admin(inbox_id)
+        return self._ffi.is_super_admin(inbox_id)
 
     @property
     def name(self) -> str | None:

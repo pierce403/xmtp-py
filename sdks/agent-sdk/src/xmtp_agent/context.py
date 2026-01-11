@@ -115,7 +115,7 @@ class MessageContext(ConversationContext):
         )
         await self._conversation.send(reaction, ContentTypeReaction)
 
-    async def _send_reply(self, text: str, content_type: ContentTypeId | str) -> None:
+    async def _send_reply(self, text: str, content_type: ContentTypeId) -> None:
         reply = Reply(
             reference=self._message.id.hex(),
             reference_inbox_id=self._message.sender_inbox_id,

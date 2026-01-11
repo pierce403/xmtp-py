@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from xmtp.bindings import NativeBindings
 from xmtp.errors import ClientNotInitializedError
+
+if TYPE_CHECKING:
+    from xmtp.client import Client
+    from xmtp.conversations import Conversations
 
 
 class Preferences:
     """Manage user preferences for the XMTP client."""
 
-    def __init__(self, client: object, conversations: object) -> None:
+    def __init__(self, client: Client, conversations: Conversations) -> None:
         self._client = client
         self._conversations = conversations
 

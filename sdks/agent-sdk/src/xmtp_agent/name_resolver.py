@@ -6,7 +6,7 @@ import asyncio
 import json
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable
-from typing import Generic, TypeVar
+from typing import Final, Generic, TypeVar, cast
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
@@ -19,7 +19,7 @@ class _MissingType:
     __slots__ = ()
 
 
-_MISSING = _MissingType()
+_MISSING: Final = _MissingType()
 T = TypeVar('T')
 
 
@@ -52,7 +52,7 @@ def create_name_resolver(api_key: str | None = None) -> Callable[[str], Awaitabl
 
         cached = cache.get(name)
         if cached is not _MISSING:
-            return cached
+            return cast(str | None, cached)
 
         def fetch() -> list[dict[str, object]]:
             endpoint = f'https://api.web3.bio/ns/{quote(name)}'

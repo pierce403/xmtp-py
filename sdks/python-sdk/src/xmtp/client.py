@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Sequence
 from datetime import datetime, timezone
+from typing import TypeVar, cast
 
 from xmtp_content_type_primitives import ContentCodec, ContentTypeId, EncodedContent
 
@@ -18,6 +19,8 @@ from xmtp.preferences import Preferences
 from xmtp.signers.base import Signer, SignerType
 from xmtp.types import ClientOptions
 from xmtp.utils import coerce_db_encryption_key
+
+ContentT = TypeVar('ContentT')
 
 
 def _identifier_to_ffi(identifier: Identifier) -> NativeBindings.FfiIdentifier:
@@ -171,6 +174,7 @@ class Client:
             inbox_id = NativeBindings.generate_inbox_id(ffi_identifier, nonce)
 
         db_path_option = options.db_path
+        db_path: str | None
         if db_path_option == 'auto':
             db_path = os.path.join(os.getcwd(), f'xmtp-{options.env}-{inbox_id}.db3')
         elif callable(db_path_option):
@@ -268,7 +272,7 @@ class Client:
         if signature_request is None:
             return
 
-        signature_text = signature_request.signature_text()
+        signature_text = await signature_request.signature_text()
         signature = await self._signer.sign_message(signature_text.encode())
 
         if self._signer.type == SignerType.SCW:
@@ -298,12 +302,12 @@ class Client:
             raise ClientNotInitializedError()
         return await self._client.find_inbox_id(_identifier_to_ffi(identifier))
 
-    def register_codec(self, codec: ContentCodec[object]) -> None:
+    def register_codec(self, codec: ContentCodec[ContentT]) -> None:
         """Register a content codec for encoding/decoding."""
 
-        self._codecs[str(codec.content_type)] = codec
+        self._codecs[str(codec.content_type)] = cast(ContentCodec[object], codec)
 
-    def register_codecs(self, codecs: Sequence[ContentCodec[object]]) -> None:
+    def register_codecs(self, codecs: Sequence[ContentCodec[ContentT]]) -> None:
         """Register multiple content codecs."""
 
         for codec in codecs:
@@ -314,13 +318,13 @@ class Client:
 
         return self._codecs.get(str(content_type))
 
-    def encode_content(self, content: object, content_type: ContentTypeId | str) -> bytes:
+    def encode_content(self, content: ContentT, content_type: ContentTypeId | str) -> bytes:
         """Encode content for sending."""
 
         codec = self.codec_for(content_type)
         if codec is None:
             raise CodecNotFoundError(str(content_type))
-        encoded = codec.encode(content, self)
+        encoded = cast(ContentCodec[ContentT], codec).encode(content, self)
         return encoded.content
 
     def _decode_message(self, message: NativeBindings.FfiMessage) -> DecodedMessage[object]:
@@ -343,13 +347,15 @@ class Client:
 
     def _decode_ffi_content(self, content: NativeBindings.FfiDecodedMessageContent) -> object:
         if content.is_TEXT():
-            return content[0].content
+            payload = cast(NativeBindings.FfiDecodedMessageContent.TEXT, content)
+            return payload[0].content
         if content.is_MARKDOWN():
-            return content[0].content
+            payload = cast(NativeBindings.FfiDecodedMessageContent.MARKDOWN, content)
+            return payload[0].content
         if content.is_REACTION():
             from xmtp_content_type_reaction import Reaction, ReactionAction, ReactionSchema
 
-            payload = content[0]
+            payload = cast(NativeBindings.FfiDecodedMessageContent.REACTION, content)[0]
             action = (
                 ReactionAction.ADDED
                 if payload.action == NativeBindings.FfiReactionAction.ADDED
@@ -370,7 +376,7 @@ class Client:
         if content.is_REPLY():
             from xmtp_content_type_reply import Reply
 
-            reply_payload = content[0]
+            reply_payload = cast(NativeBindings.FfiDecodedMessageContent.REPLY, content)[0]
             encoded = _encoded_from_ffi(reply_payload.content)
             codec = self.codec_for(encoded.type_id)
             nested_content = (
@@ -385,7 +391,9 @@ class Client:
         if content.is_REMOTE_ATTACHMENT():
             from xmtp_content_type_remote_attachment import RemoteAttachment
 
-            attachment = content[0]
+            attachment = cast(
+                NativeBindings.FfiDecodedMessageContent.REMOTE_ATTACHMENT, content
+            )[0]
             return RemoteAttachment(
                 url=attachment.url,
                 content_digest=attachment.content_digest,
@@ -404,7 +412,9 @@ class Client:
                 TransactionReference,
             )
 
-            payload = content[0]
+            payload = cast(
+                NativeBindings.FfiDecodedMessageContent.TRANSACTION_REFERENCE, content
+            )[0]
             metadata = None
             if payload.metadata is not None:
                 metadata = TransactionMetadata(
@@ -428,12 +438,14 @@ class Client:
                 WalletSendCalls,
             )
 
-            payload = content[0]
+            payload = cast(NativeBindings.FfiDecodedMessageContent.WALLET_SEND_CALLS, content)[
+                0
+            ]
             calls: list[WalletCall] = []
             for call in payload.calls:
-                metadata = None
+                call_metadata = None
                 if call.metadata is not None:
-                    metadata = WalletCallMetadata(
+                    call_metadata = WalletCallMetadata(
                         description=call.metadata.description,
                         transaction_type=call.metadata.transaction_type,
                         extra=call.metadata.extra,
@@ -444,7 +456,7 @@ class Client:
                         data=call.data,
                         value=call.value,
                         gas=call.gas,
-                        metadata=metadata,
+                        metadata=call_metadata,
                     )
                 )
             return WalletSendCalls(
@@ -455,24 +467,29 @@ class Client:
                 capabilities=payload.capabilities,
             )
         if content.is_GROUP_UPDATED():
-            return content[0]
+            payload = cast(NativeBindings.FfiDecodedMessageContent.GROUP_UPDATED, content)
+            return payload[0]
         if content.is_ATTACHMENT():
             from xmtp_content_type_remote_attachment import Attachment
 
-            attachment = content[0]
+            attachment = cast(NativeBindings.FfiDecodedMessageContent.ATTACHMENT, content)[0]
             return Attachment(
                 filename=attachment.filename,
                 mime_type=attachment.mime_type,
                 data=attachment.content,
             )
         if content.is_ACTIONS():
-            return content[0]
+            payload = cast(NativeBindings.FfiDecodedMessageContent.ACTIONS, content)
+            return payload[0]
         if content.is_INTENT():
-            return content[0]
+            payload = cast(NativeBindings.FfiDecodedMessageContent.INTENT, content)
+            return payload[0]
         if content.is_LEAVE_REQUEST():
-            return content[0]
+            payload = cast(NativeBindings.FfiDecodedMessageContent.LEAVE_REQUEST, content)
+            return payload[0]
         if content.is_CUSTOM():
-            encoded = content[0]
+            payload = cast(NativeBindings.FfiDecodedMessageContent.CUSTOM, content)
+            encoded = payload[0]
             try:
                 decoded = _encoded_from_ffi(encoded)
             except ValueError:

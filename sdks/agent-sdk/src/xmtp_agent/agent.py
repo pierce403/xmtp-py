@@ -9,8 +9,10 @@ from collections import defaultdict
 from collections.abc import Awaitable, Callable
 
 from xmtp import Client, ClientOptions, Conversation, DecodedMessage, Dm, Group
+from xmtp.async_stream import AsyncStream
 from xmtp.bindings import NativeBindings
 from xmtp.env import load_client_options_from_env, load_signer_from_env
+from xmtp.signers.base import Signer
 from xmtp.types import LogLevel
 
 from xmtp_agent.context import ClientContext, ConversationContext, MessageContext
@@ -56,8 +58,12 @@ class Agent:
         self._middlewares: list[Middleware] = []
         self._error_middlewares: list[ErrorMiddleware] = []
         self._errors = _ErrorRegistrar(self)
-        self._conversation_stream_handle: object | None = None
-        self._message_stream_handle: object | None = None
+        self._conversation_stream_handle: (
+            AsyncStream[Conversation | NativeBindings.FfiSubscribeError] | None
+        ) = None
+        self._message_stream_handle: (
+            AsyncStream[DecodedMessage[object] | NativeBindings.FfiSubscribeError] | None
+        ) = None
         self._conversation_stream: asyncio.Task[None] | None = None
         self._message_stream: asyncio.Task[None] | None = None
         self._running = False
@@ -65,7 +71,7 @@ class Agent:
     @classmethod
     async def create(
         cls,
-        signer: object,
+        signer: Signer,
         options: ClientOptions | None = None,
     ) -> Agent:
         """Create an agent with a signer."""
@@ -169,7 +175,9 @@ class Agent:
 
     async def _consume_conversations(self) -> None:
         try:
-            stream = self._client.conversations.stream()
+            stream: AsyncStream[
+                Conversation | NativeBindings.FfiSubscribeError
+            ] = self._client.conversations.stream()
             self._conversation_stream_handle = stream
             async for item in stream:
                 if not self._running:
@@ -188,7 +196,9 @@ class Agent:
 
     async def _consume_messages(self) -> None:
         try:
-            stream = self._client.conversations.stream_all_messages()
+            stream: AsyncStream[
+                DecodedMessage[object] | NativeBindings.FfiSubscribeError
+            ] = self._client.conversations.stream_all_messages()
             self._message_stream_handle = stream
             async for item in stream:
                 if not self._running:
