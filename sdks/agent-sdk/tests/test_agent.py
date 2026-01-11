@@ -804,7 +804,8 @@ async def test_agent_consume_conversations_subscribe_error_real_bindings(monkeyp
     pytest.importorskip('xmtp_bindings')
     from xmtp.bindings import NativeBindings
 
-    conversation_stream = _FakeStream([NativeBindings.FfiSubscribeError('boom')])
+    error_type = getattr(NativeBindings, 'FfiSubscribeError', Exception)
+    conversation_stream = _FakeStream([error_type('boom')])
     conversations = _FakeConversations(conversation_stream, _FakeStream([]), _FakeConversation())
     agent = Agent(_FakeClient(conversations))
     agent._running = True
@@ -821,7 +822,8 @@ async def test_agent_consume_messages_subscribe_error_real_bindings(monkeypatch)
     pytest.importorskip('xmtp_bindings')
     from xmtp.bindings import NativeBindings
 
-    message_stream = _FakeStream([NativeBindings.FfiSubscribeError('boom')])
+    error_type = getattr(NativeBindings, 'FfiSubscribeError', Exception)
+    message_stream = _FakeStream([error_type('boom')])
     conversations = _FakeConversations(_FakeStream([]), message_stream, _FakeConversation())
     agent = Agent(_FakeClient(conversations))
     agent._running = True

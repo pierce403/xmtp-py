@@ -282,6 +282,23 @@ def test_reaction_codec_non_bytes_payload(monkeypatch) -> None:
     assert decoded.reference == 'ref'
 
 
+def test_reaction_codec_missing_params_falls_back(monkeypatch) -> None:
+    from xmtp_bindings import xmtpv3
+
+    codec = ReactionCodec()
+    payload = xmtpv3.FfiReactionPayload(
+        reference='ref',
+        reference_inbox_id='inbox',
+        action=xmtpv3.FfiReactionAction.ADDED,
+        content='smile',
+        schema=xmtpv3.FfiReactionSchema.UNICODE,
+    )
+    monkeypatch.setattr('xmtp_content_type_reaction.xmtpv3.decode_reaction', lambda _: payload)
+    encoded = EncodedContent(type_id=ContentTypeReaction, parameters={}, content=b'plain')
+    decoded = codec.decode(encoded)
+    assert decoded.reference == 'ref'
+
+
 def test_reaction_codec_should_push_and_fallback() -> None:
     codec = ReactionCodec()
     reaction = Reaction(

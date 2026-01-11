@@ -82,7 +82,7 @@ class Conversation:
 
         encoded = self._client.encode_content(content, content_type)
         opts = _default_send_opts(should_push=True)
-        return await self._ffi.send(encoded, cast(NativeBindings.FfiSendMessageOpts, opts))
+        return await self._ffi.send(encoded, cast("NativeBindings.FfiSendMessageOpts", opts))
 
 
 class Dm(Conversation):

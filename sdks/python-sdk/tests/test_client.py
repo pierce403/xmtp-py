@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import builtins
 import os
+import sys
 from dataclasses import dataclass
 from typing import Any
 
@@ -24,6 +25,24 @@ class _FakeSignatureRequest:
     scw_signature: tuple[bytes, str, int, int | None] | None = None
 
     def signature_text(self) -> str:
+        return self.signature_text_value
+
+    async def add_ecdsa_signature(self, signature: bytes) -> None:
+        self.ecdsa_signature = signature
+
+    async def add_scw_signature(
+        self, signature: bytes, address: str, chain_id: int, block_number: int | None
+    ) -> None:
+        self.scw_signature = (signature, address, chain_id, block_number)
+
+
+@dataclass
+class _AsyncSignatureRequest:
+    signature_text_value: str
+    ecdsa_signature: bytes | None = None
+    scw_signature: tuple[bytes, str, int, int | None] | None = None
+
+    async def signature_text(self) -> str:
         return self.signature_text_value
 
     async def add_ecdsa_signature(self, signature: bytes) -> None:
@@ -207,6 +226,22 @@ def test_register_default_codecs_import_error(monkeypatch) -> None:
     assert client.codec_for(ContentTypeText) is None
 
 
+def test_register_default_codecs_missing_bindings(monkeypatch) -> None:
+    original_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == 'xmtp_bindings':
+            raise ImportError('blocked')
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, '__import__', fake_import)
+    monkeypatch.delitem(sys.modules, 'xmtp_bindings', raising=False)
+    monkeypatch.delitem(sys.modules, 'xmtp_bindings.xmtpv3', raising=False)
+
+    client = Client()
+    assert client.codec_for(ContentTypeText) is None
+
+
 def test_client_registers_default_codecs() -> None:
     pytest.importorskip('xmtp_bindings')
     client = Client()
@@ -288,6 +323,20 @@ async def test_client_register_scw(fake_bindings) -> None:
 
     assert fake_client._signature_request.scw_signature == (b'signature', '0xabc', 1, 123)
     assert fake_client.registered is True
+
+
+@pytest.mark.asyncio
+async def test_client_register_async_signature_text(fake_bindings) -> None:
+    client = Client()
+    fake_client = _FakeClient()
+    fake_client._signature_request = _AsyncSignatureRequest('sign me')
+    client._client = fake_client
+    client._signer = _FakeSigner(Identifier(IdentifierKind.ETHEREUM, '0xabc'), SignerType.EOA)
+
+    await client.register()
+
+    assert fake_client.registered is True
+    assert client._signer.signed == b'sign me'
 
 
 @pytest.mark.asyncio

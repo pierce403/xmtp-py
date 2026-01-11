@@ -99,6 +99,19 @@ class _RaisingConversation(_FakeFfiConversation):
         raise RuntimeError('no image')
 
 
+class _SyncConsentConversation(_FakeFfiConversation):
+    def update_consent_state(self, state: Any) -> None:
+        self._consent_state = state
+
+
+class _SyncAdminConversation(_FakeFfiConversation):
+    def is_admin(self, inbox_id: str) -> bool:
+        return inbox_id == 'admin'
+
+    def is_super_admin(self, inbox_id: str) -> bool:
+        return inbox_id == 'super'
+
+
 class _FakeClient:
     def __init__(self) -> None:
         self.encoded: tuple[Any, Any] | None = None
@@ -122,11 +135,30 @@ async def test_conversation_send_text() -> None:
 
 
 @pytest.mark.asyncio
+async def test_conversation_update_consent_state_sync() -> None:
+    ffi = _SyncConsentConversation()
+    convo = Conversation(_FakeClient(), ffi)
+    await convo.update_consent_state('denied')
+    assert ffi._consent_state == 'denied'
+
+
+@pytest.mark.asyncio
 async def test_conversation_send_requires_content_type() -> None:
     ffi = _FakeFfiConversation()
     convo = Conversation(_FakeClient(), ffi)
     with pytest.raises(MissingContentTypeError):
         await convo.send(b'data')
+
+
+def test_default_send_opts_fallback(monkeypatch) -> None:
+    import xmtp.conversation as conversation
+
+    class _Bindings:
+        pass
+
+    monkeypatch.setattr(conversation, 'NativeBindings', _Bindings(), raising=False)
+    opts = conversation._default_send_opts()
+    assert opts.should_push is True
 
 
 @pytest.mark.asyncio
@@ -175,6 +207,13 @@ async def test_group_members_and_admins(fake_bindings) -> None:
     assert group.name == 'group-name'
     assert group.description == 'group-description'
     assert group.image_url == 'https://image'
+
+
+@pytest.mark.asyncio
+async def test_group_admin_checks_sync() -> None:
+    group = Group(_FakeClient(), _SyncAdminConversation())
+    assert await group.is_admin('admin') is True
+    assert await group.is_super_admin('super') is True
 
 
 def test_group_optional_fields() -> None:

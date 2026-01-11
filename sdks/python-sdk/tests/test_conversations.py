@@ -48,6 +48,7 @@ class _FakeConversations:
         self.message_callback = None
         self.synced = False
         self.synced_all = False
+        self.synced_all_consents = None
 
     async def find_or_create_dm(self, identifier: Any, options: Any) -> Any:
         self.last_dm_identifier = identifier
@@ -79,8 +80,9 @@ class _FakeConversations:
     async def sync(self) -> None:
         self.synced = True
 
-    async def sync_all_conversations(self) -> None:
+    async def sync_all_conversations(self, consent_states: Any = None) -> None:
         self.synced_all = True
+        self.synced_all_consents = consent_states
 
 
 class _FakeClient:
@@ -246,7 +248,42 @@ async def test_conversations_sync(fake_bindings) -> None:
 
     await conversations.sync()
     await conversations.sync_all_conversations()
+    await conversations.sync_all_conversations([fake_bindings.FfiConsentState.ALLOWED])
     assert ffi.synced is True
+    assert ffi.synced_all is True
+    assert ffi.synced_all_consents == [fake_bindings.FfiConsentState.ALLOWED]
+
+
+@pytest.mark.asyncio
+async def test_conversations_sync_signature_error(monkeypatch, fake_bindings) -> None:
+    dm = _FakeConversation(fake_bindings.FfiConversationType.DM)
+    group = _FakeConversation(fake_bindings.FfiConversationType.GROUP)
+    ffi = _FakeConversations(dm, group)
+    client = _FakeClient(ffi)
+    conversations = Conversations(client, ffi)
+
+    def boom(_):
+        raise TypeError('no signature')
+
+    monkeypatch.setattr('xmtp.conversations.inspect.signature', boom)
+    await conversations.sync_all_conversations()
+    assert ffi.synced_all is True
+
+
+@pytest.mark.asyncio
+async def test_conversations_sync_no_arg_signature(fake_bindings) -> None:
+    dm = _FakeConversation(fake_bindings.FfiConversationType.DM)
+    group = _FakeConversation(fake_bindings.FfiConversationType.GROUP)
+
+    class _NoArgConversations(_FakeConversations):
+        async def sync_all_conversations(self) -> None:  # type: ignore[override]
+            self.synced_all = True
+
+    ffi = _NoArgConversations(dm, group)
+    client = _FakeClient(ffi)
+    conversations = Conversations(client, ffi)
+
+    await conversations.sync_all_conversations()
     assert ffi.synced_all is True
 
 
