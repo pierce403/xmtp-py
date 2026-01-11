@@ -5,4 +5,4 @@ try:
 except OSError as exc:  # pragma: no cover - native library missing
     raise ImportError('libxmtpv3 native library is unavailable') from exc  # pragma: no cover
 
-__all__ = []  # populated by wildcard import
+__all__ = []  # populated by wildcard import  # pragma: no cover
