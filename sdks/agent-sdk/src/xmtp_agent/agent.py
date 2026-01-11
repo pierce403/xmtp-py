@@ -7,12 +7,12 @@ import inspect
 import os
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
-from typing import Any
 
 from xmtp import Client, ClientOptions, Conversation, DecodedMessage, Dm, Group
 from xmtp.bindings import NativeBindings
 from xmtp.env import load_client_options_from_env, load_signer_from_env
 from xmtp.types import LogLevel
+
 from xmtp_agent.context import ClientContext, ConversationContext, MessageContext
 from xmtp_agent.errors import AgentError, AgentStreamingError
 from xmtp_agent.filters import (
@@ -30,7 +30,8 @@ from xmtp_agent.filters import (
 )
 from xmtp_agent.middleware import ErrorMiddleware, Middleware
 
-EventHandler = Callable[[Any], Awaitable[None] | None]
+EventPayload = ClientContext | ConversationContext | MessageContext | Exception
+EventHandler = Callable[[EventPayload], Awaitable[None] | None]
 
 
 class _ErrorRegistrar:
@@ -55,8 +56,8 @@ class Agent:
         self._middlewares: list[Middleware] = []
         self._error_middlewares: list[ErrorMiddleware] = []
         self._errors = _ErrorRegistrar(self)
-        self._conversation_stream_handle: Any | None = None
-        self._message_stream_handle: Any | None = None
+        self._conversation_stream_handle: object | None = None
+        self._message_stream_handle: object | None = None
         self._conversation_stream: asyncio.Task[None] | None = None
         self._message_stream: asyncio.Task[None] | None = None
         self._running = False
@@ -95,7 +96,11 @@ class Agent:
         opts = load_client_options_from_env(options)
         return await cls.create(signer, opts)
 
-    def on(self, event: str, handler: EventHandler | None = None) -> EventHandler | Callable[[EventHandler], EventHandler]:
+    def on(
+        self,
+        event: str,
+        handler: EventHandler | None = None,
+    ) -> EventHandler | Callable[[EventHandler], EventHandler]:
         """Register an event handler."""
 
         if handler is None:
@@ -215,7 +220,7 @@ class Agent:
         elif isinstance(conversation, Group):
             await self._emit('group', context)
 
-    async def _handle_message(self, message: DecodedMessage[Any]) -> None:
+    async def _handle_message(self, message: DecodedMessage[object]) -> None:
         if not has_content(message):
             return
         if from_self(message, self._client):
@@ -234,7 +239,7 @@ class Agent:
         topic = self._topic_for_message(message)
         await self._run_middleware_chain(context, topic)
 
-    def _topic_for_message(self, message: DecodedMessage[Any]) -> str:
+    def _topic_for_message(self, message: DecodedMessage[object]) -> str:
         if is_text(message):
             return 'text'
         if is_markdown(message):
@@ -263,7 +268,10 @@ class Agent:
             except Exception as error:
                 await self._run_error_chain(error, context)
 
-        def wrap(middleware: Middleware, next_handler: Callable[[], Awaitable[None]]) -> Callable[[], Awaitable[None]]:
+        def wrap(
+            middleware: Middleware,
+            next_handler: Callable[[], Awaitable[None]],
+        ) -> Callable[[], Awaitable[None]]:
             async def _wrapped() -> None:
                 try:
                     await middleware(context, next_handler)
@@ -310,7 +318,11 @@ class Agent:
                 return 'continue', exc
         return outcome, next_error
 
-    async def _run_error_chain(self, error: Exception, context: MessageContext | ClientContext) -> bool:
+    async def _run_error_chain(
+        self,
+        error: Exception,
+        context: MessageContext | ClientContext,
+    ) -> bool:
         chain = [*self._error_middlewares, self._default_error_handler]
         current_error: Exception = error
 
@@ -332,7 +344,7 @@ class Agent:
     ) -> None:
         await self._emit('unhandled_error', error)
 
-    async def _emit(self, event: str, arg: Any) -> None:
+    async def _emit(self, event: str, arg: EventPayload) -> None:
         handlers = self._handlers.get(event, [])
         for handler in handlers:
             result = handler(arg)

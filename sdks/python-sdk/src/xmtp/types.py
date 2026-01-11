@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Literal
 
-from xmtp.constants import API_URLS, HISTORY_SYNC_URLS
 from xmtp_content_type_primitives import ContentCodec
 
+from xmtp.constants import API_URLS, HISTORY_SYNC_URLS
 XmtpEnv = Literal['local', 'dev', 'production']
 
 

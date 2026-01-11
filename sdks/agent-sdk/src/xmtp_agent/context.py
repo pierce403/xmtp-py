@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from xmtp import Client, Conversation, DecodedMessage, Dm, Group
 from xmtp.bindings import NativeBindings
 from xmtp_content_type_markdown import ContentTypeMarkdown
+from xmtp_content_type_primitives import ContentCodec, ContentTypeId
 from xmtp_content_type_reaction import (
     ContentTypeReaction,
     Reaction,
@@ -16,7 +15,6 @@ from xmtp_content_type_reaction import (
 from xmtp_content_type_remote_attachment import ContentTypeRemoteAttachment, RemoteAttachment
 from xmtp_content_type_reply import ContentTypeReply, Reply
 from xmtp_content_type_text import ContentTypeText
-from xmtp_content_type_primitives import ContentCodec
 
 
 class ClientContext:
@@ -76,11 +74,16 @@ class ConversationContext(ClientContext):
 class MessageContext(ConversationContext):
     """Context passed to message handlers."""
 
-    def __init__(self, message: DecodedMessage[Any], conversation: Conversation, client: Client) -> None:
+    def __init__(
+        self,
+        message: DecodedMessage[object],
+        conversation: Conversation,
+        client: Client,
+    ) -> None:
         super().__init__(conversation=conversation, client=client)
         self._message = message
 
-    def uses_codec(self, codec_class: type[ContentCodec[Any]]) -> bool:
+    def uses_codec(self, codec_class: type[ContentCodec[object]]) -> bool:
         return self._message.content_type_id == str(codec_class().content_type)
 
     def is_markdown(self) -> bool:
@@ -98,7 +101,11 @@ class MessageContext(ConversationContext):
     def is_remote_attachment(self) -> bool:
         return self._message.content_type_id == str(ContentTypeRemoteAttachment)
 
-    async def send_reaction(self, content: str, schema: ReactionSchema = ReactionSchema.UNICODE) -> None:
+    async def send_reaction(
+        self,
+        content: str,
+        schema: ReactionSchema = ReactionSchema.UNICODE,
+    ) -> None:
         reaction = Reaction(
             action=ReactionAction.ADDED,
             reference=self._message.id.hex(),
@@ -108,7 +115,7 @@ class MessageContext(ConversationContext):
         )
         await self._conversation.send(reaction, ContentTypeReaction)
 
-    async def _send_reply(self, text: str, content_type: Any) -> None:
+    async def _send_reply(self, text: str, content_type: ContentTypeId | str) -> None:
         reply = Reply(
             reference=self._message.id.hex(),
             reference_inbox_id=self._message.sender_inbox_id,
@@ -136,5 +143,5 @@ class MessageContext(ConversationContext):
         return identifiers[0].identifier
 
     @property
-    def message(self) -> DecodedMessage[Any]:
+    def message(self) -> DecodedMessage[object]:
         return self._message

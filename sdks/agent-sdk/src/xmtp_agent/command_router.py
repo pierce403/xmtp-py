@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING, Any
 
-if TYPE_CHECKING:  # pragma: no cover - typing only
-    from xmtp_agent.context import MessageContext
+from xmtp_agent.context import MessageContext
 from xmtp_agent.middleware import Middleware
 
-Handler = Callable[[Any], Awaitable[None]]
+Handler = Callable[[MessageContext], Awaitable[None]]
 
 
 class CommandRouter:
@@ -55,7 +53,10 @@ class CommandRouter:
         return False
 
     def middleware(self) -> Middleware:
-        async def _middleware(ctx: MessageContext, next_handler: Callable[[], Awaitable[None]]) -> None:
+        async def _middleware(
+            ctx: MessageContext,
+            next_handler: Callable[[], Awaitable[None]],
+        ) -> None:
             handled = await self.handle(ctx)
             if not handled:
                 await next_handler()

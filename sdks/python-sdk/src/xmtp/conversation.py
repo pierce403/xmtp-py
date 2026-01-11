@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from xmtp_content_type_primitives import ContentTypeId
+
 from xmtp.bindings import NativeBindings
 from xmtp.errors import MissingContentTypeError
 from xmtp.identifiers import Identifier, IdentifierKind
-from xmtp_content_type_primitives import ContentTypeId
 
 if TYPE_CHECKING:
     from xmtp.client import Client

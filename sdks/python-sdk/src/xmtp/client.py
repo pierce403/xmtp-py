@@ -6,6 +6,8 @@ import os
 from collections.abc import Sequence
 from datetime import datetime, timezone
 
+from xmtp_content_type_primitives import ContentCodec, ContentTypeId, EncodedContent
+
 from xmtp.bindings import NativeBindings
 from xmtp.conversations import Conversations
 from xmtp.env import load_client_options_from_env, load_signer_from_env
@@ -16,7 +18,6 @@ from xmtp.preferences import Preferences
 from xmtp.signers.base import Signer, SignerType
 from xmtp.types import ClientOptions
 from xmtp.utils import coerce_db_encryption_key
-from xmtp_content_type_primitives import ContentCodec, ContentTypeId, EncodedContent
 
 
 def _identifier_to_ffi(identifier: Identifier) -> NativeBindings.FfiIdentifier:

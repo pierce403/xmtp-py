@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from xmtp import Client
+
 from xmtp_agent.agent import Agent
 
 

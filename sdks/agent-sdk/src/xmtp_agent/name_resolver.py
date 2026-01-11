@@ -10,8 +10,9 @@ from typing import Generic, TypeVar
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
-from xmtp_agent.errors import AgentError
 from xmtp.utils import is_hex_string
+
+from xmtp_agent.errors import AgentError
 
 
 class _MissingType:
