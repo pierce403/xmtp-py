@@ -2,15 +2,25 @@
 
 from __future__ import annotations
 
-from typing import TypeAlias
-
-from xmtp_bindings import xmtpv3
+from typing import TYPE_CHECKING, TypeAlias
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
     ContentTypeId,
     EncodedContent,
 )
+
+if TYPE_CHECKING:
+    from xmtp_bindings import xmtpv3
+    GroupUpdated: TypeAlias = xmtpv3.FfiGroupUpdated
+else:
+    GroupUpdated: TypeAlias = object
+
+
+def _bindings() -> "xmtpv3":
+    from xmtp_bindings import xmtpv3
+
+    return xmtpv3
 
 
 ContentTypeGroupUpdated = ContentTypeId(
@@ -19,9 +29,6 @@ ContentTypeGroupUpdated = ContentTypeId(
     version_major=1,
     version_minor=0,
 )
-
-GroupUpdated: TypeAlias = xmtpv3.FfiGroupUpdated
-
 
 class GroupUpdatedCodec(ContentCodec[GroupUpdated]):
     """Codec for group updated messages."""
@@ -34,7 +41,7 @@ class GroupUpdatedCodec(ContentCodec[GroupUpdated]):
         raise NotImplementedError('GroupUpdated messages are system generated and cannot be encoded')
 
     def decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> GroupUpdated:
-        return xmtpv3.decode_group_updated(content.content)
+        return _bindings().decode_group_updated(content.content)
 
     def fallback(self, content: GroupUpdated) -> str | None:
         return None

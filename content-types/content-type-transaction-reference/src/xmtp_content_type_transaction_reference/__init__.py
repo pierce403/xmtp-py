@@ -3,14 +3,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-
-from xmtp_bindings import xmtpv3
+from typing import TYPE_CHECKING
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
     ContentTypeId,
     EncodedContent,
 )
+
+if TYPE_CHECKING:
+    from xmtp_bindings import xmtpv3
+
+
+def _bindings() -> "xmtpv3":
+    from xmtp_bindings import xmtpv3
+
+    return xmtpv3
 
 
 ContentTypeTransactionReference = ContentTypeId(
@@ -57,7 +65,7 @@ class TransactionReferenceCodec(ContentCodec[TransactionReference]):
     ) -> EncodedContent:
         metadata = None
         if content.metadata is not None:
-            metadata = xmtpv3.FfiTransactionMetadata(
+            metadata = _bindings().FfiTransactionMetadata(
                 transaction_type=content.metadata.transaction_type,
                 currency=content.metadata.currency,
                 amount=content.metadata.amount,
@@ -65,13 +73,13 @@ class TransactionReferenceCodec(ContentCodec[TransactionReference]):
                 from_address=content.metadata.from_address,
                 to_address=content.metadata.to_address,
             )
-        payload = xmtpv3.FfiTransactionReference(
+        payload = _bindings().FfiTransactionReference(
             namespace=content.namespace,
             network_id=str(content.network_id),
             reference=content.reference,
             metadata=metadata,
         )
-        encoded = xmtpv3.encode_transaction_reference(payload)
+        encoded = _bindings().encode_transaction_reference(payload)
         return EncodedContent(type_id=self.content_type, parameters={}, content=encoded)
 
     def decode(
@@ -79,7 +87,7 @@ class TransactionReferenceCodec(ContentCodec[TransactionReference]):
         content: EncodedContent,
         registry: CodecRegistry | None = None,
     ) -> TransactionReference:
-        payload = xmtpv3.decode_transaction_reference(content.content)
+        payload = _bindings().decode_transaction_reference(content.content)
         metadata = None
         if payload.metadata is not None:
             metadata = TransactionMetadata(

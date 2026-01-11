@@ -2,13 +2,22 @@
 
 from __future__ import annotations
 
-from xmtp_bindings import xmtpv3
+from typing import TYPE_CHECKING
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
     ContentTypeId,
     EncodedContent,
 )
+
+if TYPE_CHECKING:
+    from xmtp_bindings import xmtpv3
+
+
+def _bindings() -> "xmtpv3":
+    from xmtp_bindings import xmtpv3
+
+    return xmtpv3
 
 
 ContentTypeReadReceipt = ContentTypeId(
@@ -27,11 +36,11 @@ class ReadReceiptCodec(ContentCodec[dict]):
         return ContentTypeReadReceipt
 
     def encode(self, content: dict, registry: CodecRegistry | None = None) -> EncodedContent:
-        encoded = xmtpv3.encode_read_receipt(xmtpv3.FfiReadReceipt())
+        encoded = _bindings().encode_read_receipt(_bindings().FfiReadReceipt())
         return EncodedContent(type_id=self.content_type, parameters={}, content=encoded)
 
     def decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> dict:
-        xmtpv3.decode_read_receipt(content.content)
+        _bindings().decode_read_receipt(content.content)
         return {}
 
     def fallback(self, content: dict) -> str | None:

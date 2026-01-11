@@ -4,14 +4,22 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
-
-from xmtp_bindings import xmtpv3
+from typing import TYPE_CHECKING
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
     ContentTypeId,
     EncodedContent,
 )
+
+if TYPE_CHECKING:
+    from xmtp_bindings import xmtpv3
+
+
+def _bindings() -> "xmtpv3":
+    from xmtp_bindings import xmtpv3
+
+    return xmtpv3
 
 
 ContentTypeWalletSendCalls = ContentTypeId(
@@ -69,13 +77,13 @@ class WalletSendCallsCodec(ContentCodec[WalletSendCalls]):
         for call in content.calls:
             metadata = None
             if call.metadata is not None:
-                metadata = xmtpv3.FfiWalletCallMetadata(
+                metadata = _bindings().FfiWalletCallMetadata(
                     description=call.metadata.description,
                     transaction_type=call.metadata.transaction_type,
                     extra=call.metadata.extra,
                 )
             calls.append(
-                xmtpv3.FfiWalletCall(
+                _bindings().FfiWalletCall(
                     to=call.to,
                     data=call.data,
                     value=call.value,
@@ -83,14 +91,14 @@ class WalletSendCallsCodec(ContentCodec[WalletSendCalls]):
                     metadata=metadata,
                 )
             )
-        payload = xmtpv3.FfiWalletSendCalls(
+        payload = _bindings().FfiWalletSendCalls(
             version=content.version,
             chain_id=content.chain_id,
             _from=content.from_address,
             calls=calls,
             capabilities=content.capabilities,
         )
-        encoded = xmtpv3.encode_wallet_send_calls(payload)
+        encoded = _bindings().encode_wallet_send_calls(payload)
         return EncodedContent(type_id=self.content_type, parameters={}, content=encoded)
 
     def decode(
@@ -98,7 +106,7 @@ class WalletSendCallsCodec(ContentCodec[WalletSendCalls]):
         content: EncodedContent,
         registry: CodecRegistry | None = None,
     ) -> WalletSendCalls:
-        payload = xmtpv3.decode_wallet_send_calls(content.content)
+        payload = _bindings().decode_wallet_send_calls(content.content)
         calls: list[WalletCall] = []
         for call in payload.calls:
             metadata = None

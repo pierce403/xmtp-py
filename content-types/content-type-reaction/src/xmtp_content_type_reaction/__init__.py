@@ -5,14 +5,23 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from xmtp_bindings import xmtpv3
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
     ContentTypeId,
     EncodedContent,
 )
+
+if TYPE_CHECKING:
+    from xmtp_bindings import xmtpv3
+
+
+def _bindings() -> "xmtpv3":
+    from xmtp_bindings import xmtpv3
+
+    return xmtpv3
 
 
 ContentTypeReaction = ContentTypeId(
@@ -52,23 +61,23 @@ class ReactionCodec(ContentCodec[Reaction]):
 
     def encode(self, content: Reaction, registry: CodecRegistry | None = None) -> EncodedContent:
         ffi_action = (
-            xmtpv3.FfiReactionAction.ADDED
+            _bindings().FfiReactionAction.ADDED
             if content.action == ReactionAction.ADDED
-            else xmtpv3.FfiReactionAction.REMOVED
+            else _bindings().FfiReactionAction.REMOVED
         )
         ffi_schema = {
-            ReactionSchema.UNICODE: xmtpv3.FfiReactionSchema.UNICODE,
-            ReactionSchema.SHORTCODE: xmtpv3.FfiReactionSchema.SHORTCODE,
-            ReactionSchema.CUSTOM: xmtpv3.FfiReactionSchema.CUSTOM,
+            ReactionSchema.UNICODE: _bindings().FfiReactionSchema.UNICODE,
+            ReactionSchema.SHORTCODE: _bindings().FfiReactionSchema.SHORTCODE,
+            ReactionSchema.CUSTOM: _bindings().FfiReactionSchema.CUSTOM,
         }[content.schema]
-        payload = xmtpv3.FfiReactionPayload(
+        payload = _bindings().FfiReactionPayload(
             reference=content.reference,
             reference_inbox_id=content.reference_inbox_id or '',
             action=ffi_action,
             content=content.content,
             schema=ffi_schema,
         )
-        encoded = xmtpv3.encode_reaction(payload)
+        encoded = _bindings().encode_reaction(payload)
         return EncodedContent(type_id=self.content_type, parameters={}, content=encoded)
 
     def decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> Reaction:
@@ -104,16 +113,16 @@ class ReactionCodec(ContentCodec[Reaction]):
                     schema=ReactionSchema(params['schema']),
                 )
 
-        payload = xmtpv3.decode_reaction(content.content)
+        payload = _bindings().decode_reaction(content.content)
         action = (
             ReactionAction.ADDED
-            if payload.action == xmtpv3.FfiReactionAction.ADDED
+            if payload.action == _bindings().FfiReactionAction.ADDED
             else ReactionAction.REMOVED
         )
         schema_map = {
-            xmtpv3.FfiReactionSchema.UNICODE: ReactionSchema.UNICODE,
-            xmtpv3.FfiReactionSchema.SHORTCODE: ReactionSchema.SHORTCODE,
-            xmtpv3.FfiReactionSchema.CUSTOM: ReactionSchema.CUSTOM,
+            _bindings().FfiReactionSchema.UNICODE: ReactionSchema.UNICODE,
+            _bindings().FfiReactionSchema.SHORTCODE: ReactionSchema.SHORTCODE,
+            _bindings().FfiReactionSchema.CUSTOM: ReactionSchema.CUSTOM,
         }
         schema = schema_map[payload.schema]
         reference_inbox_id = payload.reference_inbox_id or None

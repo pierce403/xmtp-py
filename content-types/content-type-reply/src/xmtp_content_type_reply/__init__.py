@@ -3,15 +3,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
-
-from xmtp_bindings import xmtpv3
+from typing import TYPE_CHECKING, Any
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
     ContentTypeId,
     EncodedContent,
 )
+
+if TYPE_CHECKING:
+    from xmtp_bindings import xmtpv3
+
+
+def _bindings() -> "xmtpv3":
+    from xmtp_bindings import xmtpv3
+
+    return xmtpv3
 
 
 ContentTypeReply = ContentTypeId(
@@ -33,7 +40,7 @@ class Reply:
 
 
 def _content_type_to_ffi(content_type: ContentTypeId) -> xmtpv3.FfiContentTypeId:
-    return xmtpv3.FfiContentTypeId(
+    return _bindings().FfiContentTypeId(
         authority_id=content_type.authority_id,
         type_id=content_type.type_id,
         version_major=content_type.version_major,
@@ -53,7 +60,7 @@ def _content_type_from_ffi(ffi: xmtpv3.FfiContentTypeId | None) -> ContentTypeId
 
 
 def _encoded_to_ffi(encoded: EncodedContent) -> xmtpv3.FfiEncodedContent:
-    return xmtpv3.FfiEncodedContent(
+    return _bindings().FfiEncodedContent(
         type_id=_content_type_to_ffi(encoded.type_id),
         parameters=encoded.parameters,
         fallback=encoded.fallback,
@@ -88,12 +95,12 @@ class ReplyCodec(ContentCodec[Reply]):
             raise ValueError(f'Missing codec for content type {content.content_type}')
 
         encoded_content = codec.encode(content.content, registry)
-        reply_payload = xmtpv3.FfiReply(
+        reply_payload = _bindings().FfiReply(
             reference=content.reference,
             reference_inbox_id=content.reference_inbox_id,
             content=_encoded_to_ffi(encoded_content),
         )
-        reply_bytes = xmtpv3.encode_reply(reply_payload)
+        reply_bytes = _bindings().encode_reply(reply_payload)
         parameters = {
             'contentType': str(content.content_type),
             'reference': content.reference,
@@ -110,7 +117,7 @@ class ReplyCodec(ContentCodec[Reply]):
         if registry is None:
             raise ValueError('Codec registry required to decode replies')
 
-        reply_payload = xmtpv3.decode_reply(content.content)
+        reply_payload = _bindings().decode_reply(content.content)
         decoded_content = _encoded_from_ffi(reply_payload.content)
         nested_content_type = decoded_content.type_id
         codec = registry.codec_for(nested_content_type)

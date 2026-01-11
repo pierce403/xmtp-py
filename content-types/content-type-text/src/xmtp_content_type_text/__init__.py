@@ -3,14 +3,22 @@
 from __future__ import annotations
 
 from enum import Enum
-
-from xmtp_bindings import xmtpv3
+from typing import TYPE_CHECKING
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
     ContentTypeId,
     EncodedContent,
 )
+
+if TYPE_CHECKING:
+    from xmtp_bindings import xmtpv3
+
+
+def _bindings() -> "xmtpv3":
+    from xmtp_bindings import xmtpv3
+
+    return xmtpv3
 
 
 ContentTypeText = ContentTypeId(
@@ -34,7 +42,7 @@ class TextCodec(ContentCodec[str]):
         return ContentTypeText
 
     def encode(self, content: str, registry: CodecRegistry | None = None) -> EncodedContent:
-        encoded = xmtpv3.encode_text(content)
+        encoded = _bindings().encode_text(content)
         return EncodedContent(
             type_id=self.content_type,
             parameters={'encoding': Encoding.UTF8.value},
@@ -49,7 +57,7 @@ class TextCodec(ContentCodec[str]):
             raise ValueError(f'unrecognized encoding {encoding}')
         if not isinstance(content.content, (bytes, bytearray)):
             raise TypeError('Text content payload must be bytes')
-        return xmtpv3.decode_text(bytes(content.content))
+        return _bindings().decode_text(bytes(content.content))
 
     def fallback(self, content: str) -> str | None:
         return None

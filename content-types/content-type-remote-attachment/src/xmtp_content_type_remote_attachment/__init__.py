@@ -3,15 +3,23 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
-
-from xmtp_bindings import xmtpv3
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
     ContentTypeId,
     EncodedContent,
 )
+
+if TYPE_CHECKING:
+    from xmtp_bindings import xmtpv3
+
+
+def _bindings() -> "xmtpv3":
+    from xmtp_bindings import xmtpv3
+
+    return xmtpv3
 
 
 ContentTypeAttachment = ContentTypeId(
@@ -60,19 +68,19 @@ class AttachmentCodec(ContentCodec[Attachment]):
         return ContentTypeAttachment
 
     def encode(self, content: Attachment, registry: CodecRegistry | None = None) -> EncodedContent:
-        attachment = xmtpv3.FfiAttachment(
+        attachment = _bindings().FfiAttachment(
             filename=content.filename,
             mime_type=content.mime_type,
             content=content.data,
         )
-        encoded = xmtpv3.encode_attachment(attachment)
+        encoded = _bindings().encode_attachment(attachment)
         parameters = {'mimeType': content.mime_type}
         if content.filename:
             parameters['filename'] = content.filename
         return EncodedContent(type_id=self.content_type, parameters=parameters, content=encoded)
 
     def decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> Attachment:
-        decoded = xmtpv3.decode_attachment(content.content)
+        decoded = _bindings().decode_attachment(content.content)
         return Attachment(
             filename=decoded.filename,
             mime_type=decoded.mime_type,
@@ -98,7 +106,7 @@ class RemoteAttachmentCodec(ContentCodec[RemoteAttachment]):
         parsed = urlparse(content.url)
         if parsed.scheme.lower() != 'https':
             raise ValueError('Remote attachment URL must use https scheme')
-        remote_attachment = xmtpv3.FfiRemoteAttachment(
+        remote_attachment = _bindings().FfiRemoteAttachment(
             url=content.url,
             content_digest=content.content_digest,
             secret=content.secret,
@@ -108,7 +116,7 @@ class RemoteAttachmentCodec(ContentCodec[RemoteAttachment]):
             content_length=content.content_length,
             filename=content.filename,
         )
-        encoded = xmtpv3.encode_remote_attachment(remote_attachment)
+        encoded = _bindings().encode_remote_attachment(remote_attachment)
         parameters = {
             'contentDigest': content.content_digest,
             'salt': content.salt.hex(),
@@ -122,7 +130,7 @@ class RemoteAttachmentCodec(ContentCodec[RemoteAttachment]):
         return EncodedContent(type_id=self.content_type, parameters=parameters, content=encoded)
 
     def decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> RemoteAttachment:
-        decoded = xmtpv3.decode_remote_attachment(content.content)
+        decoded = _bindings().decode_remote_attachment(content.content)
         return RemoteAttachment(
             url=decoded.url,
             content_digest=decoded.content_digest,
