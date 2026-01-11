@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 7:13 PM UTC / January 10, 2026
+> Generated at: 6:18 AM UTC / January 11, 2026
 > Included Sections:
 > - README.md
 > - sdks/agent-sdk/README.md
@@ -67,6 +67,30 @@ This is a community project that mirrors the structure and interfaces of the off
 
 ```bash
 pip install xmtp
+```
+
+### From source (recommended until PyPI release)
+
+Clone the repo and install into a virtualenv. You must install the bindings
+and content types in the same environment before the SDK:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+
+pip install -e bindings/python
+pip install -e content-types/content-type-primitives
+for pkg in content-types/*; do
+  if [ "$pkg" != "content-types/content-type-primitives" ]; then
+    pip install -e "$pkg"
+  fi
+done
+
+# Choose one SDK:
+pip install -e sdks/python-sdk
+# or:
+pip install -e sdks/agent-sdk
 ```
 
 ## Quick start
@@ -327,11 +351,12 @@ Exports: Agent, ClientContext, ConversationContext, CommandRouter, MessageContex
 Doc: Agent class for XMTP.
 
 Constants:
-- EventHandler = Callable[[Any], Awaitable[None] | None]
+- EventPayload = ClientContext | ConversationContext | MessageContext | Exception
+- EventHandler = Callable[[EventPayload], Awaitable[None] | None]
 
 Classes:
 - class Agent: Main agent class with an event-driven API.
-  - async create(cls, signer: object, options: ClientOptions | None = None) -> Agent: Create an agent with a signer.
+  - async create(cls, signer: Signer, options: ClientOptions | None = None) -> Agent: Create an agent with a signer.
   - async create_from_env(cls, options: ClientOptions | None = None) -> Agent: Create an agent from environment variables.
   - on(self, event: str, handler: EventHandler | None = None) -> EventHandler | Callable[[EventHandler], EventHandler]: Register an event handler.
   - use(self, *middlewares: Middleware | list[Middleware]) -> Agent: Register middleware for message handling.
@@ -382,7 +407,7 @@ Classes:
   - is_denied(self) -> bool
   - is_unknown(self) -> bool
 - class MessageContext(ConversationContext): Context passed to message handlers.
-  - uses_codec(self, codec_class: type[ContentCodec[Any]]) -> bool
+  - uses_codec(self, codec_class: type[ContentCodec[object]]) -> bool
   - is_markdown(self) -> bool
   - is_text(self) -> bool
   - is_reply(self) -> bool
@@ -392,7 +417,7 @@ Classes:
   - async send_text_reply(self, text: str) -> None
   - async send_markdown_reply(self, markdown: str) -> None
   - async get_sender_address(self) -> str | None
-  - message(self) -> DecodedMessage[Any]
+  - message(self) -> DecodedMessage[object]
 
 ### Module: xmtp_agent.debug
 
@@ -443,13 +468,13 @@ Functions:
 Doc: Middleware interfaces for the agent SDK.
 
 Constants:
-- Handler = Callable[[Any], Awaitable[None]]
-- ConversationHandler = Callable[[Any], Awaitable[None]]
-- LifecycleHandler = Callable[[Any], Awaitable[None]]
+- Handler = Callable[[MessageContext], Awaitable[None]]
+- ConversationHandler = Callable[[ConversationContext], Awaitable[None]]
+- LifecycleHandler = Callable[[ClientContext], Awaitable[None]]
 - NextHandler = Callable[[], Awaitable[None]]
 - ErrorNextHandler = Callable[[Exception | None], Awaitable[None]]
-- Middleware = Callable[[Any, NextHandler], Awaitable[None]]
-- ErrorMiddleware = Callable[[Exception, Any, ErrorNextHandler], Awaitable[None]]
+- Middleware = Callable[[MessageContext, NextHandler], Awaitable[None]]
+- ErrorMiddleware = Callable[[Exception, MessageContext | ClientContext, ErrorNextHandler], Awaitable[None]]
 
 ### Module: xmtp_agent.name_resolver
 
@@ -483,7 +508,6 @@ Exports: ContentTypeGroupUpdated, GroupUpdated, GroupUpdatedCodec
 
 Constants:
 - ContentTypeGroupUpdated = ContentTypeId(authority_id='xmtp.org', type_id='group_updated', version_major=1, version_minor=0)
-- GroupUpdated = xmtpv3.FfiGroupUpdated
 
 Classes:
 - class GroupUpdatedCodec(ContentCodec[GroupUpdated]): Codec for group updated messages.

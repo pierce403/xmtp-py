@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 7:13 PM UTC / January 10, 2026
+> Generated at: 6:18 AM UTC / January 11, 2026
 > Included Sections:
 > - README.md
 > - sdks/python-sdk/README.md
@@ -75,6 +75,30 @@ This is a community project that mirrors the structure and interfaces of the off
 
 ```bash
 pip install xmtp
+```
+
+### From source (recommended until PyPI release)
+
+Clone the repo and install into a virtualenv. You must install the bindings
+and content types in the same environment before the SDK:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+
+pip install -e bindings/python
+pip install -e content-types/content-type-primitives
+for pkg in content-types/*; do
+  if [ "$pkg" != "content-types/content-type-primitives" ]; then
+    pip install -e "$pkg"
+  fi
+done
+
+# Choose one SDK:
+pip install -e sdks/python-sdk
+# or:
+pip install -e sdks/agent-sdk
 ```
 
 ## Quick start
@@ -211,6 +235,7 @@ This documentation is generated from code docstrings.
    migration_guide
    examples
    contributing
+   test_parity
 
 ### docs/python_sdk.rst
 
@@ -381,6 +406,38 @@ Contributing
 
 See the repository's ``CONTRIBUTING.md`` for setup, testing, and linting notes.
 
+Testing and coverage
+--------------------
+
+This repo enforces full branch coverage for the Python SDKs and content types.
+We exclude generated UniFFI glue (``xmtp_bindings/xmtpv3.py``) from coverage
+because it is machine-generated, but we still exercise bindings via smoke tests.
+
+Run tests with coverage locally:
+
+.. code-block:: bash
+
+   pytest \\
+     --cov=sdks/python-sdk/src \\
+     --cov=sdks/agent-sdk/src \\
+     --cov=content-types \\
+     --cov=bindings/python/src \\
+     --cov-branch \\
+     --cov-report=term-missing:skip-covered \\
+     --cov-report=xml \\
+     --cov-report=html \\
+     --cov-config=.coveragerc
+
+FFI/Rust coverage (libxmtp)
+---------------------------
+
+Rust coverage lives in the libxmtp repo, not this one. To measure it, run
+``cargo llvm-cov`` in the libxmtp workspace (example):
+
+.. code-block:: bash
+
+   cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
+
 ### bindings/python/README.md
 
 # xmtp-bindings
@@ -499,12 +556,12 @@ Classes:
 
 Doc: Bindings loader for libxmtp (UniFFI).
 
-Constants:
-- NativeBindings = xmtpv3
-
 ### Module: xmtp.client
 
 Doc: XMTP client entry point.
+
+Constants:
+- ContentT = TypeVar('ContentT')
 
 Classes:
 - class Client: Main client for interacting with the XMTP network.
@@ -521,10 +578,10 @@ Classes:
   - async register(self) -> None: Register the user on XMTP.
   - async can_message(self, identifiers: list[Identifier]) -> dict[str, bool]: Return a map of identifiers to messageability.
   - async get_inbox_id_by_identifier(self, identifier: Identifier) -> str | None: Resolve an identifier to an inbox id.
-  - register_codec(self, codec: ContentCodec[Any]) -> None: Register a content codec for encoding/decoding.
-  - register_codecs(self, codecs: Sequence[ContentCodec[Any]]) -> None: Register multiple content codecs.
-  - codec_for(self, content_type: ContentTypeId | str) -> ContentCodec[Any] | None: Return the codec for a content type, if registered.
-  - encode_content(self, content: Any, content_type: ContentTypeId | str) -> bytes: Encode content for sending.
+  - register_codec(self, codec: ContentCodec[ContentT]) -> None: Register a content codec for encoding/decoding.
+  - register_codecs(self, codecs: Sequence[ContentCodec[ContentT]]) -> None: Register multiple content codecs.
+  - codec_for(self, content_type: ContentTypeId | str) -> ContentCodec[object] | None: Return the codec for a content type, if registered.
+  - encode_content(self, content: ContentT, content_type: ContentTypeId | str) -> bytes: Encode content for sending.
 
 ### Module: xmtp.constants
 
@@ -543,7 +600,7 @@ Classes:
   - id(self) -> bytes: Conversation identifier bytes.
   - consent_state(self) -> NativeBindings.FfiConsentState | None: Return the conversation consent state if available.
   - async update_consent_state(self, state: NativeBindings.FfiConsentState) -> None: Update the conversation consent state.
-  - async send(self, content: str | bytes | Any, content_type: Any | None = None) -> bytes: Send a message in the conversation.
+  - async send(self, content: object, content_type: ContentTypeId | str | None = None) -> bytes: Send a message in the conversation.
 - class Dm(Conversation): Direct message conversation.
   - peer_inbox_id(self) -> str | None: Inbox ID of the DM peer, if available.
 - class Group(Conversation): Group conversation.
@@ -572,14 +629,14 @@ Classes:
   - async new_dm_with_identifier(self, identifier: Identifier) -> Dm: Create a new direct message using an identifier.
   - async new_group(self, members: list[str]) -> Group: Create a new group conversation by member addresses.
   - async new_group_with_identifiers(self, identifiers: list[Identifier]) -> Group: Create a new group conversation using identifiers.
-  - async list(self, options: ListConversationsOptions | None = None) -> list[Conversation]: List all conversations.
-  - async list_dms(self, options: ListConversationsOptions | None = None) -> list[Dm]: List direct message conversations.
-  - async list_groups(self, options: ListConversationsOptions | None = None) -> list[Group]: List group conversations.
+  - async list(self, options: ListConversationsOptions | None = None) -> builtins.list[Conversation]: List all conversations.
+  - async list_dms(self, options: ListConversationsOptions | None = None) -> builtins.list[Dm]: List direct message conversations.
+  - async list_groups(self, options: ListConversationsOptions | None = None) -> builtins.list[Group]: List group conversations.
   - async get_conversation_by_id(self, conversation_id: bytes) -> Conversation | None: Return a conversation by identifier.
-  - stream(self) -> AsyncStream[Conversation]: Stream new conversations.
-  - stream_all_messages(self) -> AsyncStream[Any]: Stream all messages across conversations.
+  - stream(self) -> AsyncStream[Conversation | NativeBindings.FfiSubscribeError]: Stream new conversations.
+  - stream_all_messages(self) -> AsyncStream[DecodedMessage[object] | NativeBindings.FfiSubscribeError]: Stream all messages across conversations.
   - async sync(self) -> None: Sync new conversations.
-  - async sync_all_conversations(self) -> None: Sync all conversations.
+  - async sync_all_conversations(self, consent_states: builtins.list[NativeBindings.FfiConsentState] | None = None) -> None: Sync all conversations.
 
 ### Module: xmtp.env
 
@@ -720,11 +777,12 @@ Exports: Agent, ClientContext, ConversationContext, CommandRouter, MessageContex
 Doc: Agent class for XMTP.
 
 Constants:
-- EventHandler = Callable[[Any], Awaitable[None] | None]
+- EventPayload = ClientContext | ConversationContext | MessageContext | Exception
+- EventHandler = Callable[[EventPayload], Awaitable[None] | None]
 
 Classes:
 - class Agent: Main agent class with an event-driven API.
-  - async create(cls, signer: object, options: ClientOptions | None = None) -> Agent: Create an agent with a signer.
+  - async create(cls, signer: Signer, options: ClientOptions | None = None) -> Agent: Create an agent with a signer.
   - async create_from_env(cls, options: ClientOptions | None = None) -> Agent: Create an agent from environment variables.
   - on(self, event: str, handler: EventHandler | None = None) -> EventHandler | Callable[[EventHandler], EventHandler]: Register an event handler.
   - use(self, *middlewares: Middleware | list[Middleware]) -> Agent: Register middleware for message handling.
@@ -775,7 +833,7 @@ Classes:
   - is_denied(self) -> bool
   - is_unknown(self) -> bool
 - class MessageContext(ConversationContext): Context passed to message handlers.
-  - uses_codec(self, codec_class: type[ContentCodec[Any]]) -> bool
+  - uses_codec(self, codec_class: type[ContentCodec[object]]) -> bool
   - is_markdown(self) -> bool
   - is_text(self) -> bool
   - is_reply(self) -> bool
@@ -785,7 +843,7 @@ Classes:
   - async send_text_reply(self, text: str) -> None
   - async send_markdown_reply(self, markdown: str) -> None
   - async get_sender_address(self) -> str | None
-  - message(self) -> DecodedMessage[Any]
+  - message(self) -> DecodedMessage[object]
 
 ### Module: xmtp_agent.debug
 
@@ -836,13 +894,13 @@ Functions:
 Doc: Middleware interfaces for the agent SDK.
 
 Constants:
-- Handler = Callable[[Any], Awaitable[None]]
-- ConversationHandler = Callable[[Any], Awaitable[None]]
-- LifecycleHandler = Callable[[Any], Awaitable[None]]
+- Handler = Callable[[MessageContext], Awaitable[None]]
+- ConversationHandler = Callable[[ConversationContext], Awaitable[None]]
+- LifecycleHandler = Callable[[ClientContext], Awaitable[None]]
 - NextHandler = Callable[[], Awaitable[None]]
 - ErrorNextHandler = Callable[[Exception | None], Awaitable[None]]
-- Middleware = Callable[[Any, NextHandler], Awaitable[None]]
-- ErrorMiddleware = Callable[[Exception, Any, ErrorNextHandler], Awaitable[None]]
+- Middleware = Callable[[MessageContext, NextHandler], Awaitable[None]]
+- ErrorMiddleware = Callable[[Exception, MessageContext | ClientContext, ErrorNextHandler], Awaitable[None]]
 
 ### Module: xmtp_agent.name_resolver
 
@@ -876,7 +934,6 @@ Exports: ContentTypeGroupUpdated, GroupUpdated, GroupUpdatedCodec
 
 Constants:
 - ContentTypeGroupUpdated = ContentTypeId(authority_id='xmtp.org', type_id='group_updated', version_major=1, version_minor=0)
-- GroupUpdated = xmtpv3.FfiGroupUpdated
 
 Classes:
 - class GroupUpdatedCodec(ContentCodec[GroupUpdated]): Codec for group updated messages.
