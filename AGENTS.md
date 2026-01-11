@@ -88,6 +88,7 @@ ruff format .               # Formatting
 - Docstrings are wired into Sphinx autodoc (with napoleon + autodoc-typehints), and static typing is strict (mypy/pyright + ruff ANN rules).
 - Python bindings now use UniFFI via libxmtp `bindings_ffi`; generate in `bindings/python` and keep native libs out of git.
 - `FfiContentTypeId.__str__` is not the canonical content type string; convert to `ContentTypeId` and use its `__str__` for comparisons.
+- CI runners do not ship `libxmtpv3.so`; `xmtp_bindings` raises `ImportError` when the native library is missing, and `xmtp.bindings` provides a stub that tests can monkeypatch.
 
 ## Agent tips
 
