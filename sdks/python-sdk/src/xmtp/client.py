@@ -103,7 +103,7 @@ class Client:
             TransactionReferenceCodec(),
             WalletSendCallsCodec(),
         ):
-            self.register_codec(codec)
+            self.register_codec(cast(ContentCodec[object], codec))
 
     @classmethod
     async def create(cls, signer: Signer, options: ClientOptions | None = None) -> Client:
@@ -205,8 +205,9 @@ class Client:
             None,
         )
 
-        self._conversations = Conversations(self, self._client.conversations())
-        self._preferences = Preferences(self, self._client.conversations())
+        conversations = Conversations(self, self._client.conversations())
+        self._conversations = conversations
+        self._preferences = Preferences(self, conversations)
 
     @property
     def inbox_id(self) -> str | None:
@@ -347,18 +348,18 @@ class Client:
 
     def _decode_ffi_content(self, content: NativeBindings.FfiDecodedMessageContent) -> object:
         if content.is_TEXT():
-            payload = cast(NativeBindings.FfiDecodedMessageContent.TEXT, content)
-            return payload[0].content
+            text_payload = cast(NativeBindings.FfiDecodedMessageContent.TEXT, content)
+            return text_payload[0].content
         if content.is_MARKDOWN():
-            payload = cast(NativeBindings.FfiDecodedMessageContent.MARKDOWN, content)
-            return payload[0].content
+            markdown_payload = cast(NativeBindings.FfiDecodedMessageContent.MARKDOWN, content)
+            return markdown_payload[0].content
         if content.is_REACTION():
             from xmtp_content_type_reaction import Reaction, ReactionAction, ReactionSchema
 
-            payload = cast(NativeBindings.FfiDecodedMessageContent.REACTION, content)[0]
+            reaction_payload = cast(NativeBindings.FfiDecodedMessageContent.REACTION, content)[0]
             action = (
                 ReactionAction.ADDED
-                if payload.action == NativeBindings.FfiReactionAction.ADDED
+                if reaction_payload.action == NativeBindings.FfiReactionAction.ADDED
                 else ReactionAction.REMOVED
             )
             schema_map = {
@@ -367,11 +368,11 @@ class Client:
                 NativeBindings.FfiReactionSchema.CUSTOM: ReactionSchema.CUSTOM,
             }
             return Reaction(
-                reference=payload.reference,
-                reference_inbox_id=payload.reference_inbox_id or None,
+                reference=reaction_payload.reference,
+                reference_inbox_id=reaction_payload.reference_inbox_id or None,
                 action=action,
-                content=payload.content,
-                schema=schema_map[payload.schema],
+                content=reaction_payload.content,
+                schema=schema_map[reaction_payload.schema],
             )
         if content.is_REPLY():
             from xmtp_content_type_reply import Reply
@@ -412,23 +413,23 @@ class Client:
                 TransactionReference,
             )
 
-            payload = cast(
+            transaction_payload = cast(
                 NativeBindings.FfiDecodedMessageContent.TRANSACTION_REFERENCE, content
             )[0]
             metadata = None
-            if payload.metadata is not None:
+            if transaction_payload.metadata is not None:
                 metadata = TransactionMetadata(
-                    transaction_type=payload.metadata.transaction_type,
-                    currency=payload.metadata.currency,
-                    amount=payload.metadata.amount,
-                    decimals=payload.metadata.decimals,
-                    from_address=payload.metadata.from_address,
-                    to_address=payload.metadata.to_address,
+                    transaction_type=transaction_payload.metadata.transaction_type,
+                    currency=transaction_payload.metadata.currency,
+                    amount=transaction_payload.metadata.amount,
+                    decimals=transaction_payload.metadata.decimals,
+                    from_address=transaction_payload.metadata.from_address,
+                    to_address=transaction_payload.metadata.to_address,
                 )
             return TransactionReference(
-                namespace=payload.namespace,
-                network_id=payload.network_id,
-                reference=payload.reference,
+                namespace=transaction_payload.namespace,
+                network_id=transaction_payload.network_id,
+                reference=transaction_payload.reference,
                 metadata=metadata,
             )
         if content.is_WALLET_SEND_CALLS():
@@ -438,11 +439,11 @@ class Client:
                 WalletSendCalls,
             )
 
-            payload = cast(NativeBindings.FfiDecodedMessageContent.WALLET_SEND_CALLS, content)[
-                0
-            ]
+            wallet_payload = cast(
+                NativeBindings.FfiDecodedMessageContent.WALLET_SEND_CALLS, content
+            )[0]
             calls: list[WalletCall] = []
-            for call in payload.calls:
+            for call in wallet_payload.calls:
                 call_metadata = None
                 if call.metadata is not None:
                     call_metadata = WalletCallMetadata(
@@ -460,15 +461,15 @@ class Client:
                     )
                 )
             return WalletSendCalls(
-                version=payload.version,
-                chain_id=payload.chain_id,
-                from_address=payload._from,
+                version=wallet_payload.version,
+                chain_id=wallet_payload.chain_id,
+                from_address=wallet_payload._from,
                 calls=calls,
-                capabilities=payload.capabilities,
+                capabilities=wallet_payload.capabilities,
             )
         if content.is_GROUP_UPDATED():
-            payload = cast(NativeBindings.FfiDecodedMessageContent.GROUP_UPDATED, content)
-            return payload[0]
+            group_payload = cast(NativeBindings.FfiDecodedMessageContent.GROUP_UPDATED, content)
+            return group_payload[0]
         if content.is_ATTACHMENT():
             from xmtp_content_type_remote_attachment import Attachment
 
@@ -479,17 +480,17 @@ class Client:
                 data=attachment.content,
             )
         if content.is_ACTIONS():
-            payload = cast(NativeBindings.FfiDecodedMessageContent.ACTIONS, content)
-            return payload[0]
+            actions_payload = cast(NativeBindings.FfiDecodedMessageContent.ACTIONS, content)
+            return actions_payload[0]
         if content.is_INTENT():
-            payload = cast(NativeBindings.FfiDecodedMessageContent.INTENT, content)
-            return payload[0]
+            intent_payload = cast(NativeBindings.FfiDecodedMessageContent.INTENT, content)
+            return intent_payload[0]
         if content.is_LEAVE_REQUEST():
-            payload = cast(NativeBindings.FfiDecodedMessageContent.LEAVE_REQUEST, content)
-            return payload[0]
+            leave_payload = cast(NativeBindings.FfiDecodedMessageContent.LEAVE_REQUEST, content)
+            return leave_payload[0]
         if content.is_CUSTOM():
-            payload = cast(NativeBindings.FfiDecodedMessageContent.CUSTOM, content)
-            encoded = payload[0]
+            custom_payload = cast(NativeBindings.FfiDecodedMessageContent.CUSTOM, content)
+            encoded = custom_payload[0]
             try:
                 decoded = _encoded_from_ffi(encoded)
             except ValueError:

@@ -156,7 +156,7 @@ class Conversations:
             return None
         return self._wrap_conversation(convo)
 
-    def stream(self) -> AsyncStream[Conversation]:
+    def stream(self) -> AsyncStream[Conversation | NativeBindings.FfiSubscribeError]:
         """Stream new conversations."""
 
         queue: asyncio.Queue[object] = asyncio.Queue()
@@ -245,7 +245,7 @@ class Conversations:
 
     async def sync_all_conversations(
         self,
-        consent_states: list[NativeBindings.FfiConsentState] | None = None,
+        consent_states: builtins.list[NativeBindings.FfiConsentState] | None = None,
     ) -> None:
         """Sync all conversations."""
 
