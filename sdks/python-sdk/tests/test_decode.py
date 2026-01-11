@@ -303,6 +303,39 @@ async def test_decode_message_branches(fake_bindings) -> None:
     assert client._decode_ffi_content(unknown) is unknown
 
 
+def test_decode_transaction_reference_without_metadata() -> None:
+    client = Client()
+    payload = _FakeTransactionReference(
+        namespace='eip155',
+        network_id='1',
+        reference='0x123',
+        metadata=None,
+    )
+    decoded = client._decode_ffi_content(_DecodedContent('TRANSACTION_REFERENCE', payload))
+    assert decoded.metadata is None
+
+
+def test_decode_wallet_send_calls_without_metadata() -> None:
+    client = Client()
+    payload = _FakeWalletSendCalls(
+        version='1.0',
+        chain_id='1',
+        _from='0xabc',
+        calls=[
+            _FakeWalletCall(
+                to='0xdef',
+                data=None,
+                value='0x1',
+                gas=None,
+                metadata=None,
+            )
+        ],
+        capabilities=None,
+    )
+    decoded = client._decode_ffi_content(_DecodedContent('WALLET_SEND_CALLS', payload))
+    assert decoded.calls[0].metadata is None
+
+
 @pytest.mark.asyncio
 async def test_decode_message(fake_bindings) -> None:
     client = Client()

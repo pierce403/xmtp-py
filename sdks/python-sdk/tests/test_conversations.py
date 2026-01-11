@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from xmtp.conversations import Conversations, ListConversationsOptions
+from xmtp.conversations import Conversations, ListConversationsOptions, _default_list_options
 from xmtp.conversation import Dm, Group
 from xmtp.errors import ClientNotInitializedError
 from xmtp.identifiers import Identifier, IdentifierKind
@@ -116,6 +116,11 @@ async def test_list_conversations_options(fake_bindings) -> None:
     ffi = options.to_ffi()
     assert ffi.include_duplicate_dms is True
     assert ffi.limit == 10
+
+
+def test_default_list_options(fake_bindings) -> None:
+    ffi = _default_list_options()
+    assert isinstance(ffi, fake_bindings.FfiListConversationsOptions)
 
 
 @pytest.mark.asyncio

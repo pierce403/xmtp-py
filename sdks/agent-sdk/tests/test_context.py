@@ -117,6 +117,8 @@ async def test_message_context_helpers(fake_bindings) -> None:
     assert ctx.is_text() is True
     assert ctx.is_markdown() is False
     assert ctx.uses_codec(TextCodec) is True
+    assert ctx.conversation is convo
+    assert ctx.message is message
 
     await ctx.send_text_reply('reply')
     await ctx.send_markdown_reply('md')

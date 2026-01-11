@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import types
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -38,6 +39,11 @@ class _FakeStream:
 
     async def close(self) -> None:
         self.closed = True
+
+
+class _CancelStream(_FakeStream):
+    async def __anext__(self):
+        raise asyncio.CancelledError
 
 
 class _FakeConversation:
@@ -128,6 +134,33 @@ async def test_agent_start_noop_when_running(fake_bindings) -> None:
 
 
 @pytest.mark.asyncio
+async def test_agent_stop_streams_closes_handles(fake_bindings) -> None:
+    conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+
+    class _Handle:
+        def __init__(self) -> None:
+            self.closed = False
+
+        async def close(self) -> None:
+            self.closed = True
+
+    conv_handle = _Handle()
+    msg_handle = _Handle()
+    agent._conversation_stream_handle = conv_handle
+    agent._message_stream_handle = msg_handle
+    agent._conversation_stream = asyncio.create_task(asyncio.sleep(0))
+    agent._message_stream = asyncio.create_task(asyncio.sleep(0))
+
+    await agent._stop_streams()
+
+    assert conv_handle.closed is True
+    assert msg_handle.closed is True
+    assert agent._conversation_stream_handle is None
+    assert agent._message_stream_handle is None
+
+
+@pytest.mark.asyncio
 async def test_agent_create_defaults(monkeypatch) -> None:
     captured: dict[str, Any] = {}
 
@@ -162,6 +195,27 @@ async def test_agent_create_debug_env(monkeypatch) -> None:
     assert captured['options'].debug_events_enabled is True
     assert captured['options'].structured_logging is True
     assert captured['options'].logging_level == LogLevel.DEBUG
+
+
+@pytest.mark.asyncio
+async def test_agent_create_preserves_options_invalid_debug(monkeypatch) -> None:
+    captured: dict[str, Any] = {}
+
+    async def fake_create(cls, _signer, options):
+        captured['options'] = options
+        conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
+        return _FakeClient(conversations)
+
+    monkeypatch.setenv('XMTP_FORCE_DEBUG', '1')
+    monkeypatch.setenv('XMTP_FORCE_DEBUG_LEVEL', 'invalid')
+    monkeypatch.setattr('xmtp_agent.agent.Client.create', classmethod(fake_create))
+
+    options = ClientOptions(app_version='custom', disable_device_sync=True)
+    agent = await Agent.create(object(), options)
+    assert isinstance(agent, Agent)
+    assert captured['options'].app_version == 'custom'
+    assert captured['options'].disable_device_sync is True
+    assert captured['options'].logging_level == LogLevel.WARN
 
 
 @pytest.mark.asyncio
@@ -276,6 +330,20 @@ async def test_agent_handle_conversation_events(fake_bindings) -> None:
 
 
 @pytest.mark.asyncio
+async def test_agent_handle_conversation_unknown(fake_bindings) -> None:
+    conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    events: list[str] = []
+
+    agent.on('conversation', lambda _ctx: events.append('conversation'))
+    agent.on('dm', lambda _ctx: events.append('dm'))
+    agent.on('group', lambda _ctx: events.append('group'))
+
+    await agent._handle_conversation(object())
+    assert events == ['conversation']
+
+
+@pytest.mark.asyncio
 async def test_agent_middleware_and_error_chain(fake_bindings) -> None:
     conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
     agent = Agent(_FakeClient(conversations))
@@ -332,6 +400,31 @@ async def test_agent_middleware_error_resume(fake_bindings) -> None:
 
 
 @pytest.mark.asyncio
+async def test_agent_middleware_error_no_resume(fake_bindings) -> None:
+    conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    calls: list[str] = []
+
+    async def middleware(_ctx, _next_handler):
+        raise RuntimeError('boom')
+
+    async def error_middleware(_error, _ctx, _next_handler):
+        calls.append('error')
+
+    agent.use(middleware)
+    agent.errors.use(error_middleware)
+
+    @agent.on('text')
+    async def _on_text(_ctx):
+        calls.append('handler')
+
+    message = _MessageFactory(content_type_id=str(ContentTypeText), content='hi').build()
+    await agent._handle_message(message)
+
+    assert calls == ['error']
+
+
+@pytest.mark.asyncio
 async def test_agent_error_chain_outcomes(fake_bindings) -> None:
     conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
     agent = Agent(_FakeClient(conversations))
@@ -367,6 +460,85 @@ async def test_agent_error_chain_outcomes(fake_bindings) -> None:
     assert await agent._run_error_chain(RuntimeError('boom'), MessageContext) is True
     assert seen == ['next']
 
+
+@pytest.mark.asyncio
+async def test_agent_error_chain_continue_updates_error(fake_bindings) -> None:
+    conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    seen: list[str] = []
+
+    async def handler_continue(_error, _ctx, next_handler):
+        await next_handler(RuntimeError('next-error'))
+
+    async def handler_capture(error, _ctx, next_handler):
+        seen.append(str(error))
+        await next_handler(None)
+
+    agent._error_middlewares = [handler_continue, handler_capture]
+    assert await agent._run_error_chain(RuntimeError('boom'), MessageContext) is True
+    assert seen == ['next-error']
+
+
+@pytest.mark.asyncio
+async def test_agent_error_chain_final_continue_returns_false(fake_bindings) -> None:
+    conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+
+    async def handler_continue(_error, _ctx, next_handler):
+        await next_handler(RuntimeError('next'))
+
+    async def final_continue(_error, _ctx, next_handler):
+        await next_handler(RuntimeError('final'))
+
+    agent._error_middlewares = [handler_continue]
+    agent._default_error_handler = final_continue  # type: ignore[assignment]
+    assert await agent._run_error_chain(RuntimeError('boom'), MessageContext) is False
+
+
+@pytest.mark.asyncio
+async def test_agent_error_chain_continue_branch(fake_bindings, monkeypatch) -> None:
+    conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    calls: list[str] = []
+
+    async def fake_run_error_handler(_handler, _context, error):
+        calls.append(str(error))
+        if len(calls) == 1:
+            return 'continue', RuntimeError('next')
+        return 'handled', None
+
+    monkeypatch.setattr(agent, '_run_error_handler', fake_run_error_handler)
+    agent._error_middlewares = [lambda *_args, **_kwargs: None]
+    assert await agent._run_error_chain(RuntimeError('boom'), MessageContext) is True
+    assert calls == ['boom', 'next']
+
+
+@pytest.mark.asyncio
+async def test_agent_error_handler_settled_guard(fake_bindings) -> None:
+    conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+
+    async def handler(_error, _ctx, next_handler):
+        await next_handler(None)
+        await next_handler(RuntimeError('ignored'))
+
+    outcome, next_error = await agent._run_error_handler(handler, MessageContext, RuntimeError('boom'))
+    assert outcome == 'handled'
+    assert next_error is None
+
+
+@pytest.mark.asyncio
+async def test_agent_default_error_handler_emits(fake_bindings) -> None:
+    conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    seen: list[str] = []
+
+    @agent.on('unhandled_error')
+    async def _on_error(error):
+        seen.append(str(error))
+
+    assert await agent._run_error_chain(RuntimeError('boom'), MessageContext) is False
+    assert seen == ['boom']
 
 @pytest.mark.asyncio
 async def test_agent_stream_error_handling(fake_bindings, monkeypatch) -> None:
@@ -453,3 +625,209 @@ async def test_agent_handle_stream_error_stops(fake_bindings, monkeypatch) -> No
 
     monkeypatch.setattr(agent, '_run_error_chain', fake_run_error_chain)
     await agent._handle_stream_error(RuntimeError('boom'))
+
+
+@pytest.mark.asyncio
+async def test_agent_run_middleware_chain_emitter_error(fake_bindings, monkeypatch) -> None:
+    conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    called: list[str] = []
+
+    @agent.on('text')
+    async def _on_text(_ctx):
+        raise RuntimeError('boom')
+
+    async def fake_run_error_chain(error, ctx):
+        called.append(str(error))
+        return False
+
+    monkeypatch.setattr(agent, '_run_error_chain', fake_run_error_chain)
+
+    message = _MessageFactory(content_type_id=str(ContentTypeText), content='hi').build()
+    context = MessageContext(message, _FakeConversation(), agent.client)
+    await agent._run_middleware_chain(context, 'text')
+    assert called == ['boom']
+
+
+@pytest.mark.asyncio
+async def test_agent_consume_conversations_breaks_when_stopped(fake_bindings) -> None:
+    conversation_stream = _FakeStream([object()])
+    conversations = _FakeConversations(conversation_stream, _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    agent._running = False
+    await agent._consume_conversations()
+    assert conversation_stream.closed is True
+    assert agent._conversation_stream_handle is None
+
+
+@pytest.mark.asyncio
+async def test_agent_consume_conversations_handles_item(fake_bindings, monkeypatch) -> None:
+    item = object()
+    conversation_stream = _FakeStream([item])
+    conversations = _FakeConversations(conversation_stream, _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    agent._running = True
+    handled: list[object] = []
+
+    async def _handle_conversation(conversation):
+        handled.append(conversation)
+
+    monkeypatch.setattr(agent, '_handle_conversation', _handle_conversation)
+    await agent._consume_conversations()
+    assert handled == [item]
+
+
+@pytest.mark.asyncio
+async def test_agent_consume_conversations_subscribe_error(fake_bindings, monkeypatch) -> None:
+    import xmtp_agent.agent as agent_module
+
+    patched_bindings = types.SimpleNamespace(FfiSubscribeError=object)
+    monkeypatch.setattr(agent_module, 'NativeBindings', patched_bindings)
+    monkeypatch.setitem(Agent._consume_conversations.__globals__, 'NativeBindings', patched_bindings)
+    error_item = object()
+    conversation_stream = _FakeStream([error_item])
+    conversations = _FakeConversations(conversation_stream, _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    agent._running = True
+    async def fake_run_error_chain(_error, _ctx):
+        return False
+
+    monkeypatch.setattr(agent, '_run_error_chain', fake_run_error_chain)
+
+    handled: list[Exception] = []
+
+    original_handle = agent._handle_stream_error
+
+    async def wrapped_handle(error: Exception) -> None:
+        handled.append(error)
+        await original_handle(error)
+
+    monkeypatch.setattr(agent, '_handle_stream_error', wrapped_handle)
+    await agent._consume_conversations()
+    assert handled
+    assert agent._conversation_stream_handle is None
+
+
+@pytest.mark.asyncio
+async def test_agent_consume_conversations_cancelled(fake_bindings, monkeypatch) -> None:
+    conversation_stream = _CancelStream([])
+    conversations = _FakeConversations(conversation_stream, _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    agent._running = True
+    called: list[str] = []
+
+    async def _handle_stream_error(error: Exception) -> None:
+        called.append(str(error))
+
+    monkeypatch.setattr(agent, '_handle_stream_error', _handle_stream_error)
+    await agent._consume_conversations()
+    assert called == []
+
+
+@pytest.mark.asyncio
+async def test_agent_consume_messages_breaks_when_stopped(fake_bindings) -> None:
+    message_stream = _FakeStream([object()])
+    conversations = _FakeConversations(_FakeStream([]), message_stream, _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    agent._running = False
+    await agent._consume_messages()
+    assert message_stream.closed is True
+    assert agent._message_stream_handle is None
+
+
+@pytest.mark.asyncio
+async def test_agent_consume_messages_handles_item(fake_bindings, monkeypatch) -> None:
+    message = _MessageFactory(content_type_id=str(ContentTypeText), content='hi').build()
+    message_stream = _FakeStream([message])
+    conversations = _FakeConversations(_FakeStream([]), message_stream, _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    agent._running = True
+    handled: list[object] = []
+
+    async def _handle_message(item):
+        handled.append(item)
+
+    monkeypatch.setattr(agent, '_handle_message', _handle_message)
+    await agent._consume_messages()
+    assert handled == [message]
+
+
+@pytest.mark.asyncio
+async def test_agent_consume_messages_subscribe_error(fake_bindings, monkeypatch) -> None:
+    import xmtp_agent.agent as agent_module
+
+    patched_bindings = types.SimpleNamespace(FfiSubscribeError=object)
+    monkeypatch.setattr(agent_module, 'NativeBindings', patched_bindings)
+    monkeypatch.setitem(Agent._consume_messages.__globals__, 'NativeBindings', patched_bindings)
+    error_item = object()
+    message_stream = _FakeStream([error_item])
+    conversations = _FakeConversations(_FakeStream([]), message_stream, _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    agent._running = True
+    async def fake_run_error_chain(_error, _ctx):
+        return False
+
+    monkeypatch.setattr(agent, '_run_error_chain', fake_run_error_chain)
+
+    handled: list[Exception] = []
+
+    original_handle = agent._handle_stream_error
+
+    async def wrapped_handle(error: Exception) -> None:
+        handled.append(error)
+        await original_handle(error)
+
+    monkeypatch.setattr(agent, '_handle_stream_error', wrapped_handle)
+    await agent._consume_messages()
+    assert handled
+    assert agent._message_stream_handle is None
+
+
+@pytest.mark.asyncio
+async def test_agent_consume_messages_cancelled(fake_bindings, monkeypatch) -> None:
+    message_stream = _CancelStream([])
+    conversations = _FakeConversations(_FakeStream([]), message_stream, _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    agent._running = True
+    called: list[str] = []
+
+    async def _handle_stream_error(error: Exception) -> None:
+        called.append(str(error))
+
+    monkeypatch.setattr(agent, '_handle_stream_error', _handle_stream_error)
+    await agent._consume_messages()
+    assert called == []
+
+
+@pytest.mark.asyncio
+async def test_agent_consume_conversations_subscribe_error_real_bindings(monkeypatch) -> None:
+    pytest.importorskip('xmtp_bindings')
+    from xmtp.bindings import NativeBindings
+
+    conversation_stream = _FakeStream([NativeBindings.FfiSubscribeError('boom')])
+    conversations = _FakeConversations(conversation_stream, _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    agent._running = True
+
+    async def fake_run_error_chain(_error, _ctx):
+        return False
+
+    monkeypatch.setattr(agent, '_run_error_chain', fake_run_error_chain)
+    await agent._consume_conversations()
+
+
+@pytest.mark.asyncio
+async def test_agent_consume_messages_subscribe_error_real_bindings(monkeypatch) -> None:
+    pytest.importorskip('xmtp_bindings')
+    from xmtp.bindings import NativeBindings
+
+    message_stream = _FakeStream([NativeBindings.FfiSubscribeError('boom')])
+    conversations = _FakeConversations(_FakeStream([]), message_stream, _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    agent._running = True
+
+    async def fake_run_error_chain(_error, _ctx):
+        return False
+
+    monkeypatch.setattr(agent, '_run_error_chain', fake_run_error_chain)
+    await agent._consume_messages()

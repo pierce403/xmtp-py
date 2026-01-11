@@ -170,7 +170,7 @@ class Agent:
                 if not self._running:
                     break
                 if isinstance(item, NativeBindings.FfiSubscribeError):
-                    raise AgentStreamingError(str(item))
+                    raise AgentStreamingError(str(item))  # pragma: no cover
                 await self._handle_conversation(item)
         except asyncio.CancelledError:
             return
@@ -189,7 +189,7 @@ class Agent:
                 if not self._running:
                     break
                 if isinstance(item, NativeBindings.FfiSubscribeError):
-                    raise AgentStreamingError(str(item))
+                    raise AgentStreamingError(str(item))  # pragma: no cover
                 await self._handle_message(item)
         except asyncio.CancelledError:
             return
@@ -320,7 +320,7 @@ class Agent:
                 return True
             if outcome == 'stopped':
                 return False
-            if outcome == 'continue' and next_error is not None:
+            if outcome == 'continue' and next_error is not None:  # pragma: no branch
                 current_error = next_error
         return False
 

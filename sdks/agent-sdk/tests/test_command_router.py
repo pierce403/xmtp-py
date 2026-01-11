@@ -72,6 +72,21 @@ async def test_command_router_ignores_non_text() -> None:
 
 
 @pytest.mark.asyncio
+async def test_command_router_non_string_message() -> None:
+    router = CommandRouter()
+
+    class _Context:
+        def __init__(self) -> None:
+            self.message = DummyMessage(b'bytes')
+
+        def is_text(self) -> bool:
+            return True
+
+    ctx = _Context()
+    assert await router.handle(ctx) is False
+
+
+@pytest.mark.asyncio
 async def test_command_router_middleware_calls_next() -> None:
     router = CommandRouter()
     called = []
@@ -82,6 +97,24 @@ async def test_command_router_middleware_calls_next() -> None:
     middleware = router.middleware()
     await middleware(DummyContext('hello'), next_handler)
     assert called == ['next']
+
+
+@pytest.mark.asyncio
+async def test_command_router_middleware_skips_next_on_handle() -> None:
+    router = CommandRouter()
+    called = []
+
+    async def handler(_ctx) -> None:
+        called.append('handled')
+
+    async def next_handler() -> None:
+        called.append('next')
+
+    router.command('/ping', handler)
+
+    middleware = router.middleware()
+    await middleware(DummyContext('/ping arg'), next_handler)
+    assert called == ['handled']
 
 
 @pytest.mark.asyncio

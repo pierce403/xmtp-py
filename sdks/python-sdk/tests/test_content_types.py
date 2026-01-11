@@ -75,6 +75,17 @@ def test_text_codec_unknown_encoding() -> None:
         codec.decode(encoded)
 
 
+def test_text_codec_missing_encoding() -> None:
+    codec = TextCodec()
+    encoded = EncodedContent(
+        type_id=ContentTypeText,
+        parameters={},
+        content=b'hello',
+    )
+    with pytest.raises(ValueError, match='Missing encoding for text content'):
+        codec.decode(encoded)
+
+
 def test_text_codec_invalid_payload_type() -> None:
     codec = TextCodec()
     encoded = EncodedContent(
@@ -104,6 +115,17 @@ def test_markdown_codec_unknown_encoding() -> None:
         content=b'',
     )
     with pytest.raises(ValueError, match='unrecognized encoding UTF-16'):
+        codec.decode(encoded)
+
+
+def test_markdown_codec_missing_encoding() -> None:
+    codec = MarkdownCodec()
+    encoded = EncodedContent(
+        type_id=ContentTypeMarkdown,
+        parameters={},
+        content=b'hello',
+    )
+    with pytest.raises(ValueError, match='Missing encoding for markdown content'):
         codec.decode(encoded)
 
 
@@ -205,6 +227,61 @@ def test_reaction_codec_ffi_fallback(monkeypatch) -> None:
     assert decoded.content == 'smile'
 
 
+def test_reaction_codec_encode_round_trip() -> None:
+    from xmtp_bindings import xmtpv3
+
+    codec = ReactionCodec()
+    reaction = Reaction(
+        reference='ref',
+        reference_inbox_id=None,
+        action=ReactionAction.REMOVED,
+        content='wow',
+        schema=ReactionSchema.CUSTOM,
+    )
+    encoded = codec.encode(reaction)
+    decoded = xmtpv3.decode_reaction(encoded.content)
+    assert decoded.reference == 'ref'
+    assert decoded.reference_inbox_id == ''
+    assert decoded.content == 'wow'
+    assert decoded.action == xmtpv3.FfiReactionAction.REMOVED
+    assert decoded.schema == xmtpv3.FfiReactionSchema.CUSTOM
+
+
+def test_reaction_codec_invalid_utf8_falls_back(monkeypatch) -> None:
+    from xmtp_bindings import xmtpv3
+
+    codec = ReactionCodec()
+    payload = xmtpv3.FfiReactionPayload(
+        reference='ref',
+        reference_inbox_id='inbox',
+        action=xmtpv3.FfiReactionAction.ADDED,
+        content='smile',
+        schema=xmtpv3.FfiReactionSchema.UNICODE,
+    )
+    monkeypatch.setattr('xmtp_content_type_reaction.xmtpv3.decode_reaction', lambda _: payload)
+    encoded = EncodedContent(type_id=ContentTypeReaction, parameters={}, content=b'\xff')
+    decoded = codec.decode(encoded)
+    assert decoded.reference == 'ref'
+    assert decoded.content == 'smile'
+
+
+def test_reaction_codec_non_bytes_payload(monkeypatch) -> None:
+    from xmtp_bindings import xmtpv3
+
+    codec = ReactionCodec()
+    payload = xmtpv3.FfiReactionPayload(
+        reference='ref',
+        reference_inbox_id='inbox',
+        action=xmtpv3.FfiReactionAction.ADDED,
+        content='smile',
+        schema=xmtpv3.FfiReactionSchema.UNICODE,
+    )
+    monkeypatch.setattr('xmtp_content_type_reaction.xmtpv3.decode_reaction', lambda _: payload)
+    encoded = EncodedContent(type_id=ContentTypeReaction, parameters={}, content='smile')
+    decoded = codec.decode(encoded)
+    assert decoded.reference == 'ref'
+
+
 def test_reaction_codec_should_push_and_fallback() -> None:
     codec = ReactionCodec()
     reaction = Reaction(
@@ -225,6 +302,15 @@ def test_reaction_codec_should_push_and_fallback() -> None:
         schema=ReactionSchema.UNICODE,
     )
     assert 'Removed' in (codec.fallback(reaction_removed) or '')
+
+    reaction_other = Reaction(
+        reference='abc',
+        reference_inbox_id=None,
+        action='other',
+        content=':)',
+        schema=ReactionSchema.UNICODE,
+    )
+    assert codec.fallback(reaction_other) is None
 
 
 def test_read_receipt_codec() -> None:

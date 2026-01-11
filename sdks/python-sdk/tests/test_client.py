@@ -419,6 +419,34 @@ async def test_client_build_with_explicit_db_path(fake_bindings) -> None:
     assert calls['create_client'][2] == '/tmp/static.db'
 
 
+@pytest.mark.asyncio
+async def test_client_build_with_empty_history_sync(fake_bindings) -> None:
+    fake_client = _FakeClient()
+    calls: dict[str, Any] = {}
+
+    async def connect_to_backend(*args):
+        calls.setdefault('connect', []).append(args)
+        return 'api'
+
+    async def get_inbox_id_for_identifier(api, identifier):
+        return 'inbox'
+
+    async def create_client(*args):
+        calls['create_client'] = args
+        return fake_client
+
+    fake_bindings.connect_to_backend = connect_to_backend
+    fake_bindings.get_inbox_id_for_identifier = get_inbox_id_for_identifier
+    fake_bindings.generate_inbox_id = lambda identifier, nonce: 'unused'
+    fake_bindings.create_client = create_client
+
+    options = ClientOptions(env='dev', history_sync_url='')
+    client = await Client.build(Identifier(IdentifierKind.ETHEREUM, '0xabc'), options)
+    assert client._client is fake_client
+    assert len(calls['connect']) == 1
+    assert calls['create_client'][1] == 'api'
+
+
 def test_client_properties_without_init() -> None:
     client = Client()
     assert client.inbox_id is None
@@ -428,6 +456,17 @@ def test_client_properties_without_init() -> None:
         _ = client.conversations
     with pytest.raises(ClientNotInitializedError):
         _ = client.preferences
+
+
+def test_client_properties_with_init() -> None:
+    client = Client()
+    fake_client = _FakeClient()
+    client._client = fake_client
+    client._conversations = object()
+    client._preferences = object()
+    assert client.installation_id == b'install-id'
+    assert client.conversations is client._conversations
+    assert client.preferences is client._preferences
 
 
 def test_client_options_and_account_identifier() -> None:
@@ -472,6 +511,18 @@ async def test_client_create_from_env(monkeypatch) -> None:
     client = await Client.create_from_env()
     assert client._client is not None
     assert client.account_identifier == await fake_signer.get_identifier()
+
+
+@pytest.mark.asyncio
+async def test_client_init_noop_when_initialized(fake_bindings) -> None:
+    client = Client()
+    client._client = object()
+
+    def connect_to_backend(*args, **kwargs):
+        raise RuntimeError('should not be called')
+
+    fake_bindings.connect_to_backend = connect_to_backend
+    await client._init(Identifier(kind=IdentifierKind.ETHEREUM, value='0xabc'))
 
 
 @pytest.mark.asyncio
