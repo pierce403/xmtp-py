@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import builtins
+import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -248,8 +249,17 @@ class Conversations:
         consent_states: builtins.list[NativeBindings.FfiConsentState] | None = None,
     ) -> None:
         """Sync all conversations."""
-
-        await self._ensure().sync_all_conversations(consent_states)
+        ffi = self._ensure()
+        if consent_states is None:
+            try:
+                signature = inspect.signature(ffi.sync_all_conversations)
+            except (TypeError, ValueError):
+                await ffi.sync_all_conversations(consent_states)
+                return
+            if len(signature.parameters) == 0:
+                await ffi.sync_all_conversations()
+                return
+        await ffi.sync_all_conversations(consent_states)
 
     def _wrap_conversation(self, convo: NativeBindings.FfiConversation) -> Conversation:
         convo_type = convo.conversation_type()

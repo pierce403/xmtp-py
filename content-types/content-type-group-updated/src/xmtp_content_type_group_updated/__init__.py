@@ -11,16 +11,17 @@ from xmtp_content_type_primitives import (
 )
 
 if TYPE_CHECKING:
-    from xmtp_bindings import xmtpv3
+    from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
+
+
     GroupUpdated: TypeAlias = xmtpv3.FfiGroupUpdated
 else:
     GroupUpdated: TypeAlias = object
 
 
-def _bindings() -> "xmtpv3":
-    from xmtp_bindings import xmtpv3
-
-    return xmtpv3
+def _bindings() -> "xmtpv3":  # pragma: no cover - requires native bindings
+    from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
+    return xmtpv3  # pragma: no cover - requires native bindings
 
 
 ContentTypeGroupUpdated = ContentTypeId(
@@ -29,6 +30,7 @@ ContentTypeGroupUpdated = ContentTypeId(
     version_major=1,
     version_minor=0,
 )
+
 
 class GroupUpdatedCodec(ContentCodec[GroupUpdated]):
     """Codec for group updated messages."""

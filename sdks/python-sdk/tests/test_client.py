@@ -208,6 +208,7 @@ def test_register_default_codecs_import_error(monkeypatch) -> None:
 
 
 def test_client_registers_default_codecs() -> None:
+    pytest.importorskip('xmtp_bindings')
     client = Client()
     assert client.codec_for(ContentTypeText) is not None
 

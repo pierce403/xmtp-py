@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import inspect
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from xmtp_content_type_primitives import ContentTypeId
@@ -13,6 +15,19 @@ from xmtp.identifiers import Identifier, IdentifierKind
 if TYPE_CHECKING:
     from xmtp.client import Client
 
+
+@dataclass(slots=True)
+class _SendMessageOpts:
+    should_push: bool
+
+
+def _default_send_opts(
+    should_push: bool = True,
+) -> NativeBindings.FfiSendMessageOpts | _SendMessageOpts:
+    try:
+        return NativeBindings.FfiSendMessageOpts(should_push=should_push)
+    except Exception:
+        return _SendMessageOpts(should_push=should_push)
 
 
 def _identifier_to_ffi(identifier: Identifier) -> NativeBindings.FfiIdentifier:
@@ -48,7 +63,9 @@ class Conversation:
     async def update_consent_state(self, state: NativeBindings.FfiConsentState) -> None:
         """Update the conversation consent state."""
 
-        self._ffi.update_consent_state(state)
+        result = self._ffi.update_consent_state(state)
+        if inspect.isawaitable(result):
+            await result
 
     async def send(
         self,
@@ -64,7 +81,7 @@ class Conversation:
             raise MissingContentTypeError()
 
         encoded = self._client.encode_content(content, content_type)
-        opts = NativeBindings.FfiSendMessageOpts(should_push=True)
+        opts = _default_send_opts(should_push=True)
         return await self._ffi.send(encoded, opts)
 
 
@@ -122,12 +139,18 @@ class Group(Conversation):
     async def is_admin(self, inbox_id: str) -> bool:
         """Return True if inbox_id is an admin."""
 
-        return self._ffi.is_admin(inbox_id)
+        result = self._ffi.is_admin(inbox_id)
+        if inspect.isawaitable(result):
+            return await result
+        return result
 
     async def is_super_admin(self, inbox_id: str) -> bool:
         """Return True if inbox_id is a super admin."""
 
-        return self._ffi.is_super_admin(inbox_id)
+        result = self._ffi.is_super_admin(inbox_id)
+        if inspect.isawaitable(result):
+            return await result
+        return result
 
     @property
     def name(self) -> str | None:

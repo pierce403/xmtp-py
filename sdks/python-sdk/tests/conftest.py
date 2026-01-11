@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pickle
+import sys
 import types
 from dataclasses import dataclass
 from enum import Enum
@@ -113,6 +115,182 @@ class FfiReactionSchema(str, Enum):
     CUSTOM = 'custom'
 
 
+@dataclass
+class FfiReadReceipt:
+    pass
+
+
+@dataclass
+class FfiReactionPayload:
+    reference: str
+    reference_inbox_id: str
+    action: FfiReactionAction
+    content: str
+    schema: FfiReactionSchema
+
+
+@dataclass
+class FfiAttachment:
+    filename: str | None
+    mime_type: str
+    content: bytes
+
+
+@dataclass
+class FfiRemoteAttachment:
+    url: str
+    content_digest: str
+    secret: bytes
+    salt: bytes
+    nonce: bytes
+    scheme: str
+    content_length: int
+    filename: str | None
+
+
+@dataclass
+class FfiTransactionMetadata:
+    transaction_type: str
+    currency: str
+    amount: float
+    decimals: int
+    from_address: str
+    to_address: str
+
+
+@dataclass
+class FfiTransactionReference:
+    namespace: str | None
+    network_id: str
+    reference: str
+    metadata: FfiTransactionMetadata | None
+
+
+@dataclass
+class FfiWalletCallMetadata:
+    description: str
+    transaction_type: str
+    extra: dict[str, str]
+
+
+@dataclass
+class FfiWalletCall:
+    to: str | None
+    data: str | None
+    value: str | None
+    gas: str | None
+    metadata: FfiWalletCallMetadata | None
+
+
+@dataclass
+class FfiWalletSendCalls:
+    version: str
+    chain_id: str
+    _from: str
+    calls: list[FfiWalletCall]
+    capabilities: dict[str, str] | None
+
+
+@dataclass
+class FfiReply:
+    reference: str
+    reference_inbox_id: str | None
+    content: FfiEncodedContent
+
+
+@dataclass
+class FfiGroupUpdated:
+    pass
+
+
+def _pickle_encode(payload: object) -> bytes:
+    return pickle.dumps(payload)
+
+
+def _pickle_decode(payload: bytes) -> object:
+    return pickle.loads(payload)
+
+
+def _install_fake_xmtp_bindings() -> None:
+    xmtpv3 = types.ModuleType('xmtp_bindings.xmtpv3')
+
+    xmtpv3.FfiContentTypeId = FfiContentTypeId
+    xmtpv3.FfiEncodedContent = FfiEncodedContent
+    xmtpv3.FfiReadReceipt = FfiReadReceipt
+    xmtpv3.FfiReactionAction = FfiReactionAction
+    xmtpv3.FfiReactionSchema = FfiReactionSchema
+    xmtpv3.FfiReactionPayload = FfiReactionPayload
+    xmtpv3.FfiAttachment = FfiAttachment
+    xmtpv3.FfiRemoteAttachment = FfiRemoteAttachment
+    xmtpv3.FfiTransactionMetadata = FfiTransactionMetadata
+    xmtpv3.FfiTransactionReference = FfiTransactionReference
+    xmtpv3.FfiWalletCallMetadata = FfiWalletCallMetadata
+    xmtpv3.FfiWalletCall = FfiWalletCall
+    xmtpv3.FfiWalletSendCalls = FfiWalletSendCalls
+    xmtpv3.FfiReply = FfiReply
+    xmtpv3.FfiGroupUpdated = FfiGroupUpdated
+
+    xmtpv3.encode_text = lambda text: text.encode('utf-8')
+    xmtpv3.decode_text = lambda payload: payload.decode('utf-8')
+    xmtpv3.encode_markdown = lambda text: text.encode('utf-8')
+    xmtpv3.decode_markdown = lambda payload: payload.decode('utf-8')
+
+    xmtpv3.encode_read_receipt = lambda receipt: _pickle_encode(receipt)
+    xmtpv3.decode_read_receipt = lambda payload: FfiReadReceipt()
+
+    xmtpv3.encode_reaction = lambda payload: _pickle_encode(payload)
+    xmtpv3.decode_reaction = lambda payload: _pickle_decode(payload)
+
+    xmtpv3.encode_attachment = lambda payload: _pickle_encode(payload)
+    xmtpv3.decode_attachment = lambda payload: _pickle_decode(payload)
+
+    xmtpv3.encode_remote_attachment = lambda payload: _pickle_encode(payload)
+    xmtpv3.decode_remote_attachment = lambda payload: _pickle_decode(payload)
+
+    xmtpv3.encode_transaction_reference = lambda payload: _pickle_encode(payload)
+    xmtpv3.decode_transaction_reference = lambda payload: _pickle_decode(payload)
+
+    xmtpv3.encode_wallet_send_calls = lambda payload: _pickle_encode(payload)
+    xmtpv3.decode_wallet_send_calls = lambda payload: _pickle_decode(payload)
+
+    xmtpv3.encode_reply = lambda payload: _pickle_encode(payload)
+    xmtpv3.decode_reply = lambda payload: _pickle_decode(payload)
+
+    xmtpv3.decode_group_updated = lambda payload: payload
+
+    xmtp_bindings = types.ModuleType('xmtp_bindings')
+    xmtp_bindings.xmtpv3 = xmtpv3
+
+    sys.modules['xmtp_bindings'] = xmtp_bindings
+    sys.modules['xmtp_bindings.xmtpv3'] = xmtpv3
+
+
+def _ensure_xmtp_bindings() -> None:
+    try:
+        import xmtp_bindings  # noqa: F401
+    except ImportError:
+        _install_fake_xmtp_bindings()
+
+    try:
+        from xmtp_bindings import xmtpv3
+    except ImportError:
+        return
+
+    for module_name in (
+        'xmtp_content_type_group_updated',
+        'xmtp_content_type_reaction',
+        'xmtp_content_type_reply',
+    ):
+        try:
+            module = __import__(module_name, fromlist=['__dict__'])
+        except ImportError:
+            continue
+        setattr(module, 'xmtpv3', xmtpv3)
+
+
+_ensure_xmtp_bindings()
+
+
 class _Bindings(types.SimpleNamespace):
     pass
 
@@ -137,6 +315,7 @@ def fake_bindings(monkeypatch: pytest.MonkeyPatch):
         FfiSyncWorkerMode=FfiSyncWorkerMode,
         FfiReactionAction=FfiReactionAction,
         FfiReactionSchema=FfiReactionSchema,
+        FfiReadReceipt=FfiReadReceipt,
     )
 
     import xmtp.bindings

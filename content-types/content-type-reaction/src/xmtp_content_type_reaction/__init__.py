@@ -15,13 +15,12 @@ from xmtp_content_type_primitives import (
 )
 
 if TYPE_CHECKING:
-    from xmtp_bindings import xmtpv3
+    from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
 
-def _bindings() -> "xmtpv3":
-    from xmtp_bindings import xmtpv3
-
-    return xmtpv3
+def _bindings() -> "xmtpv3":  # pragma: no cover - requires native bindings
+    from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
+    return xmtpv3  # pragma: no cover - requires native bindings
 
 
 ContentTypeReaction = ContentTypeId(

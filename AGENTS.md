@@ -89,6 +89,7 @@ ruff format .               # Formatting
 - Python bindings now use UniFFI via libxmtp `bindings_ffi`; generate in `bindings/python` and keep native libs out of git.
 - `FfiContentTypeId.__str__` is not the canonical content type string; convert to `ContentTypeId` and use its `__str__` for comparisons.
 - CI runners do not ship `libxmtpv3.so`; `xmtp_bindings` raises `ImportError` when the native library is missing, and `xmtp.bindings` provides a stub that tests can monkeypatch.
+- `sdks/python-sdk/tests/conftest.py` installs a fake `xmtp_bindings.xmtpv3` module when native bindings are unavailable so content-type and bindings smoke tests still run.
 
 ## Agent tips
 

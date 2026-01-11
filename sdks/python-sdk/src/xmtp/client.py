@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import os
 from collections.abc import Sequence
 from datetime import datetime, timezone
@@ -78,6 +79,11 @@ class Client:
                 self.register_codec(codec)
 
     def _register_default_codecs(self) -> None:
+        try:
+            import xmtp_bindings  # noqa: F401
+        except ImportError:
+            return
+
         try:
             from xmtp_content_type_group_updated import GroupUpdatedCodec
             from xmtp_content_type_markdown import MarkdownCodec
@@ -273,7 +279,9 @@ class Client:
         if signature_request is None:
             return
 
-        signature_text = await signature_request.signature_text()
+        signature_text = signature_request.signature_text()
+        if inspect.isawaitable(signature_text):
+            signature_text = await signature_text
         signature = await self._signer.sign_message(signature_text.encode())
 
         if self._signer.type == SignerType.SCW:
@@ -348,15 +356,15 @@ class Client:
 
     def _decode_ffi_content(self, content: NativeBindings.FfiDecodedMessageContent) -> object:
         if content.is_TEXT():
-            text_payload = cast(NativeBindings.FfiDecodedMessageContent.TEXT, content)
+            text_payload = cast("NativeBindings.FfiDecodedMessageContent.TEXT", content)
             return text_payload[0].content
         if content.is_MARKDOWN():
-            markdown_payload = cast(NativeBindings.FfiDecodedMessageContent.MARKDOWN, content)
+            markdown_payload = cast("NativeBindings.FfiDecodedMessageContent.MARKDOWN", content)
             return markdown_payload[0].content
         if content.is_REACTION():
             from xmtp_content_type_reaction import Reaction, ReactionAction, ReactionSchema
 
-            reaction_payload = cast(NativeBindings.FfiDecodedMessageContent.REACTION, content)[0]
+            reaction_payload = cast("NativeBindings.FfiDecodedMessageContent.REACTION", content)[0]
             action = (
                 ReactionAction.ADDED
                 if reaction_payload.action == NativeBindings.FfiReactionAction.ADDED
@@ -377,7 +385,7 @@ class Client:
         if content.is_REPLY():
             from xmtp_content_type_reply import Reply
 
-            reply_payload = cast(NativeBindings.FfiDecodedMessageContent.REPLY, content)[0]
+            reply_payload = cast("NativeBindings.FfiDecodedMessageContent.REPLY", content)[0]
             encoded = _encoded_from_ffi(reply_payload.content)
             codec = self.codec_for(encoded.type_id)
             nested_content = (
@@ -393,7 +401,8 @@ class Client:
             from xmtp_content_type_remote_attachment import RemoteAttachment
 
             attachment = cast(
-                NativeBindings.FfiDecodedMessageContent.REMOTE_ATTACHMENT, content
+                "NativeBindings.FfiDecodedMessageContent.REMOTE_ATTACHMENT",
+                content,
             )[0]
             return RemoteAttachment(
                 url=attachment.url,
@@ -414,7 +423,8 @@ class Client:
             )
 
             transaction_payload = cast(
-                NativeBindings.FfiDecodedMessageContent.TRANSACTION_REFERENCE, content
+                "NativeBindings.FfiDecodedMessageContent.TRANSACTION_REFERENCE",
+                content,
             )[0]
             metadata = None
             if transaction_payload.metadata is not None:
@@ -440,7 +450,8 @@ class Client:
             )
 
             wallet_payload = cast(
-                NativeBindings.FfiDecodedMessageContent.WALLET_SEND_CALLS, content
+                "NativeBindings.FfiDecodedMessageContent.WALLET_SEND_CALLS",
+                content,
             )[0]
             calls: list[WalletCall] = []
             for call in wallet_payload.calls:
@@ -468,28 +479,46 @@ class Client:
                 capabilities=wallet_payload.capabilities,
             )
         if content.is_GROUP_UPDATED():
-            group_payload = cast(NativeBindings.FfiDecodedMessageContent.GROUP_UPDATED, content)
+            group_payload = cast(
+                "NativeBindings.FfiDecodedMessageContent.GROUP_UPDATED",
+                content,
+            )
             return group_payload[0]
         if content.is_ATTACHMENT():
             from xmtp_content_type_remote_attachment import Attachment
 
-            attachment = cast(NativeBindings.FfiDecodedMessageContent.ATTACHMENT, content)[0]
+            attachment = cast(
+                "NativeBindings.FfiDecodedMessageContent.ATTACHMENT",
+                content,
+            )[0]
             return Attachment(
                 filename=attachment.filename,
                 mime_type=attachment.mime_type,
                 data=attachment.content,
             )
         if content.is_ACTIONS():
-            actions_payload = cast(NativeBindings.FfiDecodedMessageContent.ACTIONS, content)
+            actions_payload = cast(
+                "NativeBindings.FfiDecodedMessageContent.ACTIONS",
+                content,
+            )
             return actions_payload[0]
         if content.is_INTENT():
-            intent_payload = cast(NativeBindings.FfiDecodedMessageContent.INTENT, content)
+            intent_payload = cast(
+                "NativeBindings.FfiDecodedMessageContent.INTENT",
+                content,
+            )
             return intent_payload[0]
         if content.is_LEAVE_REQUEST():
-            leave_payload = cast(NativeBindings.FfiDecodedMessageContent.LEAVE_REQUEST, content)
+            leave_payload = cast(
+                "NativeBindings.FfiDecodedMessageContent.LEAVE_REQUEST",
+                content,
+            )
             return leave_payload[0]
         if content.is_CUSTOM():
-            custom_payload = cast(NativeBindings.FfiDecodedMessageContent.CUSTOM, content)
+            custom_payload = cast(
+                "NativeBindings.FfiDecodedMessageContent.CUSTOM",
+                content,
+            )
             encoded = custom_payload[0]
             try:
                 decoded = _encoded_from_ffi(encoded)
