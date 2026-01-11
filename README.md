@@ -37,6 +37,30 @@ This is a community project that mirrors the structure and interfaces of the off
 pip install xmtp
 ```
 
+### From source (recommended until PyPI release)
+
+Clone the repo and install into a virtualenv. You must install the bindings
+and content types in the same environment before the SDK:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+
+pip install -e bindings/python
+pip install -e content-types/content-type-primitives
+for pkg in content-types/*; do
+  if [ "$pkg" != "content-types/content-type-primitives" ]; then
+    pip install -e "$pkg"
+  fi
+done
+
+# Choose one SDK:
+pip install -e sdks/python-sdk
+# or:
+pip install -e sdks/agent-sdk
+```
+
 ## Quick start
 
 ### Python SDK

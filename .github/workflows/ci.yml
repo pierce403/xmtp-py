@@ -16,8 +16,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e bindings/python
+          python -m pip install -e content-types/content-type-primitives
           for pkg in content-types/*; do
-            python -m pip install -e "$pkg"
+            if [ "$pkg" != "content-types/content-type-primitives" ]; then
+              python -m pip install -e "$pkg"
+            fi
           done
           python -m pip install -e sdks/python-sdk[dev]
           python -m pip install -e sdks/agent-sdk[dev]
