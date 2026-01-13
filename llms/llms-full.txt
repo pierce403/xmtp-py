@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 6:18 AM UTC / January 11, 2026
+> Generated at: 1:49 PM UTC / January 13, 2026
 > Included Sections:
 > - README.md
 > - sdks/python-sdk/README.md
@@ -148,6 +148,13 @@ async def handle_text(ctx):
 await agent.start()
 ```
 
+## Key management tips
+
+- `create_user()` generates an in-memory key; persist the private key yourself if you want a stable inbox across restarts.
+- Prefer `XMTP_WALLET_KEY` and `XMTP_DB_ENCRYPTION_KEY` in environment variables or a secrets manager; never commit them to git.
+- Use a stable `db_path` and keep the database directory between runs. Losing it creates a new installation and can hit installation limits.
+- For production, wrap a hardware wallet or KMS signer by implementing the `Signer` protocol instead of storing raw keys.
+
 ## LibXMTP bindings
 
 This SDK uses [libxmtp](https://github.com/xmtp/libxmtp) Python bindings for core XMTP functionality including cryptography, networking, and protocol implementation.
@@ -189,6 +196,12 @@ dm = await client.conversations.new_dm('0x...')
 await dm.send('Hello from Python!')
 ```
 
+## Key management tips
+
+- `create_signer()` expects a long-lived private key; store it outside source control.
+- `XMTP_WALLET_KEY` can be used to load a signer from the environment.
+- Keep `XMTP_DB_ENCRYPTION_KEY` and the database path stable to preserve installations.
+
 ### sdks/agent-sdk/README.md
 
 # xmtp-agent-sdk
@@ -213,6 +226,12 @@ async def on_text(ctx):
 
 await agent.start()
 ```
+
+## Key management tips
+
+- `create_user()` generates a fresh private key each run; persist the key if you want a stable inbox.
+- `Agent.create_from_env()` loads `XMTP_WALLET_KEY`; prefer env vars or a secrets manager over hardcoding.
+- Keep your database directory and encryption key stable to avoid spinning up excess installations.
 
 ### docs/index.rst
 
@@ -241,6 +260,13 @@ This documentation is generated from code docstrings.
 
 Python SDK
 ==========
+
+Key management tips
+-------------------
+
+- Store private keys outside source control (env vars or a secrets manager).
+- Keep ``XMTP_DB_ENCRYPTION_KEY`` and your database path stable between runs.
+- Use a custom signer implementation for hardware wallets or KMS.
 
 .. automodule:: xmtp.client
    :members:
@@ -278,6 +304,13 @@ Python SDK
 
 Agent SDK
 =========
+
+Key management tips
+-------------------
+
+- ``create_user()`` generates a new in-memory key; persist it if you want a stable inbox.
+- ``XMTP_WALLET_KEY`` should be provided via env vars or a secrets manager.
+- Preserve the database directory and encryption key to avoid extra installations.
 
 .. automodule:: xmtp_agent.agent
    :members:
@@ -770,7 +803,7 @@ Functions:
 
 Doc: XMTP agent SDK (unofficial).
 
-Exports: Agent, ClientContext, ConversationContext, CommandRouter, MessageContext, create_name_resolver, create_signer, create_user, download_remote_attachment, filter, get_test_url, log_details
+Exports: Agent, ClientContext, ConversationContext, CommandRouter, MessageContext, create_identifier, create_name_resolver, create_signer, create_user, download_remote_attachment, filter, get_installation_info, get_test_url, log_details
 
 ### Module: xmtp_agent.agent
 
@@ -849,10 +882,14 @@ Classes:
 
 Doc: Debug helpers for agent development.
 
-Exports: get_test_url, log_details
+Exports: get_test_url, get_installation_info, log_details, InstallationInfo
+
+Classes:
+- class InstallationInfo: Installation details for an XMTP client.
 
 Functions:
 - get_test_url(client: Client) -> str: Return a URL to test the agent on xmtp.chat.
+- async get_installation_info(client: Client) -> InstallationInfo: Return information about the client's installation state.
 - async log_details(agent: Agent) -> None: Log basic agent details for debugging.
 
 ### Module: xmtp_agent.errors
@@ -915,7 +952,7 @@ Functions:
 
 Doc: User helpers for XMTP agents.
 
-Exports: User, create_user, create_signer
+Exports: User, create_user, create_signer, create_identifier
 
 Classes:
 - class User: User wallet wrapper.
@@ -923,6 +960,7 @@ Classes:
 Functions:
 - create_user(private_key: str | None = None) -> User: Create a user from an optional private key.
 - create_signer(user_or_key: User | str) -> EoaSigner: Create an EOA signer from a user or private key.
+- create_identifier(user: User) -> Identifier: Create an XMTP identifier for a user.
 
 ## Content Types API Reference
 

@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 6:18 AM UTC / January 11, 2026
+> Generated at: 1:49 PM UTC / January 13, 2026
 > Included Sections:
 > - README.md
 > - sdks/python-sdk/README.md
@@ -140,6 +140,13 @@ async def handle_text(ctx):
 await agent.start()
 ```
 
+## Key management tips
+
+- `create_user()` generates an in-memory key; persist the private key yourself if you want a stable inbox across restarts.
+- Prefer `XMTP_WALLET_KEY` and `XMTP_DB_ENCRYPTION_KEY` in environment variables or a secrets manager; never commit them to git.
+- Use a stable `db_path` and keep the database directory between runs. Losing it creates a new installation and can hit installation limits.
+- For production, wrap a hardware wallet or KMS signer by implementing the `Signer` protocol instead of storing raw keys.
+
 ## LibXMTP bindings
 
 This SDK uses [libxmtp](https://github.com/xmtp/libxmtp) Python bindings for core XMTP functionality including cryptography, networking, and protocol implementation.
@@ -181,10 +188,23 @@ dm = await client.conversations.new_dm('0x...')
 await dm.send('Hello from Python!')
 ```
 
+## Key management tips
+
+- `create_signer()` expects a long-lived private key; store it outside source control.
+- `XMTP_WALLET_KEY` can be used to load a signer from the environment.
+- Keep `XMTP_DB_ENCRYPTION_KEY` and the database path stable to preserve installations.
+
 ### docs/python_sdk.rst
 
 Python SDK
 ==========
+
+Key management tips
+-------------------
+
+- Store private keys outside source control (env vars or a secrets manager).
+- Keep ``XMTP_DB_ENCRYPTION_KEY`` and your database path stable between runs.
+- Use a custom signer implementation for hardware wallets or KMS.
 
 .. automodule:: xmtp.client
    :members:

@@ -108,6 +108,13 @@ async def handle_text(ctx):
 await agent.start()
 ```
 
+## Key management tips
+
+- `create_user()` generates an in-memory key; persist the private key yourself if you want a stable inbox across restarts.
+- Prefer `XMTP_WALLET_KEY` and `XMTP_DB_ENCRYPTION_KEY` in environment variables or a secrets manager; never commit them to git.
+- Use a stable `db_path` and keep the database directory between runs. Losing it creates a new installation and can hit installation limits.
+- For production, wrap a hardware wallet or KMS signer by implementing the `Signer` protocol instead of storing raw keys.
+
 ## LibXMTP bindings
 
 This SDK uses [libxmtp](https://github.com/xmtp/libxmtp) Python bindings for core XMTP functionality including cryptography, networking, and protocol implementation.

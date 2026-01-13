@@ -20,3 +20,9 @@ async def on_text(ctx):
 
 await agent.start()
 ```
+
+## Key management tips
+
+- `create_user()` generates a fresh private key each run; persist the key if you want a stable inbox.
+- `Agent.create_from_env()` loads `XMTP_WALLET_KEY`; prefer env vars or a secrets manager over hardcoding.
+- Keep your database directory and encryption key stable to avoid spinning up excess installations.
