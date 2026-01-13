@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import os
+import warnings
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
 
@@ -16,6 +17,7 @@ from xmtp.signers.base import Signer
 from xmtp.types import LogLevel
 
 from xmtp_agent.context import ClientContext, ConversationContext, MessageContext
+from xmtp_agent.debug import get_installation_info
 from xmtp_agent.errors import AgentError, AgentStreamingError
 from xmtp_agent.filters import (
     from_self,
@@ -92,6 +94,17 @@ class Agent:
                 opts.logging_level = LogLevel.WARN
 
         client = await Client.create(signer, opts)
+        info = await get_installation_info(client)
+        if info.total_installations > 1 and info.is_most_recent:
+            warnings.warn(
+                'You have multiple installations. Installation ID '
+                f'"{info.installation_id}" is the most recent. Persist and reload your '
+                'installation data to avoid losing access. If you exceed the installation '
+                'limit, your agent will stop working. See '
+                'https://docs.xmtp.org/agents/build-agents/local-database'
+                '#installation-limits-and-revocation-rules',
+                UserWarning,
+            )
         return cls(client)
 
     @classmethod

@@ -1,6 +1,7 @@
 import pytest
 
-from xmtp_agent.user import create_signer, create_user
+from xmtp.identifiers import IdentifierKind
+from xmtp_agent.user import create_identifier, create_signer, create_user
 
 
 def test_create_user_random() -> None:
@@ -30,6 +31,13 @@ def test_create_signer_from_user() -> None:
 def test_create_signer_from_key_normalizes() -> None:
     signer = create_signer('3' * 64)
     assert signer is not None
+
+
+def test_create_identifier_lowercases() -> None:
+    user = create_user('0x' + 'a' * 64)
+    identifier = create_identifier(user)
+    assert identifier.kind is IdentifierKind.ETHEREUM
+    assert identifier.value == user.address.lower()
 
 
 def test_create_user_invalid_key() -> None:

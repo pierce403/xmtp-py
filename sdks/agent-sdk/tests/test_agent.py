@@ -11,6 +11,7 @@ import pytest
 from xmtp.messages import DecodedMessage
 from xmtp_agent.agent import Agent
 from xmtp_agent.context import MessageContext
+from xmtp_agent.debug import InstallationInfo
 from xmtp_agent.errors import AgentError
 from xmtp.types import ClientOptions, LogLevel
 from xmtp_content_type_group_updated import ContentTypeGroupUpdated
@@ -75,6 +76,15 @@ class _FakeClient:
         self.conversations = conversations
         self.inbox_id = 'self-inbox'
         self.options = type('Options', (), {'env': 'dev'})()
+
+
+async def _fake_installation_info(_client) -> InstallationInfo:
+    return InstallationInfo(
+        total_installations=1,
+        installation_id='install',
+        most_recent_installation_id='install',
+        is_most_recent=True,
+    )
 
 
 @dataclass
@@ -170,6 +180,7 @@ async def test_agent_create_defaults(monkeypatch) -> None:
         return _FakeClient(conversations)
 
     monkeypatch.setattr('xmtp_agent.agent.Client.create', classmethod(fake_create))
+    monkeypatch.setattr('xmtp_agent.agent.get_installation_info', _fake_installation_info)
 
     agent = await Agent.create(object(), ClientOptions())
     assert isinstance(agent, Agent)
@@ -189,6 +200,7 @@ async def test_agent_create_debug_env(monkeypatch) -> None:
     monkeypatch.setenv('XMTP_FORCE_DEBUG', '1')
     monkeypatch.setenv('XMTP_FORCE_DEBUG_LEVEL', 'debug')
     monkeypatch.setattr('xmtp_agent.agent.Client.create', classmethod(fake_create))
+    monkeypatch.setattr('xmtp_agent.agent.get_installation_info', _fake_installation_info)
 
     agent = await Agent.create(object(), ClientOptions())
     assert isinstance(agent, Agent)
@@ -209,6 +221,7 @@ async def test_agent_create_preserves_options_invalid_debug(monkeypatch) -> None
     monkeypatch.setenv('XMTP_FORCE_DEBUG', '1')
     monkeypatch.setenv('XMTP_FORCE_DEBUG_LEVEL', 'invalid')
     monkeypatch.setattr('xmtp_agent.agent.Client.create', classmethod(fake_create))
+    monkeypatch.setattr('xmtp_agent.agent.get_installation_info', _fake_installation_info)
 
     options = ClientOptions(app_version='custom', disable_device_sync=True)
     agent = await Agent.create(object(), options)
@@ -227,9 +240,31 @@ async def test_agent_create_from_env(monkeypatch) -> None:
     monkeypatch.setattr('xmtp_agent.agent.load_signer_from_env', lambda: object())
     monkeypatch.setattr('xmtp_agent.agent.load_client_options_from_env', lambda opts=None: ClientOptions())
     monkeypatch.setattr('xmtp_agent.agent.Client.create', classmethod(fake_create))
+    monkeypatch.setattr('xmtp_agent.agent.get_installation_info', _fake_installation_info)
 
     agent = await Agent.create_from_env()
     assert isinstance(agent, Agent)
+
+
+@pytest.mark.asyncio
+async def test_agent_create_warns_on_multiple_installations(monkeypatch) -> None:
+    async def fake_create(cls, _signer, options):
+        conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
+        return _FakeClient(conversations)
+
+    async def fake_installation_info(_client) -> InstallationInfo:
+        return InstallationInfo(
+            total_installations=2,
+            installation_id='install',
+            most_recent_installation_id='install',
+            is_most_recent=True,
+        )
+
+    monkeypatch.setattr('xmtp_agent.agent.Client.create', classmethod(fake_create))
+    monkeypatch.setattr('xmtp_agent.agent.get_installation_info', fake_installation_info)
+
+    with pytest.warns(UserWarning, match='installation'):
+        await Agent.create(object(), ClientOptions())
 
 
 @pytest.mark.asyncio

@@ -90,6 +90,8 @@ ruff format .               # Formatting
 - `FfiContentTypeId.__str__` is not the canonical content type string; convert to `ContentTypeId` and use its `__str__` for comparisons.
 - CI runners do not ship `libxmtpv3.so`; `xmtp_bindings` raises `ImportError` when the native library is missing, and `xmtp.bindings` provides a stub that tests can monkeypatch.
 - `sdks/python-sdk/tests/conftest.py` installs a fake `xmtp_bindings.xmtpv3` module when native bindings are unavailable so content-type and bindings smoke tests still run.
+- As of 2026-01-13, agent SDK key lifecycle is caller-owned: `create_user()` generates an in-memory key if none provided, `create_signer()` just wraps a key, and `Agent.create_from_env()` only reads `XMTP_WALLET_KEY` without any persistence or rotation helpers.
+- xmtp-js agent-sdk mirrors this: `createUser()`/`createSigner()` are in-memory helpers, `Agent.createFromEnv()` reads `XMTP_WALLET_KEY` (expects 0x hex), and key generation lives in the `xmtp-cli keys` command rather than the SDK.
 
 ## Agent tips
 

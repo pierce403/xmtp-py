@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from eth_account import Account
+from xmtp.identifiers import Identifier, IdentifierKind
 from xmtp.signers import EoaSigner
 from xmtp.signers import create_signer as _create_signer
 from xmtp.utils import is_hex_string
@@ -46,5 +47,10 @@ def create_signer(user_or_key: User | str) -> EoaSigner:
     key = user_or_key.private_key if isinstance(user_or_key, User) else user_or_key
     return _create_signer(_normalize_key(key))
 
+def create_identifier(user: User) -> Identifier:
+    """Create an XMTP identifier for a user."""
 
-__all__ = ['User', 'create_user', 'create_signer']
+    return Identifier(kind=IdentifierKind.ETHEREUM, value=user.address.lower())
+
+
+__all__ = ['User', 'create_user', 'create_signer', 'create_identifier']
