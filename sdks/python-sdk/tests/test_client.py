@@ -495,6 +495,7 @@ async def test_client_build_with_empty_history_sync(fake_bindings) -> None:
     assert client._client is fake_client
     assert len(calls['connect']) == 1
     assert calls['create_client'][1] == 'api'
+    assert calls['create_client'][8] is None
 
 
 def test_client_properties_without_init() -> None:

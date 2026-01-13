@@ -26,3 +26,9 @@ await agent.start()
 - `create_user()` generates a fresh private key each run; persist the key if you want a stable inbox.
 - `Agent.create_from_env()` loads `XMTP_WALLET_KEY`; prefer env vars or a secrets manager over hardcoding.
 - Keep your database directory and encryption key stable to avoid spinning up excess installations.
+
+## Configuration & troubleshooting
+
+Endpoint overrides via env: `XMTP_API_URL`, `XMTP_HISTORY_SYNC_URL`, `XMTP_GATEWAY_HOST`, `XMTP_DISABLE_HISTORY_SYNC=1`.
+
+If you see history sync gRPC errors, set `XMTP_DISABLE_HISTORY_SYNC=1` or pass `history_sync_url=''` in `ClientOptions`.

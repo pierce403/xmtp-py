@@ -8,6 +8,12 @@ Key management tips
 - ``XMTP_WALLET_KEY`` should be provided via env vars or a secrets manager.
 - Preserve the database directory and encryption key to avoid extra installations.
 
+Configuration & troubleshooting
+-------------------------------
+
+- Override endpoints with ``XMTP_API_URL``, ``XMTP_HISTORY_SYNC_URL``, or ``XMTP_GATEWAY_HOST``.
+- Set ``XMTP_DISABLE_HISTORY_SYNC=1`` if the history sync endpoint returns gRPC errors.
+
 .. automodule:: xmtp_agent.agent
    :members:
    :undoc-members:

@@ -36,6 +36,23 @@ def load_client_options_from_env(options: ClientOptions | None = None) -> Client
     if env_value in {'local', 'dev', 'production'}:
         updated.env = cast(XmtpEnv, env_value)
 
+    api_url = os.getenv('XMTP_API_URL')
+    if api_url:
+        updated.api_url = api_url
+
+    history_sync_url = os.getenv('XMTP_HISTORY_SYNC_URL')
+    if history_sync_url is not None:
+        normalized = history_sync_url.strip().lower()
+        if normalized in {'', 'none', 'disable', 'disabled', 'off'}:
+            updated.disable_history_sync = True
+            updated.history_sync_url = None
+        else:
+            updated.history_sync_url = history_sync_url
+
+    gateway_host = os.getenv('XMTP_GATEWAY_HOST')
+    if gateway_host:
+        updated.gateway_host = gateway_host
+
     db_encryption_key = os.getenv('XMTP_DB_ENCRYPTION_KEY')
     if db_encryption_key:
         updated.db_encryption_key = db_encryption_key
@@ -56,6 +73,10 @@ def load_client_options_from_env(options: ClientOptions | None = None) -> Client
         updated.structured_logging = True
         level = _parse_log_level(os.getenv('XMTP_FORCE_DEBUG_LEVEL'))
         updated.logging_level = level or LogLevel.WARN
+
+    if _is_truthy(os.getenv('XMTP_DISABLE_HISTORY_SYNC')):
+        updated.disable_history_sync = True
+        updated.history_sync_url = None
 
     return updated
 

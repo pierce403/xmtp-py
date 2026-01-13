@@ -115,6 +115,17 @@ await agent.start()
 - Use a stable `db_path` and keep the database directory between runs. Losing it creates a new installation and can hit installation limits.
 - For production, wrap a hardware wallet or KMS signer by implementing the `Signer` protocol instead of storing raw keys.
 
+## Configuration & troubleshooting
+
+Endpoint overrides via env:
+- `XMTP_ENV`, `XMTP_API_URL`, `XMTP_HISTORY_SYNC_URL`, `XMTP_GATEWAY_HOST`
+- `XMTP_DISABLE_HISTORY_SYNC=1` to force identity calls through the primary API
+
+Common issues:
+- **Missing `libxmtpv3.so`**: build libxmtp and copy the shared library next to `bindings/python/src/xmtp_bindings/xmtpv3.py` (see `bindings/python/README.md`).
+- **History sync gRPC errors**: set `XMTP_DISABLE_HISTORY_SYNC=1`, or set `XMTP_HISTORY_SYNC_URL` to a working gRPC endpoint. You can also pass `history_sync_url=''` in `ClientOptions`.
+- **Gateway host errors**: `gateway_host` is an advanced setting; only set it when you have a gateway that supports XMTP gRPC.
+
 ## LibXMTP bindings
 
 This SDK uses [libxmtp](https://github.com/xmtp/libxmtp) Python bindings for core XMTP functionality including cryptography, networking, and protocol implementation.

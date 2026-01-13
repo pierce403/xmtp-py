@@ -8,6 +8,12 @@ Key management tips
 - Keep ``XMTP_DB_ENCRYPTION_KEY`` and your database path stable between runs.
 - Use a custom signer implementation for hardware wallets or KMS.
 
+Configuration & troubleshooting
+-------------------------------
+
+- Override endpoints with ``XMTP_API_URL``, ``XMTP_HISTORY_SYNC_URL``, or ``XMTP_GATEWAY_HOST``.
+- Set ``XMTP_DISABLE_HISTORY_SYNC=1`` if the history sync endpoint returns gRPC errors.
+
 .. automodule:: xmtp.client
    :members:
    :undoc-members:

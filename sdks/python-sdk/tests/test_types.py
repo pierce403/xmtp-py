@@ -16,3 +16,10 @@ def test_client_options_resolve_urls() -> None:
     options.history_sync_url = 'https://history'
     assert options.resolved_api_url() == 'https://custom'
     assert options.resolved_history_sync_url() == 'https://history'
+
+
+def test_client_options_disable_history_sync() -> None:
+    options = ClientOptions(env='local', disable_history_sync=True)
+    assert options.resolved_history_sync_url() is None
+    options.history_sync_url = 'https://history'
+    assert options.resolved_history_sync_url() is None

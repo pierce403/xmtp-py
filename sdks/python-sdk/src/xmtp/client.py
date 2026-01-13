@@ -172,6 +172,7 @@ class Client:
             )
         else:
             sync_api = api
+            history_sync_url = None
 
         ffi_identifier = _identifier_to_ffi(identifier)
         inbox_id = await NativeBindings.get_inbox_id_for_identifier(api, ffi_identifier)

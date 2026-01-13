@@ -8,6 +8,9 @@ from xmtp.types import ClientOptions, LogLevel
 
 def test_load_client_options_from_env(monkeypatch, tmp_path) -> None:
     monkeypatch.setenv('XMTP_ENV', 'production')
+    monkeypatch.setenv('XMTP_API_URL', 'https://api.example')
+    monkeypatch.setenv('XMTP_HISTORY_SYNC_URL', 'https://history.example')
+    monkeypatch.setenv('XMTP_GATEWAY_HOST', 'gateway.example')
     monkeypatch.setenv('XMTP_DB_ENCRYPTION_KEY', '0xdeadbeef')
     monkeypatch.setenv('XMTP_DB_DIRECTORY', str(tmp_path))
     monkeypatch.setenv('XMTP_FORCE_DEBUG', '1')
@@ -16,6 +19,9 @@ def test_load_client_options_from_env(monkeypatch, tmp_path) -> None:
     options = load_client_options_from_env(ClientOptions())
 
     assert options.env == 'production'
+    assert options.api_url == 'https://api.example'
+    assert options.history_sync_url == 'https://history.example'
+    assert options.gateway_host == 'gateway.example'
     assert options.db_encryption_key == '0xdeadbeef'
     assert options.debug_events_enabled is True
     assert options.structured_logging is True
@@ -47,6 +53,19 @@ def test_load_client_options_invalid_debug_level(monkeypatch) -> None:
     monkeypatch.setenv('XMTP_FORCE_DEBUG_LEVEL', 'invalid')
     options = load_client_options_from_env(ClientOptions(env='dev'))
     assert options.logging_level == LogLevel.WARN
+
+
+def test_load_client_options_disable_history_sync(monkeypatch) -> None:
+    monkeypatch.setenv('XMTP_HISTORY_SYNC_URL', 'disabled')
+    options = load_client_options_from_env(ClientOptions(env='dev'))
+    assert options.disable_history_sync is True
+    assert options.resolved_history_sync_url() is None
+
+    monkeypatch.setenv('XMTP_HISTORY_SYNC_URL', 'https://history.example')
+    monkeypatch.setenv('XMTP_DISABLE_HISTORY_SYNC', '1')
+    options = load_client_options_from_env(ClientOptions(env='dev'))
+    assert options.disable_history_sync is True
+    assert options.history_sync_url is None
 
 
 def test_is_truthy() -> None:

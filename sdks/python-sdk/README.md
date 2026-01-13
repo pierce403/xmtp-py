@@ -23,3 +23,9 @@ await dm.send('Hello from Python!')
 - `create_signer()` expects a long-lived private key; store it outside source control.
 - `XMTP_WALLET_KEY` can be used to load a signer from the environment.
 - Keep `XMTP_DB_ENCRYPTION_KEY` and the database path stable to preserve installations.
+
+## Configuration & troubleshooting
+
+Endpoint overrides via env: `XMTP_API_URL`, `XMTP_HISTORY_SYNC_URL`, `XMTP_GATEWAY_HOST`, `XMTP_DISABLE_HISTORY_SYNC=1`.
+
+If you see history sync gRPC errors, set `XMTP_DISABLE_HISTORY_SYNC=1` or pass `history_sync_url=''` in `ClientOptions`.
