@@ -122,7 +122,7 @@ Endpoint overrides via env:
 - `XMTP_DISABLE_HISTORY_SYNC=1` to force identity calls through the primary API
 
 Common issues:
-- **Missing `libxmtpv3.so`**: build libxmtp and copy the shared library next to `bindings/python/src/xmtp_bindings/xmtpv3.py` (see `bindings/python/README.md`).
+- **Missing `libxmtpv3.so`**: install will build it automatically, but you need Rust (`cargo`) and `git`. See `bindings/python/README.md` for overrides.
 - **History sync gRPC errors**: set `XMTP_DISABLE_HISTORY_SYNC=1`, or set `XMTP_HISTORY_SYNC_URL` to a working gRPC endpoint. You can also pass `history_sync_url=''` in `ClientOptions`.
 - **Gateway host errors**: `gateway_host` is an advanced setting; only set it when you have a gateway that supports XMTP gRPC.
 
