@@ -15,9 +15,9 @@ dependencies = []
 package-dir = {"" = "src"}
 
 [tool.setuptools.cmdclass]
-build_py = "xmtp_bindings.build:BuildPy"
-build_ext = "xmtp_bindings.build:BuildExt"
-develop = "xmtp_bindings.build:Develop"
+build_py = "xmtp_bindings.build.BuildPy"
+build_ext = "xmtp_bindings.build.BuildExt"
+develop = "xmtp_bindings.build.Develop"
 
 [tool.setuptools.packages.find]
 where = ["src"]
