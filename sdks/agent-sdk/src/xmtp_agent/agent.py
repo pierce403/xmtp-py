@@ -104,6 +104,7 @@ class Agent:
                 'https://docs.xmtp.org/agents/build-agents/local-database'
                 '#installation-limits-and-revocation-rules',
                 UserWarning,
+                stacklevel=2,
             )
         return cls(client)
 
