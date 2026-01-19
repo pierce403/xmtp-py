@@ -80,3 +80,14 @@ async def test_get_installation_info_missing_ids() -> None:
     assert info.installation_id is None
     assert info.most_recent_installation_id is None
     assert info.is_most_recent is False
+
+
+@pytest.mark.asyncio
+async def test_get_installation_info_missing_timestamp() -> None:
+    installations = [_Installation(b'\x01', None)]
+    client = _Client(installations=installations, installation_id=b'\x01')
+    info = await get_installation_info(client)
+    assert info.total_installations == 1
+    assert info.installation_id == '01'
+    assert info.most_recent_installation_id == '01'
+    assert info.is_most_recent is True

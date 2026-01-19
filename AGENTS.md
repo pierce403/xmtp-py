@@ -96,6 +96,7 @@ ruff format .               # Formatting
 - History sync can be disabled via `ClientOptions.disable_history_sync` or `XMTP_DISABLE_HISTORY_SYNC`; endpoint overrides via `XMTP_API_URL`, `XMTP_HISTORY_SYNC_URL`, and `XMTP_GATEWAY_HOST`.
 - `xmtp-bindings` now builds libxmtp during install via setuptools cmdclasses; requires `cargo` + `git` and honors `XMTP_LIBXMTP_*` env overrides.
 - `bindings/python/pyproject.toml` cmdclass entries must use dotted paths (e.g., `xmtp_bindings.build.BuildPy`), not `module:Class`.
+- Coverage omits `xmtp_bindings/build.py` because it is an install-time helper that is hard to exercise in unit tests.
 
 ## Agent tips
 
