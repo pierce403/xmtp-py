@@ -108,6 +108,7 @@ ruff format .               # Formatting
 - CIBW aarch64 manylinux builds on GitHub Ubuntu runners can fail with `exec format error` unless QEMU/binfmt is set up; limit `CIBW_ARCHS_LINUX` or add QEMU.
 - macOS x86_64 wheel builds on arm64 runners can fail delocate’s arch check; limit `CIBW_ARCHS_MACOS` or set up proper cross-builds/universal2.
 - PyPI trusted publishing requires the GitHub Actions environment to match the configured publisher; missing/mismatched environment triggers `invalid-publisher` during publish.
+- PyPI OIDC uploads cannot create new projects; the first release for each distribution must be created with a user/token or an existing project.
 
 ## Agent tips
 
