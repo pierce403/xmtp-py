@@ -81,6 +81,37 @@ def _select_built_library(target_dir: Path) -> Path:
     raise FileNotFoundError(f"libxmtp build output not found in {target_dir}")
 
 
+def _generate_bindings(
+    libxmtp_dir: Path,
+    built_library: Path,
+    package_dir: Path,
+    announce: Callable[[str], None],
+) -> None:
+    bindings_dir = libxmtp_dir / "bindings_ffi"
+    if not bindings_dir.exists():
+        raise FileNotFoundError(f"bindings_ffi not found in {libxmtp_dir}")
+    announce("Regenerating UniFFI Python bindings from libxmtp...")
+    _run(
+        [
+            "cargo",
+            "run",
+            "--bin",
+            "ffi-uniffi-bindgen",
+            "--release",
+            "--features",
+            "uniffi/cli",
+            "generate",
+            "--library",
+            str(built_library),
+            "--out-dir",
+            str(package_dir),
+            "--language",
+            "python",
+        ],
+        cwd=bindings_dir,
+    )
+
+
 def _ensure_libxmtp(announce: Callable[[str], None]) -> None:
     if _is_truthy(os.getenv("XMTP_BINDINGS_SKIP_BUILD")):
         announce("Skipping libxmtp build (XMTP_BINDINGS_SKIP_BUILD set).")
@@ -127,6 +158,7 @@ def _ensure_libxmtp(announce: Callable[[str], None]) -> None:
     _run(["cargo", "build", "-p", "xmtpv3", "--release"], cwd=libxmtp_dir)
 
     built = _select_built_library(libxmtp_dir / "target" / "release")
+    _generate_bindings(libxmtp_dir, built, package_dir, announce)
     destination = package_dir / built.name
     shutil.copy2(built, destination)
     announce(f"Copied {built.name} to {destination}")

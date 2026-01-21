@@ -17,6 +17,10 @@ Environment overrides:
 - `XMTP_BINDINGS_SKIP_BUILD=1`: skip native build (requires a prebuilt `libxmtpv3` next to `xmtpv3.py`)
 - `XMTP_BINDINGS_FORCE_BUILD=1`: rebuild even if a native library already exists
 
+During builds, the UniFFI Python bindings (`xmtpv3.py`) are regenerated from the
+same libxmtp checkout used to build the native library to keep the wrapper and
+shared library in sync.
+
 ## Manual build
 
 These bindings are generated from the `libxmtp` Rust workspace. To regenerate manually:
