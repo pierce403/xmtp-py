@@ -44,11 +44,12 @@ def backoff_reconnect(
             await next_handler(error)
             return
 
-        if last_error_at is not None and (time.monotonic() - last_error_at) > reset_after:
+        now = time.monotonic()
+        if last_error_at is not None and (now - last_error_at) > reset_after:
             delay = initial_delay
 
         await asyncio.sleep(delay)
-        last_error_at = time.monotonic()
+        last_error_at = now
         delay = min(max_delay, delay * multiplier)
         await next_handler(None)
 

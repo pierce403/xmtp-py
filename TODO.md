@@ -12,6 +12,7 @@ Add new work items below as needed.
 - [x] Address ruff UP037 forward-reference cleanup and missing Any import in content-type reply/group-updated
 - [x] Add Protocol __init__ signatures + casted binding modules to satisfy mypy for content-type FFI helpers
 - [x] Fix mypy no-any-return in agent attachment fetch
+- [x] Stabilize backoff reconnect timing + add tests to cover error/recipient branches for 100% coverage
 
 ## PyPI release checklist
 

@@ -17,6 +17,12 @@ class _InboxState:
         self.account_identities = []
 
 
+class _InboxStateNoRecovery:
+    def __init__(self, address: str) -> None:
+        self.recovery_identity = None
+        self.account_identities = [_Identity(address)]
+
+
 class _Preferences:
     def __init__(self, inbox_state: object | None = None) -> None:
         self._inbox_state = inbox_state
@@ -76,6 +82,16 @@ async def test_resolve_recipient_inbox_id_no_address() -> None:
     assert resolved.inbox_id == inbox_id
     assert resolved.address is None
 
+
+@pytest.mark.asyncio
+async def test_resolve_recipient_inbox_id_no_recovery_identity() -> None:
+    inbox_id = '9' * 64
+    address = '0x' + 'a' * 40
+    client = _Client(inbox_state=_InboxStateNoRecovery(address))
+
+    resolved = await resolve_recipient(client, inbox_id)
+    assert resolved.inbox_id == inbox_id
+    assert resolved.address == address
 
 @pytest.mark.asyncio
 async def test_resolve_recipient_address() -> None:

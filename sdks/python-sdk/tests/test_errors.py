@@ -2,8 +2,9 @@ from xmtp.errors import (
     AccountAlreadyAssociatedError,
     ClientNotInitializedError,
     CodecNotFoundError,
-    InvalidGroupMembershipChangeError,
+    DatabaseOpenError,
     InboxReassignError,
+    InvalidGroupMembershipChangeError,
     MissingContentTypeError,
     NotImplementedXmtpError,
     SignerUnavailableError,
@@ -24,3 +25,12 @@ def test_error_messages() -> None:
     assert 'Stream retry attempts' in str(StreamInvalidRetryAttemptsError())
     assert isinstance(NotImplementedXmtpError(), Exception)
     assert 'Invalid group membership change' in str(InvalidGroupMembershipChangeError('msg'))
+
+
+def test_database_open_error_without_optional_details() -> None:
+    error = DatabaseOpenError(None)
+    message = str(error)
+
+    assert 'Failed to open the local XMTP database.' in message
+    assert 'Path:' not in message
+    assert 'Root error:' not in message
