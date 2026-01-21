@@ -29,6 +29,7 @@ Add new work items below as needed.
 - [x] Temporarily limit Linux wheels to x86_64 to avoid aarch64 exec format errors
 - [x] Temporarily limit macOS wheels to arm64 to avoid delocate arch mismatch on x86_64
 - [x] Add `publish` job environment to align with PyPI trusted publisher claims
+- [x] Set PyPI publish `skip-existing` to handle retries after partial uploads
 
 ## PyPI release checklist
 

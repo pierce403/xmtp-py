@@ -109,6 +109,7 @@ ruff format .               # Formatting
 - macOS x86_64 wheel builds on arm64 runners can fail delocate’s arch check; limit `CIBW_ARCHS_MACOS` or set up proper cross-builds/universal2.
 - PyPI trusted publishing requires the GitHub Actions environment to match the configured publisher; missing/mismatched environment triggers `invalid-publisher` during publish.
 - PyPI OIDC uploads cannot create new projects; the first release for each distribution must be created with a user/token or an existing project.
+- When re-tagging the same version after partial PyPI uploads, set `skip-existing: true` in the publish action to avoid file-name reuse errors.
 
 ## Agent tips
 
