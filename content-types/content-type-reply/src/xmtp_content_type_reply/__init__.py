@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -14,6 +14,15 @@ from xmtp_content_type_primitives import (
 
 
 class _FfiContentTypeId(Protocol):
+    def __init__(
+        self,
+        *,
+        authority_id: str,
+        type_id: str,
+        version_major: int,
+        version_minor: int,
+    ) -> None: ...
+
     authority_id: str
     type_id: str
     version_major: int
@@ -21,6 +30,16 @@ class _FfiContentTypeId(Protocol):
 
 
 class _FfiEncodedContent(Protocol):
+    def __init__(
+        self,
+        *,
+        type_id: _FfiContentTypeId,
+        parameters: dict[str, str],
+        fallback: str | None,
+        compression: int | None,
+        content: bytes,
+    ) -> None: ...
+
     type_id: _FfiContentTypeId | None
     parameters: dict[str, str]
     fallback: str | None
@@ -29,6 +48,14 @@ class _FfiEncodedContent(Protocol):
 
 
 class _FfiReply(Protocol):
+    def __init__(
+        self,
+        *,
+        reference: str,
+        reference_inbox_id: str | None,
+        content: _FfiEncodedContent,
+    ) -> None: ...
+
     reference: str
     reference_inbox_id: str | None
     content: _FfiEncodedContent
@@ -47,7 +74,7 @@ class _Bindings(Protocol):
 def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
-    return xmtpv3  # pragma: no cover - requires native bindings
+    return cast(_Bindings, xmtpv3)  # pragma: no cover - requires native bindings
 
 
 ContentTypeReply = ContentTypeId(

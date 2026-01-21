@@ -10,6 +10,8 @@ Add new work items below as needed.
 - [x] Replace `Any` annotations in content-type `_bindings` helpers with Protocols to satisfy ruff ANN401
 - [x] Fix import ordering in content-type modules flagged by ruff
 - [x] Address ruff UP037 forward-reference cleanup and missing Any import in content-type reply/group-updated
+- [x] Add Protocol __init__ signatures + casted binding modules to satisfy mypy for content-type FFI helpers
+- [x] Fix mypy no-any-return in agent attachment fetch
 
 ## PyPI release checklist
 

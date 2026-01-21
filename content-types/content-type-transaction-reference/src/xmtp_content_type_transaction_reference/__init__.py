@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Protocol, cast
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -14,6 +14,17 @@ from xmtp_content_type_primitives import (
 
 
 class _FfiTransactionMetadata(Protocol):
+    def __init__(
+        self,
+        *,
+        transaction_type: str,
+        currency: str,
+        amount: float,
+        decimals: int,
+        from_address: str,
+        to_address: str,
+    ) -> None: ...
+
     transaction_type: str
     currency: str
     amount: float
@@ -23,6 +34,15 @@ class _FfiTransactionMetadata(Protocol):
 
 
 class _FfiTransactionReference(Protocol):
+    def __init__(
+        self,
+        *,
+        namespace: str | None,
+        network_id: str,
+        reference: str,
+        metadata: _FfiTransactionMetadata | None,
+    ) -> None: ...
+
     namespace: str | None
     network_id: str
     reference: str
@@ -41,7 +61,7 @@ class _Bindings(Protocol):
 def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
-    return xmtpv3  # pragma: no cover - requires native bindings
+    return cast(_Bindings, xmtpv3)  # pragma: no cover - requires native bindings
 
 
 ContentTypeTransactionReference = ContentTypeId(

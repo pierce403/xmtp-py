@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Protocol
+from typing import Protocol, cast
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -27,6 +27,16 @@ class _FfiReactionSchema(Protocol):
 
 
 class _FfiReactionPayload(Protocol):
+    def __init__(
+        self,
+        *,
+        reference: str,
+        reference_inbox_id: str,
+        action: object,
+        content: str,
+        schema: object,
+    ) -> None: ...
+
     reference: str
     reference_inbox_id: str
     action: object
@@ -35,8 +45,8 @@ class _FfiReactionPayload(Protocol):
 
 
 class _Bindings(Protocol):
-    FfiReactionAction: _FfiReactionAction
-    FfiReactionSchema: _FfiReactionSchema
+    FfiReactionAction: type[_FfiReactionAction]
+    FfiReactionSchema: type[_FfiReactionSchema]
     FfiReactionPayload: type[_FfiReactionPayload]
 
     def encode_reaction(self, payload: _FfiReactionPayload) -> bytes: ...
@@ -47,7 +57,7 @@ class _Bindings(Protocol):
 def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
-    return xmtpv3  # pragma: no cover - requires native bindings
+    return cast(_Bindings, xmtpv3)  # pragma: no cover - requires native bindings
 
 
 ContentTypeReaction = ContentTypeId(

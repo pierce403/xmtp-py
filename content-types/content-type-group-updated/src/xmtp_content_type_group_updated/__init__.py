@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Protocol, TypeAlias
+from typing import TYPE_CHECKING, Protocol, TypeAlias, cast
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -26,7 +26,7 @@ class _Bindings(Protocol):
 def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
-    return xmtpv3  # pragma: no cover - requires native bindings
+    return cast(_Bindings, xmtpv3)  # pragma: no cover - requires native bindings
 
 
 ContentTypeGroupUpdated = ContentTypeId(

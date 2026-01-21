@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
-from typing import Protocol
+from typing import Protocol, cast
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -15,12 +15,30 @@ from xmtp_content_type_primitives import (
 
 
 class _FfiWalletCallMetadata(Protocol):
+    def __init__(
+        self,
+        *,
+        description: str,
+        transaction_type: str,
+        extra: dict[str, str],
+    ) -> None: ...
+
     description: str
     transaction_type: str
     extra: dict[str, str]
 
 
 class _FfiWalletCall(Protocol):
+    def __init__(
+        self,
+        *,
+        to: str | None,
+        data: str | None,
+        value: str | None,
+        gas: str | None,
+        metadata: _FfiWalletCallMetadata | None,
+    ) -> None: ...
+
     to: str | None
     data: str | None
     value: str | None
@@ -29,6 +47,16 @@ class _FfiWalletCall(Protocol):
 
 
 class _FfiWalletSendCalls(Protocol):
+    def __init__(
+        self,
+        *,
+        version: str,
+        chain_id: str,
+        _from: str,
+        calls: list[_FfiWalletCall],
+        capabilities: dict[str, str] | None,
+    ) -> None: ...
+
     version: str
     chain_id: str
     _from: str
@@ -49,7 +77,7 @@ class _Bindings(Protocol):
 def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
-    return xmtpv3  # pragma: no cover - requires native bindings
+    return cast(_Bindings, xmtpv3)  # pragma: no cover - requires native bindings
 
 
 ContentTypeWalletSendCalls = ContentTypeId(

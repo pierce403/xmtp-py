@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Protocol, cast
 from urllib.parse import urlparse
 
 from xmtp_content_type_primitives import (
@@ -15,12 +15,27 @@ from xmtp_content_type_primitives import (
 
 
 class _FfiAttachment(Protocol):
+    def __init__(self, *, filename: str | None, mime_type: str, content: bytes) -> None: ...
+
     filename: str | None
     mime_type: str
     content: bytes
 
 
 class _FfiRemoteAttachment(Protocol):
+    def __init__(
+        self,
+        *,
+        url: str,
+        content_digest: str,
+        secret: bytes,
+        salt: bytes,
+        nonce: bytes,
+        scheme: str,
+        content_length: int,
+        filename: str | None,
+    ) -> None: ...
+
     url: str
     content_digest: str
     secret: bytes
@@ -47,7 +62,7 @@ class _Bindings(Protocol):
 def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
-    return xmtpv3  # pragma: no cover - requires native bindings
+    return cast(_Bindings, xmtpv3)  # pragma: no cover - requires native bindings
 
 
 ContentTypeAttachment = ContentTypeId(

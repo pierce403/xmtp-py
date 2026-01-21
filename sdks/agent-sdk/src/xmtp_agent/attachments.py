@@ -24,7 +24,7 @@ async def download_remote_attachment(remote_attachment: RemoteAttachment) -> byt
                 raise ValueError(
                     f"Unable to fetch remote attachment: {response.status} {response.reason}"
                 )
-            return response.read()
+            return cast(bytes, response.read())
 
     payload = cast(bytes, await asyncio.to_thread(fetch))
     digest = _sha256_hex(payload)
