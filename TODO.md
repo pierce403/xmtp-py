@@ -15,6 +15,7 @@ Add new work items below as needed.
 - [x] Stabilize backoff reconnect timing + add tests to cover error/recipient branches for 100% coverage
 - [x] Make backoff reconnect time mock infinite to avoid StopIteration during teardown
 - [x] Regenerate llms reference files after API/type updates
+- [x] Make CI coverage artifact name unique per OS to avoid upload conflicts
 
 ## PyPI release checklist
 
