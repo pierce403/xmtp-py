@@ -182,9 +182,7 @@ class Conversations:
 
         self_outer = self
         callback = Callback()
-        stream: AsyncStream[
-            Conversation | NativeBindings.FfiSubscribeError
-        ] = AsyncStream(queue)
+        stream: AsyncStream[Conversation | NativeBindings.FfiSubscribeError] = AsyncStream(queue)
 
         async def start() -> None:
             closer = await self._ensure().stream(callback)
@@ -224,9 +222,9 @@ class Conversations:
                 loop.call_soon_threadsafe(stream._end)
 
         callback = Callback()
-        stream: AsyncStream[
-            DecodedMessage[object] | NativeBindings.FfiSubscribeError
-        ] = AsyncStream(queue)
+        stream: AsyncStream[DecodedMessage[object] | NativeBindings.FfiSubscribeError] = (
+            AsyncStream(queue)
+        )
 
         async def start() -> None:
             closer = await self._ensure().stream_all_messages(callback, None)

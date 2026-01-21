@@ -37,7 +37,7 @@ class EoaSigner(Signer):
     async def get_chain_id(self) -> int:
         """Return the chain ID (not applicable for EOA)."""
 
-        raise ValueError('EOA signer does not support chain_id')
+        raise ValueError("EOA signer does not support chain_id")
 
     async def get_block_number(self) -> int | None:
         """Return block number (not applicable for EOA)."""

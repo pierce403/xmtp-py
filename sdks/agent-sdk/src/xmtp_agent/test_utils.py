@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Generic, Iterable, TypeVar
+from typing import Any, Generic, TypeVar
 
 from xmtp.async_stream import AsyncStream
 from xmtp.messages import DecodedMessage
 from xmtp_content_type_text import ContentTypeText
 
-ContentT = TypeVar('ContentT')
+ContentT = TypeVar("ContentT")
 
 
 @dataclass(slots=True)
@@ -24,14 +25,14 @@ class _MessageOverrides(Generic[ContentT]):
     content: ContentT | None = None
 
 
-def create_mock_message(content: ContentT, **overrides: Any) -> DecodedMessage[ContentT]:
+def create_mock_message(content: ContentT, **overrides: object) -> DecodedMessage[ContentT]:
     """Create a decoded message with sensible defaults for tests."""
 
     opts = _MessageOverrides[ContentT](content=content, **overrides)
     return DecodedMessage(
-        id=opts.id or b'mock-message-id',
-        conversation_id=opts.conversation_id or b'test-conversation-id',
-        sender_inbox_id=opts.sender_inbox_id or 'sender-inbox-id',
+        id=opts.id or b"mock-message-id",
+        conversation_id=opts.conversation_id or b"test-conversation-id",
+        sender_inbox_id=opts.sender_inbox_id or "sender-inbox-id",
         sent_at=opts.sent_at or datetime.now(tz=timezone.utc),
         content=content,
         content_type_id=opts.content_type_id or str(ContentTypeText),
@@ -62,12 +63,12 @@ def serialize_message(message: DecodedMessage[Any]) -> dict[str, Any]:
     """Serialize a decoded message to a JSON-friendly dict."""
 
     return {
-        'id': message.id.hex(),
-        'conversation_id': message.conversation_id.hex(),
-        'sender_inbox_id': message.sender_inbox_id,
-        'sent_at': message.sent_at.isoformat(),
-        'content': message.content,
-        'content_type_id': message.content_type_id,
+        "id": message.id.hex(),
+        "conversation_id": message.conversation_id.hex(),
+        "sender_inbox_id": message.sender_inbox_id,
+        "sent_at": message.sent_at.isoformat(),
+        "content": message.content,
+        "content_type_id": message.content_type_id,
     }
 
 
@@ -75,12 +76,12 @@ def deserialize_message(payload: dict[str, Any]) -> DecodedMessage[Any]:
     """Deserialize a decoded message from a JSON-friendly dict."""
 
     return DecodedMessage(
-        id=bytes.fromhex(payload['id']),
-        conversation_id=bytes.fromhex(payload['conversation_id']),
-        sender_inbox_id=payload['sender_inbox_id'],
-        sent_at=datetime.fromisoformat(payload['sent_at']),
-        content=payload['content'],
-        content_type_id=payload.get('content_type_id'),
+        id=bytes.fromhex(payload["id"]),
+        conversation_id=bytes.fromhex(payload["conversation_id"]),
+        sender_inbox_id=payload["sender_inbox_id"],
+        sent_at=datetime.fromisoformat(payload["sent_at"]),
+        content=payload["content"],
+        content_type_id=payload.get("content_type_id"),
     )
 
 
@@ -114,11 +115,11 @@ async def flush_asyncio() -> None:
 
 
 __all__ = [
-    'MockAsyncStream',
-    'create_mock_message',
-    'deserialize_message',
-    'flush_asyncio',
-    'record_messages',
-    'replay_messages',
-    'serialize_message',
+    "MockAsyncStream",
+    "create_mock_message",
+    "deserialize_message",
+    "flush_asyncio",
+    "record_messages",
+    "replay_messages",
+    "serialize_message",
 ]

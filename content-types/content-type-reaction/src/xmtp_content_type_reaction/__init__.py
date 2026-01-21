@@ -18,28 +18,29 @@ if TYPE_CHECKING:
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
 
-def _bindings() -> "xmtpv3":  # pragma: no cover - requires native bindings
+def _bindings() -> xmtpv3:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
+
     return xmtpv3  # pragma: no cover - requires native bindings
 
 
 ContentTypeReaction = ContentTypeId(
-    authority_id='xmtp.org',
-    type_id='reaction',
+    authority_id="xmtp.org",
+    type_id="reaction",
     version_major=1,
     version_minor=0,
 )
 
 
 class ReactionAction(str, Enum):
-    ADDED = 'added'
-    REMOVED = 'removed'
+    ADDED = "added"
+    REMOVED = "removed"
 
 
 class ReactionSchema(str, Enum):
-    UNICODE = 'unicode'
-    SHORTCODE = 'shortcode'
-    CUSTOM = 'custom'
+    UNICODE = "unicode"
+    SHORTCODE = "shortcode"
+    CUSTOM = "custom"
 
 
 @dataclass(slots=True)
@@ -71,7 +72,7 @@ class ReactionCodec(ContentCodec[Reaction]):
         }[content.schema]
         payload = _bindings().FfiReactionPayload(
             reference=content.reference,
-            reference_inbox_id=content.reference_inbox_id or '',
+            reference_inbox_id=content.reference_inbox_id or "",
             action=ffi_action,
             content=content.content,
             schema=ffi_schema,
@@ -83,33 +84,35 @@ class ReactionCodec(ContentCodec[Reaction]):
         decoded_text: str | None = None
         if isinstance(content.content, (bytes, bytearray)):
             try:
-                decoded_text = bytes(content.content).decode('utf-8')
+                decoded_text = bytes(content.content).decode("utf-8")
             except UnicodeDecodeError:
                 decoded_text = None
 
         if decoded_text:
             try:
                 payload = json.loads(decoded_text)
-                reference_inbox_id = payload.get('referenceInboxId', payload.get('reference_inbox_id'))
+                reference_inbox_id = payload.get(
+                    "referenceInboxId", payload.get("reference_inbox_id")
+                )
                 return Reaction(
-                    reference=payload['reference'],
+                    reference=payload["reference"],
                     reference_inbox_id=reference_inbox_id,
-                    action=ReactionAction(payload['action']),
-                    content=payload['content'],
-                    schema=ReactionSchema(payload['schema']),
+                    action=ReactionAction(payload["action"]),
+                    content=payload["content"],
+                    schema=ReactionSchema(payload["schema"]),
                 )
             except (ValueError, KeyError, TypeError):
                 pass
 
         if decoded_text is not None:
             params = content.parameters
-            if 'action' in params and 'reference' in params and 'schema' in params:
+            if "action" in params and "reference" in params and "schema" in params:
                 return Reaction(
-                    reference=params['reference'],
+                    reference=params["reference"],
                     reference_inbox_id=None,
-                    action=ReactionAction(params['action']),
+                    action=ReactionAction(params["action"]),
                     content=decoded_text,
-                    schema=ReactionSchema(params['schema']),
+                    schema=ReactionSchema(params["schema"]),
                 )
 
         payload = _bindings().decode_reaction(content.content)
@@ -144,4 +147,4 @@ class ReactionCodec(ContentCodec[Reaction]):
         return False
 
 
-__all__ = ['ContentTypeReaction', 'Reaction', 'ReactionAction', 'ReactionSchema', 'ReactionCodec']
+__all__ = ["ContentTypeReaction", "Reaction", "ReactionAction", "ReactionSchema", "ReactionCodec"]

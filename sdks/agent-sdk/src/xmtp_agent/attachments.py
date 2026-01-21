@@ -17,19 +17,19 @@ async def download_remote_attachment(remote_attachment: RemoteAttachment) -> byt
     """Download a remote attachment and verify its digest."""
 
     def fetch() -> bytes:
-        request = Request(remote_attachment.url, method='GET')
+        request = Request(remote_attachment.url, method="GET")
         with urlopen(request, timeout=30) as response:
             if response.status >= 400:
                 raise ValueError(
-                    f'Unable to fetch remote attachment: {response.status} {response.reason}'
+                    f"Unable to fetch remote attachment: {response.status} {response.reason}"
                 )
             return response.read()
 
     payload = await asyncio.to_thread(fetch)
     digest = _sha256_hex(payload)
     if digest.lower() != remote_attachment.content_digest.lower():
-        raise ValueError('Remote attachment digest does not match payload')
+        raise ValueError("Remote attachment digest does not match payload")
     return payload
 
 
-__all__ = ['download_remote_attachment']
+__all__ = ["download_remote_attachment"]

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
+
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
@@ -16,21 +17,22 @@ if TYPE_CHECKING:
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
 
-def _bindings() -> "xmtpv3":  # pragma: no cover - requires native bindings
+def _bindings() -> xmtpv3:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
+
     return xmtpv3  # pragma: no cover - requires native bindings
 
 
 ContentTypeAttachment = ContentTypeId(
-    authority_id='xmtp.org',
-    type_id='attachment',
+    authority_id="xmtp.org",
+    type_id="attachment",
     version_major=1,
     version_minor=0,
 )
 
 ContentTypeRemoteAttachment = ContentTypeId(
-    authority_id='xmtp.org',
-    type_id='remoteStaticAttachment',
+    authority_id="xmtp.org",
+    type_id="remoteStaticAttachment",
     version_major=1,
     version_minor=0,
 )
@@ -73,9 +75,9 @@ class AttachmentCodec(ContentCodec[Attachment]):
             content=content.data,
         )
         encoded = _bindings().encode_attachment(attachment)
-        parameters = {'mimeType': content.mime_type}
+        parameters = {"mimeType": content.mime_type}
         if content.filename:
-            parameters['filename'] = content.filename
+            parameters["filename"] = content.filename
         return EncodedContent(type_id=self.content_type, parameters=parameters, content=encoded)
 
     def decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> Attachment:
@@ -87,7 +89,7 @@ class AttachmentCodec(ContentCodec[Attachment]):
         )
 
     def fallback(self, content: Attachment) -> str | None:
-        filename = content.filename or 'attachment'
+        filename = content.filename or "attachment"
         return f"Can't display \"{filename}\". This app doesn't support attachments."
 
     def should_push(self, content: Attachment) -> bool:
@@ -101,10 +103,12 @@ class RemoteAttachmentCodec(ContentCodec[RemoteAttachment]):
     def content_type(self) -> ContentTypeId:
         return ContentTypeRemoteAttachment
 
-    def encode(self, content: RemoteAttachment, registry: CodecRegistry | None = None) -> EncodedContent:
+    def encode(
+        self, content: RemoteAttachment, registry: CodecRegistry | None = None
+    ) -> EncodedContent:
         parsed = urlparse(content.url)
-        if parsed.scheme.lower() != 'https':
-            raise ValueError('Remote attachment URL must use https scheme')
+        if parsed.scheme.lower() != "https":
+            raise ValueError("Remote attachment URL must use https scheme")
         remote_attachment = _bindings().FfiRemoteAttachment(
             url=content.url,
             content_digest=content.content_digest,
@@ -117,18 +121,20 @@ class RemoteAttachmentCodec(ContentCodec[RemoteAttachment]):
         )
         encoded = _bindings().encode_remote_attachment(remote_attachment)
         parameters = {
-            'contentDigest': content.content_digest,
-            'salt': content.salt.hex(),
-            'nonce': content.nonce.hex(),
-            'secret': content.secret.hex(),
-            'scheme': content.scheme,
-            'contentLength': str(content.content_length),
+            "contentDigest": content.content_digest,
+            "salt": content.salt.hex(),
+            "nonce": content.nonce.hex(),
+            "secret": content.secret.hex(),
+            "scheme": content.scheme,
+            "contentLength": str(content.content_length),
         }
         if content.filename:
-            parameters['filename'] = content.filename
+            parameters["filename"] = content.filename
         return EncodedContent(type_id=self.content_type, parameters=parameters, content=encoded)
 
-    def decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> RemoteAttachment:
+    def decode(
+        self, content: EncodedContent, registry: CodecRegistry | None = None
+    ) -> RemoteAttachment:
         decoded = _bindings().decode_remote_attachment(content.content)
         return RemoteAttachment(
             url=decoded.url,
@@ -142,7 +148,7 @@ class RemoteAttachmentCodec(ContentCodec[RemoteAttachment]):
         )
 
     def fallback(self, content: RemoteAttachment) -> str | None:
-        filename = content.filename or 'attachment'
+        filename = content.filename or "attachment"
         return f"Can't display \"{filename}\". This app doesn't support attachments."
 
     def should_push(self, content: RemoteAttachment) -> bool:
@@ -150,10 +156,10 @@ class RemoteAttachmentCodec(ContentCodec[RemoteAttachment]):
 
 
 __all__ = [
-    'Attachment',
-    'AttachmentCodec',
-    'ContentTypeAttachment',
-    'ContentTypeRemoteAttachment',
-    'RemoteAttachment',
-    'RemoteAttachmentCodec',
+    "Attachment",
+    "AttachmentCodec",
+    "ContentTypeAttachment",
+    "ContentTypeRemoteAttachment",
+    "RemoteAttachment",
+    "RemoteAttachmentCodec",
 ]

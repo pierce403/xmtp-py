@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
@@ -14,14 +15,15 @@ if TYPE_CHECKING:
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
 
-def _bindings() -> "xmtpv3":  # pragma: no cover - requires native bindings
+def _bindings() -> xmtpv3:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
+
     return xmtpv3  # pragma: no cover - requires native bindings
 
 
 ContentTypeReadReceipt = ContentTypeId(
-    authority_id='xmtp.org',
-    type_id='readReceipt',
+    authority_id="xmtp.org",
+    type_id="readReceipt",
     version_major=1,
     version_minor=0,
 )
@@ -49,4 +51,4 @@ class ReadReceiptCodec(ContentCodec[dict]):
         return False
 
 
-__all__ = ['ContentTypeReadReceipt', 'ReadReceiptCodec']
+__all__ = ["ContentTypeReadReceipt", "ReadReceiptCodec"]

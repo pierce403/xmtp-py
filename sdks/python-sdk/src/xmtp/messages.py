@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Generic, TypeVar
 
-ContentT = TypeVar('ContentT')
+ContentT = TypeVar("ContentT")
 
 
 @dataclass(slots=True)

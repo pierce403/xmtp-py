@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING
+
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
@@ -16,14 +17,15 @@ if TYPE_CHECKING:
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
 
-def _bindings() -> "xmtpv3":  # pragma: no cover - requires native bindings
+def _bindings() -> xmtpv3:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
+
     return xmtpv3  # pragma: no cover - requires native bindings
 
 
 ContentTypeWalletSendCalls = ContentTypeId(
-    authority_id='xmtp.org',
-    type_id='walletSendCalls',
+    authority_id="xmtp.org",
+    type_id="walletSendCalls",
     version_major=1,
     version_minor=0,
 )
@@ -140,9 +142,9 @@ class WalletSendCallsCodec(ContentCodec[WalletSendCalls]):
 
 
 __all__ = [
-    'ContentTypeWalletSendCalls',
-    'WalletCall',
-    'WalletCallMetadata',
-    'WalletSendCalls',
-    'WalletSendCallsCodec',
+    "ContentTypeWalletSendCalls",
+    "WalletCall",
+    "WalletCallMetadata",
+    "WalletSendCalls",
+    "WalletSendCallsCodec",
 ]

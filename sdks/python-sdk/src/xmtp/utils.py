@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-_HEX_RE = re.compile(r'^(0x)?[0-9a-fA-F]+$')
+_HEX_RE = re.compile(r"^(0x)?[0-9a-fA-F]+$")
 
 
 def is_hex_string(value: str, length: int | None = None) -> bool:
@@ -18,7 +18,7 @@ def is_hex_string(value: str, length: int | None = None) -> bool:
     if not _HEX_RE.match(value):
         return False
 
-    normalized = value[2:] if value.startswith('0x') else value
+    normalized = value[2:] if value.startswith("0x") else value
     if length is None:
         return True
     return len(normalized) == length
@@ -27,7 +27,7 @@ def is_hex_string(value: str, length: int | None = None) -> bool:
 def hex_to_bytes(value: str) -> bytes:
     """Convert a hex string (with or without 0x prefix) to bytes."""
 
-    normalized = value[2:] if value.startswith('0x') else value
+    normalized = value[2:] if value.startswith("0x") else value
     return bytes.fromhex(normalized)
 
 
@@ -40,4 +40,4 @@ def coerce_db_encryption_key(value: bytes | str | None) -> bytes | None:
         return value
     if is_hex_string(value):
         return hex_to_bytes(value)
-    raise ValueError('db_encryption_key must be bytes or hex string')
+    raise ValueError("db_encryption_key must be bytes or hex string")

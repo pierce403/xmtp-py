@@ -6,7 +6,7 @@ import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Generic, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 _END = object()
 

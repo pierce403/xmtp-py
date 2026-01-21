@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
@@ -15,14 +16,15 @@ if TYPE_CHECKING:
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
 
-def _bindings() -> "xmtpv3":  # pragma: no cover - requires native bindings
+def _bindings() -> xmtpv3:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
+
     return xmtpv3  # pragma: no cover - requires native bindings
 
 
 ContentTypeTransactionReference = ContentTypeId(
-    authority_id='xmtp.org',
-    type_id='transactionReference',
+    authority_id="xmtp.org",
+    type_id="transactionReference",
     version_major=1,
     version_minor=0,
 )
@@ -107,18 +109,18 @@ class TransactionReferenceCodec(ContentCodec[TransactionReference]):
     def fallback(self, content: TransactionReference) -> str | None:
         if content.reference:
             return (
-                '[Crypto transaction] Use a blockchain explorer to learn more '
-                f'using the transaction hash: {content.reference}'
+                "[Crypto transaction] Use a blockchain explorer to learn more "
+                f"using the transaction hash: {content.reference}"
             )
-        return 'Crypto transaction'
+        return "Crypto transaction"
 
     def should_push(self, content: TransactionReference) -> bool:
         return True
 
 
 __all__ = [
-    'ContentTypeTransactionReference',
-    'TransactionMetadata',
-    'TransactionReference',
-    'TransactionReferenceCodec',
+    "ContentTypeTransactionReference",
+    "TransactionMetadata",
+    "TransactionReference",
+    "TransactionReferenceCodec",
 ]

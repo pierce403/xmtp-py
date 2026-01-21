@@ -10,20 +10,20 @@ from xmtp.preferences import Preferences
 from xmtp.types import ClientOptions, LogLevel, XmtpEnv
 
 __all__ = [
-    'Client',
-    'ClientOptions',
-    'Conversation',
-    'Conversations',
-    'DecodedMessage',
-    'Dm',
-    'Group',
-    'Identifier',
-    'IdentifierKind',
-    'LogLevel',
-    'load_client_options_from_env',
-    'load_signer_from_env',
-    'Preferences',
-    'XmtpEnv',
+    "Client",
+    "ClientOptions",
+    "Conversation",
+    "Conversations",
+    "DecodedMessage",
+    "Dm",
+    "Group",
+    "Identifier",
+    "IdentifierKind",
+    "LogLevel",
+    "load_client_options_from_env",
+    "load_signer_from_env",
+    "Preferences",
+    "XmtpEnv",
 ]
 
-__version__ = '0.1.0'
+__version__ = "0.1.0"

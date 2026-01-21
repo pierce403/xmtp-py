@@ -11,8 +11,8 @@ from xmtp.identifiers import Identifier
 class SignerType(str, Enum):
     """Supported signer types."""
 
-    EOA = 'EOA'
-    SCW = 'SCW'
+    EOA = "EOA"
+    SCW = "SCW"
 
 
 class Signer(Protocol):

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Generic, Protocol, TypeVar
 
-TContent = TypeVar('TContent')
+TContent = TypeVar("TContent")
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,7 +18,7 @@ class ContentTypeId:
     version_minor: int
 
     def __str__(self) -> str:
-        return f'{self.authority_id}/{self.type_id}:{self.version_major}.{self.version_minor}'
+        return f"{self.authority_id}/{self.type_id}:{self.version_major}.{self.version_minor}"
 
     def same_as(self, other: ContentTypeId) -> bool:
         return (
@@ -43,28 +43,26 @@ class EncodedContent:
 class CodecRegistry(Protocol):
     """Registry for content codecs."""
 
-    def codec_for(self, content_type: ContentTypeId) -> ContentCodec[Any] | None:
-        ...
+    def codec_for(self, content_type: ContentTypeId) -> ContentCodec[Any] | None: ...
 
 
 class ContentCodec(Protocol[TContent]):
     """Protocol for content codecs."""
 
     @property
-    def content_type(self) -> ContentTypeId:
-        ...
+    def content_type(self) -> ContentTypeId: ...
 
-    def encode(self, content: TContent, registry: CodecRegistry | None = None) -> EncodedContent:
-        ...
+    def encode(
+        self, content: TContent, registry: CodecRegistry | None = None
+    ) -> EncodedContent: ...
 
-    def decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> TContent:
-        ...
+    def decode(
+        self, content: EncodedContent, registry: CodecRegistry | None = None
+    ) -> TContent: ...
 
-    def fallback(self, content: TContent) -> str | None:
-        ...
+    def fallback(self, content: TContent) -> str | None: ...
 
-    def should_push(self, content: TContent) -> bool:
-        ...
+    def should_push(self, content: TContent) -> bool: ...
 
 
 class BaseContentCodec(Generic[TContent]):
@@ -103,7 +101,7 @@ def content_type_from_string(content_type_string: str) -> ContentTypeId:
     """Parse content type ID from string form."""
     import re
 
-    match = re.match(r'^([^/]+)/([^:]+):(\d+)\.(\d+)$', content_type_string)
+    match = re.match(r"^([^/]+)/([^:]+):(\d+)\.(\d+)$", content_type_string)
     if not match:
         raise ValueError(
             f'Invalid content type string: "{content_type_string}". '
@@ -119,12 +117,12 @@ def content_type_from_string(content_type_string: str) -> ContentTypeId:
 
 
 __all__ = [
-    'BaseContentCodec',
-    'CodecRegistry',
-    'ContentCodec',
-    'ContentTypeId',
-    'EncodedContent',
-    'content_type_from_string',
-    'content_type_to_string',
-    'content_types_are_equal',
+    "BaseContentCodec",
+    "CodecRegistry",
+    "ContentCodec",
+    "ContentTypeId",
+    "EncodedContent",
+    "content_type_from_string",
+    "content_type_to_string",
+    "content_types_are_equal",
 ]

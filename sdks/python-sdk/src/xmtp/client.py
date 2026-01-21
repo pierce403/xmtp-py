@@ -27,17 +27,17 @@ from xmtp.signers.base import Signer, SignerType
 from xmtp.types import ClientOptions
 from xmtp.utils import coerce_db_encryption_key
 
-ContentT = TypeVar('ContentT')
+ContentT = TypeVar("ContentT")
 
 _DB_ERROR_MARKERS = (
-    'sqlcipher',
-    'sqlite',
-    'database',
-    'db3',
-    'file is encrypted',
-    'not a database',
-    'cipher',
-    'malformed',
+    "sqlcipher",
+    "sqlite",
+    "database",
+    "db3",
+    "file is encrypted",
+    "not a database",
+    "cipher",
+    "malformed",
 )
 
 
@@ -79,7 +79,7 @@ def _content_type_from_ffi(
 def _encoded_from_ffi(encoded: NativeBindings.FfiEncodedContent) -> EncodedContent:
     content_type = _content_type_from_ffi(encoded.type_id)
     if content_type is None:
-        raise ValueError('Missing content type in encoded content')
+        raise ValueError("Missing content type in encoded content")
     return EncodedContent(
         type_id=content_type,
         parameters=encoded.parameters,
@@ -185,7 +185,7 @@ class Client:
         options = self._options
         host = options.resolved_api_url()
         gateway_host = options.gateway_host
-        is_secure = host.startswith('https')
+        is_secure = host.startswith("https")
 
         api = await NativeBindings.connect_to_backend(
             host,
@@ -202,7 +202,7 @@ class Client:
             sync_api = await NativeBindings.connect_to_backend(
                 history_sync_url,
                 gateway_host,
-                history_sync_url.startswith('https'),
+                history_sync_url.startswith("https"),
                 None,
                 options.app_version,
                 None,
@@ -220,8 +220,8 @@ class Client:
 
         db_path_option = options.db_path
         db_path: str | None
-        if db_path_option == 'auto':
-            db_path = os.path.join(os.getcwd(), f'xmtp-{options.env}-{inbox_id}.db3')
+        if db_path_option == "auto":
+            db_path = os.path.join(os.getcwd(), f"xmtp-{options.env}-{inbox_id}.db3")
         elif callable(db_path_option):
             db_path = db_path_option(inbox_id)
         else:
@@ -449,9 +449,7 @@ class Client:
             reply_payload = cast("NativeBindings.FfiDecodedMessageContent.REPLY", content)[0]
             encoded = _encoded_from_ffi(reply_payload.content)
             codec = self.codec_for(encoded.type_id)
-            nested_content = (
-                codec.decode(encoded, self) if codec is not None else encoded.content
-            )
+            nested_content = codec.decode(encoded, self) if codec is not None else encoded.content
             return Reply(
                 reference=reply_payload.reference,
                 reference_inbox_id=reply_payload.reference_inbox_id or None,

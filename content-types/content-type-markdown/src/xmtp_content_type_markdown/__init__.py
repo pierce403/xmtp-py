@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from enum import Enum
 from typing import TYPE_CHECKING
+
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
@@ -15,22 +16,23 @@ if TYPE_CHECKING:
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
 
-def _bindings() -> "xmtpv3":  # pragma: no cover - requires native bindings
+def _bindings() -> xmtpv3:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
+
     return xmtpv3  # pragma: no cover - requires native bindings
 
 
 ContentTypeMarkdown = ContentTypeId(
-    authority_id='xmtp.org',
-    type_id='markdown',
+    authority_id="xmtp.org",
+    type_id="markdown",
     version_major=1,
     version_minor=0,
 )
 
 
 class Encoding(str, Enum):
-    UTF8 = 'UTF-8'
-    UNKNOWN = 'unknown'
+    UTF8 = "UTF-8"
+    UNKNOWN = "unknown"
 
 
 class MarkdownCodec(ContentCodec[str]):
@@ -44,18 +46,18 @@ class MarkdownCodec(ContentCodec[str]):
         encoded = _bindings().encode_markdown(content)
         return EncodedContent(
             type_id=self.content_type,
-            parameters={'encoding': Encoding.UTF8.value},
+            parameters={"encoding": Encoding.UTF8.value},
             content=encoded,
         )
 
     def decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> str:
-        encoding = content.parameters.get('encoding')
+        encoding = content.parameters.get("encoding")
         if encoding is None:
-            raise ValueError('Missing encoding for markdown content')
+            raise ValueError("Missing encoding for markdown content")
         if encoding.upper() != Encoding.UTF8.value:
-            raise ValueError(f'unrecognized encoding {encoding}')
+            raise ValueError(f"unrecognized encoding {encoding}")
         if not isinstance(content.content, (bytes, bytearray)):
-            raise TypeError('Markdown content payload must be bytes')
+            raise TypeError("Markdown content payload must be bytes")
         return _bindings().decode_markdown(bytes(content.content))
 
     def fallback(self, content: str) -> str | None:
@@ -65,4 +67,4 @@ class MarkdownCodec(ContentCodec[str]):
         return True
 
 
-__all__ = ['ContentTypeMarkdown', 'Encoding', 'MarkdownCodec']
+__all__ = ["ContentTypeMarkdown", "Encoding", "MarkdownCodec"]

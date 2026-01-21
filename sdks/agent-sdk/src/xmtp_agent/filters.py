@@ -16,7 +16,7 @@ from xmtp_content_type_text import ContentTypeText
 from xmtp_content_type_transaction_reference import ContentTypeTransactionReference
 from xmtp_content_type_wallet_send_calls import ContentTypeWalletSendCalls
 
-ContentT = TypeVar('ContentT')
+ContentT = TypeVar("ContentT")
 
 
 def from_self(message: DecodedMessage[Any], client: Client) -> bool:
@@ -96,20 +96,20 @@ filter = _Filter()
 f = filter
 
 __all__ = [
-    'filter',
-    'f',
-    'from_self',
-    'has_content',
-    'is_dm',
-    'is_group',
-    'is_group_update',
-    'is_markdown',
-    'is_reaction',
-    'is_read_receipt',
-    'is_remote_attachment',
-    'is_reply',
-    'is_text',
-    'is_transaction_reference',
-    'is_wallet_send_calls',
-    'uses_codec',
+    "filter",
+    "f",
+    "from_self",
+    "has_content",
+    "is_dm",
+    "is_group",
+    "is_group_update",
+    "is_markdown",
+    "is_reaction",
+    "is_read_receipt",
+    "is_remote_attachment",
+    "is_reply",
+    "is_text",
+    "is_transaction_reference",
+    "is_wallet_send_calls",
+    "uses_codec",
 ]

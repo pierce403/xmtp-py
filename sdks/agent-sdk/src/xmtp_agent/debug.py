@@ -16,7 +16,7 @@ def get_test_url(client: Client) -> str:
 
     address = client.account_identifier.value if client.account_identifier else None
     env = client.options.env
-    return f'http://xmtp.chat/{env}/dm/{address}'
+    return f"http://xmtp.chat/{env}/dm/{address}"
 
 
 @dataclass(slots=True)
@@ -30,7 +30,7 @@ class InstallationInfo:
 
 
 def _installation_sort_key(installation: object) -> int:
-    timestamp = getattr(installation, 'client_timestamp_ns', None)
+    timestamp = getattr(installation, "client_timestamp_ns", None)
     if timestamp is None:
         return 0
     return int(timestamp)
@@ -50,7 +50,7 @@ async def get_installation_info(client: Client) -> InstallationInfo:
         )
 
     inbox_state = await client.preferences.inbox_state(refresh_from_network=True)
-    installations = list(getattr(inbox_state, 'installations', []) or [])
+    installations = list(getattr(inbox_state, "installations", []) or [])
     installations.sort(key=_installation_sort_key, reverse=True)
 
     installation_id_hex = installation_id.hex()
@@ -79,14 +79,14 @@ async def log_details(agent: Agent) -> None:
     conversations = await client.conversations.list()
     inbox_state = await client.preferences.inbox_state()
 
-    print('XMTP Agent Details')
-    print(f'- Inbox ID: {inbox_id}')
-    print(f'- Installation ID: {installation_id_display}')
-    print(f'- Address: {address}')
-    print(f'- Conversations: {len(conversations)}')
-    print(f'- Installations: {len(inbox_state.installations)}')
-    print(f'- Environment: {env}')
-    print(f'- Test URL: {get_test_url(client)}')
+    print("XMTP Agent Details")
+    print(f"- Inbox ID: {inbox_id}")
+    print(f"- Installation ID: {installation_id_display}")
+    print(f"- Address: {address}")
+    print(f"- Conversations: {len(conversations)}")
+    print(f"- Installations: {len(inbox_state.installations)}")
+    print(f"- Environment: {env}")
+    print(f"- Test URL: {get_test_url(client)}")
 
 
-__all__ = ['get_test_url', 'get_installation_info', 'log_details', 'InstallationInfo']
+__all__ = ["get_test_url", "get_installation_info", "log_details", "InstallationInfo"]

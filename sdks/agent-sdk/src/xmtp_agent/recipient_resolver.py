@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 
 from xmtp import Client
 from xmtp.bindings import NativeBindings
@@ -21,14 +21,14 @@ class ResolvedRecipient:
 
 
 def _normalize_hex(value: str) -> str:
-    normalized = value[2:] if value.lower().startswith('0x') else value
+    normalized = value[2:] if value.lower().startswith("0x") else value
     return normalized.lower()
 
 
 def _normalize_address(value: str) -> str:
     if not is_hex_string(value, length=40):
         raise ValueError(f'Invalid address: "{value}"')
-    normalized = value if value.lower().startswith('0x') else f'0x{value}'
+    normalized = value if value.lower().startswith("0x") else f"0x{value}"
     return normalized
 
 
@@ -38,13 +38,13 @@ def _is_inbox_id(value: str) -> bool:
 
 def _address_from_inbox_state(state: object) -> str | None:
     identities = []
-    recovery = getattr(state, 'recovery_identity', None)
+    recovery = getattr(state, "recovery_identity", None)
     if recovery is not None:
         identities.append(recovery)
-    identities.extend(getattr(state, 'account_identities', []) or [])
+    identities.extend(getattr(state, "account_identities", []) or [])
 
     for identity in identities:
-        candidate = getattr(identity, 'identifier', None)
+        candidate = getattr(identity, "identifier", None)
         if isinstance(candidate, str) and is_hex_string(candidate, length=40):
             return _normalize_address(candidate)
     return None
@@ -95,7 +95,7 @@ async def resolve_recipient(
                 address = _normalize_address(target)
             else:
                 if name_resolver is None:
-                    raise ValueError('Name resolver required for non-hex recipient')
+                    raise ValueError("Name resolver required for non-hex recipient")
                 resolved = await name_resolver(target)
                 if resolved is None:
                     raise ValueError(f'Could not resolve address for "{target}"')
@@ -116,4 +116,4 @@ async def resolve_recipient(
     return ResolvedRecipient(address=address, inbox_id=inbox_id, identifier=identifier)
 
 
-__all__ = ['ResolvedRecipient', 'resolve_recipient']
+__all__ = ["ResolvedRecipient", "resolve_recipient"]

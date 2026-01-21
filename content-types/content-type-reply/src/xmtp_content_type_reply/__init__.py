@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
+
 from xmtp_content_type_primitives import (
     CodecRegistry,
     ContentCodec,
@@ -15,14 +16,15 @@ if TYPE_CHECKING:
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
 
-def _bindings() -> "xmtpv3":  # pragma: no cover - requires native bindings
+def _bindings() -> xmtpv3:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
+
     return xmtpv3  # pragma: no cover - requires native bindings
 
 
 ContentTypeReply = ContentTypeId(
-    authority_id='xmtp.org',
-    type_id='reply',
+    authority_id="xmtp.org",
+    type_id="reply",
     version_major=1,
     version_minor=0,
 )
@@ -49,7 +51,7 @@ def _content_type_to_ffi(content_type: ContentTypeId) -> xmtpv3.FfiContentTypeId
 
 def _content_type_from_ffi(ffi: xmtpv3.FfiContentTypeId | None) -> ContentTypeId:
     if ffi is None:
-        raise ValueError('Missing content type in encoded reply')
+        raise ValueError("Missing content type in encoded reply")
     return ContentTypeId(
         authority_id=ffi.authority_id,
         type_id=ffi.type_id,
@@ -87,11 +89,11 @@ class ReplyCodec(ContentCodec[Reply]):
 
     def encode(self, content: Reply, registry: CodecRegistry | None = None) -> EncodedContent:
         if registry is None:
-            raise ValueError('Codec registry required to encode replies')
+            raise ValueError("Codec registry required to encode replies")
 
         codec = registry.codec_for(content.content_type)
         if codec is None:
-            raise ValueError(f'Missing codec for content type {content.content_type}')
+            raise ValueError(f"Missing codec for content type {content.content_type}")
 
         encoded_content = codec.encode(content.content, registry)
         reply_payload = _bindings().FfiReply(
@@ -101,11 +103,11 @@ class ReplyCodec(ContentCodec[Reply]):
         )
         reply_bytes = _bindings().encode_reply(reply_payload)
         parameters = {
-            'contentType': str(content.content_type),
-            'reference': content.reference,
+            "contentType": str(content.content_type),
+            "reference": content.reference,
         }
         if content.reference_inbox_id:
-            parameters['referenceInboxId'] = content.reference_inbox_id
+            parameters["referenceInboxId"] = content.reference_inbox_id
         return EncodedContent(
             type_id=self.content_type,
             parameters=parameters,
@@ -114,14 +116,14 @@ class ReplyCodec(ContentCodec[Reply]):
 
     def decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> Reply:
         if registry is None:
-            raise ValueError('Codec registry required to decode replies')
+            raise ValueError("Codec registry required to decode replies")
 
         reply_payload = _bindings().decode_reply(content.content)
         decoded_content = _encoded_from_ffi(reply_payload.content)
         nested_content_type = decoded_content.type_id
         codec = registry.codec_for(nested_content_type)
         if codec is None:
-            raise ValueError(f'Missing codec for content type {nested_content_type}')
+            raise ValueError(f"Missing codec for content type {nested_content_type}")
 
         return Reply(
             reference=reply_payload.reference,
@@ -132,11 +134,11 @@ class ReplyCodec(ContentCodec[Reply]):
 
     def fallback(self, content: Reply) -> str | None:
         if isinstance(content.content, str):
-            return f'Replied with \"{content.content}\" to an earlier message'
-        return 'Replied to an earlier message'
+            return f'Replied with "{content.content}" to an earlier message'
+        return "Replied to an earlier message"
 
     def should_push(self, content: Reply) -> bool:
         return True
 
 
-__all__ = ['ContentTypeReply', 'Reply', 'ReplyCodec']
+__all__ = ["ContentTypeReply", "Reply", "ReplyCodec"]

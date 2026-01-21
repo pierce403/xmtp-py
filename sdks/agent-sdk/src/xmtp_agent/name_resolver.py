@@ -20,7 +20,7 @@ class _MissingType:
 
 
 _MISSING: Final = _MissingType()
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class _LimitedCache(Generic[T]):
@@ -55,22 +55,22 @@ def create_name_resolver(api_key: str | None = None) -> Callable[[str], Awaitabl
             return cast(str | None, cached)
 
         def fetch() -> list[dict[str, object]]:
-            endpoint = f'https://api.web3.bio/ns/{quote(name)}'
-            headers = {'Content-Type': 'application/json'}
+            endpoint = f"https://api.web3.bio/ns/{quote(name)}"
+            headers = {"Content-Type": "application/json"}
             if api_key:
-                headers['X-API-KEY'] = f'Bearer {api_key}'
-            request = Request(endpoint, headers=headers, method='GET')
+                headers["X-API-KEY"] = f"Bearer {api_key}"
+            request = Request(endpoint, headers=headers, method="GET")
             with urlopen(request, timeout=10) as response:
                 if response.status >= 400:
                     raise AgentError(
                         f'Could not resolve address for name "{name}": '
-                        f'{response.status} {response.reason}'
+                        f"{response.status} {response.reason}"
                     )
                 data = response.read()
-            return json.loads(data.decode('utf-8'))
+            return json.loads(data.decode("utf-8"))
 
         results = await asyncio.to_thread(fetch)
-        address_value = results[0].get('address') if results else None
+        address_value = results[0].get("address") if results else None
         address = address_value if isinstance(address_value, str) else None
         cache.set(name, address)
         return address
@@ -78,4 +78,4 @@ def create_name_resolver(api_key: str | None = None) -> Callable[[str], Awaitabl
     return resolve_name
 
 
-__all__ = ['create_name_resolver']
+__all__ = ["create_name_resolver"]

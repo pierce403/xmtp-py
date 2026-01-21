@@ -11,17 +11,17 @@ from xmtp_content_type_primitives import ContentCodec
 
 from xmtp.constants import API_URLS, HISTORY_SYNC_URLS
 
-XmtpEnv = Literal['local', 'dev', 'production']
+XmtpEnv = Literal["local", "dev", "production"]
 
 
 class LogLevel(str, Enum):
     """Logging levels for libxmtp."""
 
-    ERROR = 'error'
-    WARN = 'warn'
-    INFO = 'info'
-    DEBUG = 'debug'
-    TRACE = 'trace'
+    ERROR = "error"
+    WARN = "warn"
+    INFO = "info"
+    DEBUG = "debug"
+    TRACE = "trace"
 
 
 @dataclass(slots=True)
@@ -46,12 +46,12 @@ class ClientOptions:
         codecs: Optional content codecs to register.
     """
 
-    env: XmtpEnv = 'dev'
+    env: XmtpEnv = "dev"
     api_url: str | None = None
     history_sync_url: str | None = None
     disable_history_sync: bool = False
     gateway_host: str | None = None
-    db_path: str | None | Literal['auto'] | Callable[[str], str] = 'auto'
+    db_path: str | None | Literal["auto"] | Callable[[str], str] = "auto"
     db_encryption_key: bytes | str | None = None
     structured_logging: bool = False
     logging_level: LogLevel | None = None

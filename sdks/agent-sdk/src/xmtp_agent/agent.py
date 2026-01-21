@@ -80,14 +80,14 @@ class Agent:
 
         opts = options or ClientOptions()
         if opts.app_version is None:
-            opts.app_version = 'agent-sdk/alpha'
+            opts.app_version = "agent-sdk/alpha"
         if not opts.disable_device_sync:
             opts.disable_device_sync = True
 
-        if os.getenv('XMTP_FORCE_DEBUG'):
+        if os.getenv("XMTP_FORCE_DEBUG"):
             opts.debug_events_enabled = True
             opts.structured_logging = True
-            level = os.getenv('XMTP_FORCE_DEBUG_LEVEL')
+            level = os.getenv("XMTP_FORCE_DEBUG_LEVEL")
             try:
                 opts.logging_level = LogLevel(level) if level else LogLevel.WARN
             except ValueError:
@@ -97,12 +97,12 @@ class Agent:
         info = await get_installation_info(client)
         if info.total_installations > 1 and info.is_most_recent:
             warnings.warn(
-                'You have multiple installations. Installation ID '
+                "You have multiple installations. Installation ID "
                 f'"{info.installation_id}" is the most recent. Persist and reload your '
-                'installation data to avoid losing access. If you exceed the installation '
-                'limit, your agent will stop working. See '
-                'https://docs.xmtp.org/agents/build-agents/local-database'
-                '#installation-limits-and-revocation-rules',
+                "installation data to avoid losing access. If you exceed the installation "
+                "limit, your agent will stop working. See "
+                "https://docs.xmtp.org/agents/build-agents/local-database"
+                "#installation-limits-and-revocation-rules",
                 UserWarning,
                 stacklevel=2,
             )
@@ -124,6 +124,7 @@ class Agent:
         """Register an event handler."""
 
         if handler is None:
+
             def decorator(fn: EventHandler) -> EventHandler:
                 self._handlers[event].append(fn)
                 return fn
@@ -160,7 +161,7 @@ class Agent:
             return
         self._running = True
 
-        await self._emit('start', ClientContext(self._client))
+        await self._emit("start", ClientContext(self._client))
 
         self._conversation_stream = asyncio.create_task(self._consume_conversations())
         self._message_stream = asyncio.create_task(self._consume_messages())
@@ -170,7 +171,7 @@ class Agent:
 
         self._running = False
         await self._stop_streams()
-        await self._emit('stop', ClientContext(self._client))
+        await self._emit("stop", ClientContext(self._client))
 
     async def _stop_streams(self) -> None:
         if self._conversation_stream_handle is not None:
@@ -189,9 +190,9 @@ class Agent:
 
     async def _consume_conversations(self) -> None:
         try:
-            stream: AsyncStream[
-                Conversation | NativeBindings.FfiSubscribeError
-            ] = self._client.conversations.stream()
+            stream: AsyncStream[Conversation | NativeBindings.FfiSubscribeError] = (
+                self._client.conversations.stream()
+            )
             self._conversation_stream_handle = stream
             async for item in stream:
                 if not self._running:
@@ -210,9 +211,9 @@ class Agent:
 
     async def _consume_messages(self) -> None:
         try:
-            stream: AsyncStream[
-                DecodedMessage[object] | NativeBindings.FfiSubscribeError
-            ] = self._client.conversations.stream_all_messages()
+            stream: AsyncStream[DecodedMessage[object] | NativeBindings.FfiSubscribeError] = (
+                self._client.conversations.stream_all_messages()
+            )
             self._message_stream_handle = stream
             async for item in stream:
                 if not self._running:
@@ -238,11 +239,11 @@ class Agent:
 
     async def _handle_conversation(self, conversation: Conversation) -> None:
         context = ConversationContext(conversation, self._client)
-        await self._emit('conversation', context)
+        await self._emit("conversation", context)
         if isinstance(conversation, Dm):
-            await self._emit('dm', context)
+            await self._emit("dm", context)
         elif isinstance(conversation, Group):
-            await self._emit('group', context)
+            await self._emit("group", context)
 
     async def _handle_message(self, message: DecodedMessage[object]) -> None:
         if not has_content(message):
@@ -255,8 +256,8 @@ class Agent:
         )
         if conversation is None:
             raise AgentError(
-                f'Failed to process message {message.id.hex()} for conversation '
-                f'{message.conversation_id.hex()}: conversation not found.'
+                f"Failed to process message {message.id.hex()} for conversation "
+                f"{message.conversation_id.hex()}: conversation not found."
             )
 
         context = MessageContext(message, conversation, self._client)
@@ -265,30 +266,30 @@ class Agent:
 
     def _topic_for_message(self, message: DecodedMessage[object]) -> str:
         if is_text(message):
-            return 'text'
+            return "text"
         if is_markdown(message):
-            return 'markdown'
+            return "markdown"
         if is_reaction(message):
-            return 'reaction'
+            return "reaction"
         if is_reply(message):
-            return 'reply'
+            return "reply"
         if is_remote_attachment(message):
-            return 'attachment'
+            return "attachment"
         if is_read_receipt(message):
-            return 'read-receipt'
+            return "read-receipt"
         if is_group_update(message):
-            return 'group-update'
+            return "group-update"
         if is_transaction_reference(message):
-            return 'transaction-reference'
+            return "transaction-reference"
         if is_wallet_send_calls(message):
-            return 'wallet-send-calls'
-        return 'unknown_message'
+            return "wallet-send-calls"
+        return "unknown_message"
 
     async def _run_middleware_chain(self, context: MessageContext, topic: str) -> None:
         async def final_emit() -> None:
             try:
                 await self._emit(topic, context)
-                await self._emit('message', context)
+                await self._emit("message", context)
             except Exception as error:
                 await self._run_error_chain(error, context)
 
@@ -319,7 +320,7 @@ class Agent:
         error: Exception,
     ) -> tuple[str, Exception | None]:
         settled = False
-        outcome = 'stopped'
+        outcome = "stopped"
         next_error: Exception | None = None
 
         async def next_handler(next_exc: Exception | None = None) -> None:
@@ -328,9 +329,9 @@ class Agent:
                 return
             settled = True
             if next_exc is None:
-                outcome = 'handled'
+                outcome = "handled"
             else:
-                outcome = 'continue'
+                outcome = "continue"
                 next_error = next_exc
 
         try:
@@ -339,7 +340,7 @@ class Agent:
                 await result
         except Exception as exc:  # pragma: no cover - defensive
             if not settled:
-                return 'continue', exc
+                return "continue", exc
         return outcome, next_error
 
     async def _run_error_chain(
@@ -352,11 +353,11 @@ class Agent:
 
         for handler in chain:
             outcome, next_error = await self._run_error_handler(handler, context, current_error)
-            if outcome == 'handled':
+            if outcome == "handled":
                 return True
-            if outcome == 'stopped':
+            if outcome == "stopped":
                 return False
-            if outcome == 'continue' and next_error is not None:  # pragma: no branch
+            if outcome == "continue" and next_error is not None:  # pragma: no branch
                 current_error = next_error
         return False
 
@@ -366,7 +367,7 @@ class Agent:
         context: MessageContext | ClientContext,
         next_handler: Callable[[Exception | None], Awaitable[None]],
     ) -> None:
-        await self._emit('unhandled_error', error)
+        await self._emit("unhandled_error", error)
 
     async def _emit(self, event: str, arg: EventPayload) -> None:
         handlers = self._handlers.get(event, [])

@@ -22,7 +22,7 @@ class CommandRouter:
         return list(self._commands.keys())
 
     def command(self, command: str, handler: Handler) -> CommandRouter:
-        if not command.startswith('/'):
+        if not command.startswith("/"):
             raise ValueError('Command must start with "/"')
         self._commands[command.lower()] = handler
         return self
@@ -37,14 +37,14 @@ class CommandRouter:
         message_text = ctx.message.content
         if not isinstance(message_text, str):
             return False
-        parts = message_text.split(' ')
-        command = parts[0].lower() if parts else ''
+        parts = message_text.split(" ")
+        command = parts[0].lower() if parts else ""
         if not command:
             return False
-        if command.startswith('/'):
+        if command.startswith("/"):
             handler = self._commands.get(command)
             if handler:
-                ctx.message.content = ' '.join(parts[1:])
+                ctx.message.content = " ".join(parts[1:])
                 await handler(ctx)
                 return True
         if self._default:
@@ -64,4 +64,4 @@ class CommandRouter:
         return _middleware
 
 
-__all__ = ['CommandRouter']
+__all__ = ["CommandRouter"]
