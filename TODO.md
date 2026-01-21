@@ -9,6 +9,7 @@ Add new work items below as needed.
 
 - [x] Replace `Any` annotations in content-type `_bindings` helpers with Protocols to satisfy ruff ANN401
 - [x] Fix import ordering in content-type modules flagged by ruff
+- [x] Address ruff UP037 forward-reference cleanup and missing Any import in content-type reply/group-updated
 
 ## PyPI release checklist
 

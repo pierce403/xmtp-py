@@ -20,7 +20,7 @@ else:
 
 
 class _Bindings(Protocol):
-    def decode_group_updated(self, data: bytes) -> "GroupUpdated": ...
+    def decode_group_updated(self, data: bytes) -> GroupUpdated: ...
 
 
 def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
