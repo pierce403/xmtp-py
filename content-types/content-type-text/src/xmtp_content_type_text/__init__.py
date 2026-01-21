@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, cast
+from typing import Protocol
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -13,7 +13,13 @@ from xmtp_content_type_primitives import (
 )
 
 
-def _bindings() -> Any:  # pragma: no cover - requires native bindings
+class _Bindings(Protocol):
+    def encode_text(self, text: str) -> bytes: ...
+
+    def decode_text(self, data: bytes) -> str: ...
+
+
+def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
     return xmtpv3  # pragma: no cover - requires native bindings
@@ -55,7 +61,7 @@ class TextCodec(ContentCodec[str]):
             raise ValueError(f"unrecognized encoding {encoding}")
         if not isinstance(content.content, (bytes, bytearray)):
             raise TypeError("Text content payload must be bytes")
-        return cast(str, _bindings().decode_text(bytes(content.content)))
+        return _bindings().decode_text(bytes(content.content))
 
     def fallback(self, content: str) -> str | None:
         return None

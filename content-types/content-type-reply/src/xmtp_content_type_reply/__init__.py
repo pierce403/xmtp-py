@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Protocol
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -13,7 +13,38 @@ from xmtp_content_type_primitives import (
 )
 
 
-def _bindings() -> Any:  # pragma: no cover - requires native bindings
+class _FfiContentTypeId(Protocol):
+    authority_id: str
+    type_id: str
+    version_major: int
+    version_minor: int
+
+
+class _FfiEncodedContent(Protocol):
+    type_id: _FfiContentTypeId | None
+    parameters: dict[str, str]
+    fallback: str | None
+    compression: int | None
+    content: bytes
+
+
+class _FfiReply(Protocol):
+    reference: str
+    reference_inbox_id: str | None
+    content: _FfiEncodedContent
+
+
+class _Bindings(Protocol):
+    FfiContentTypeId: type[_FfiContentTypeId]
+    FfiEncodedContent: type[_FfiEncodedContent]
+    FfiReply: type[_FfiReply]
+
+    def encode_reply(self, payload: _FfiReply) -> bytes: ...
+
+    def decode_reply(self, data: bytes) -> _FfiReply: ...
+
+
+def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
     return xmtpv3  # pragma: no cover - requires native bindings
@@ -37,7 +68,7 @@ class Reply:
     content_type: ContentTypeId
 
 
-def _content_type_to_ffi(content_type: ContentTypeId) -> Any:
+def _content_type_to_ffi(content_type: ContentTypeId) -> _FfiContentTypeId:
     return _bindings().FfiContentTypeId(
         authority_id=content_type.authority_id,
         type_id=content_type.type_id,
@@ -46,7 +77,7 @@ def _content_type_to_ffi(content_type: ContentTypeId) -> Any:
     )
 
 
-def _content_type_from_ffi(ffi: Any) -> ContentTypeId:
+def _content_type_from_ffi(ffi: _FfiContentTypeId | None) -> ContentTypeId:
     if ffi is None:
         raise ValueError("Missing content type in encoded reply")
     return ContentTypeId(
@@ -57,7 +88,7 @@ def _content_type_from_ffi(ffi: Any) -> ContentTypeId:
     )
 
 
-def _encoded_to_ffi(encoded: EncodedContent) -> Any:
+def _encoded_to_ffi(encoded: EncodedContent) -> _FfiEncodedContent:
     return _bindings().FfiEncodedContent(
         type_id=_content_type_to_ffi(encoded.type_id),
         parameters=encoded.parameters,
@@ -67,7 +98,7 @@ def _encoded_to_ffi(encoded: EncodedContent) -> Any:
     )
 
 
-def _encoded_from_ffi(encoded: Any) -> EncodedContent:
+def _encoded_from_ffi(encoded: _FfiEncodedContent) -> EncodedContent:
     return EncodedContent(
         type_id=_content_type_from_ffi(encoded.type_id),
         parameters=encoded.parameters,

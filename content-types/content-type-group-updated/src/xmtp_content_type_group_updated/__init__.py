@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING, TypeAlias, cast
+from typing import TYPE_CHECKING, Protocol, TypeAlias
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -19,7 +19,11 @@ else:
     GroupUpdated: TypeAlias = object
 
 
-def _bindings() -> Any:  # pragma: no cover - requires native bindings
+class _Bindings(Protocol):
+    def decode_group_updated(self, data: bytes) -> "GroupUpdated": ...
+
+
+def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
     return xmtpv3  # pragma: no cover - requires native bindings
@@ -50,7 +54,7 @@ class GroupUpdatedCodec(ContentCodec[GroupUpdated]):
     def decode(
         self, content: EncodedContent, registry: CodecRegistry | None = None
     ) -> GroupUpdated:
-        return cast(GroupUpdated, _bindings().decode_group_updated(content.content))
+        return _bindings().decode_group_updated(content.content)
 
     def fallback(self, content: GroupUpdated) -> str | None:
         return None

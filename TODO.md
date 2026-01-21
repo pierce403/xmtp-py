@@ -5,6 +5,11 @@ Add new work items below as needed.
 
 ---
 
+## CI fixes (2026-01-21)
+
+- [x] Replace `Any` annotations in content-type `_bindings` helpers with Protocols to satisfy ruff ANN401
+- [x] Fix import ordering in content-type modules flagged by ruff
+
 ## PyPI release checklist
 
 - [ ] Reserve project names on PyPI + TestPyPI: `xmtp` and `xmtp-bindings`

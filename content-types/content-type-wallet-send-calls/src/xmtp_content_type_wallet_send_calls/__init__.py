@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
-from typing import Any
+from typing import Protocol
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -14,7 +14,39 @@ from xmtp_content_type_primitives import (
 )
 
 
-def _bindings() -> Any:  # pragma: no cover - requires native bindings
+class _FfiWalletCallMetadata(Protocol):
+    description: str
+    transaction_type: str
+    extra: dict[str, str]
+
+
+class _FfiWalletCall(Protocol):
+    to: str | None
+    data: str | None
+    value: str | None
+    gas: str | None
+    metadata: _FfiWalletCallMetadata | None
+
+
+class _FfiWalletSendCalls(Protocol):
+    version: str
+    chain_id: str
+    _from: str
+    calls: list[_FfiWalletCall]
+    capabilities: dict[str, str] | None
+
+
+class _Bindings(Protocol):
+    FfiWalletCallMetadata: type[_FfiWalletCallMetadata]
+    FfiWalletCall: type[_FfiWalletCall]
+    FfiWalletSendCalls: type[_FfiWalletSendCalls]
+
+    def encode_wallet_send_calls(self, payload: _FfiWalletSendCalls) -> bytes: ...
+
+    def decode_wallet_send_calls(self, data: bytes) -> _FfiWalletSendCalls: ...
+
+
+def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
     return xmtpv3  # pragma: no cover - requires native bindings

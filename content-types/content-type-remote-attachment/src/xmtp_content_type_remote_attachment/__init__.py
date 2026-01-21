@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Protocol
 from urllib.parse import urlparse
 
 from xmtp_content_type_primitives import (
@@ -14,7 +14,37 @@ from xmtp_content_type_primitives import (
 )
 
 
-def _bindings() -> Any:  # pragma: no cover - requires native bindings
+class _FfiAttachment(Protocol):
+    filename: str | None
+    mime_type: str
+    content: bytes
+
+
+class _FfiRemoteAttachment(Protocol):
+    url: str
+    content_digest: str
+    secret: bytes
+    salt: bytes
+    nonce: bytes
+    scheme: str
+    content_length: int
+    filename: str | None
+
+
+class _Bindings(Protocol):
+    FfiAttachment: type[_FfiAttachment]
+    FfiRemoteAttachment: type[_FfiRemoteAttachment]
+
+    def encode_attachment(self, attachment: _FfiAttachment) -> bytes: ...
+
+    def decode_attachment(self, data: bytes) -> _FfiAttachment: ...
+
+    def encode_remote_attachment(self, attachment: _FfiRemoteAttachment) -> bytes: ...
+
+    def decode_remote_attachment(self, data: bytes) -> _FfiRemoteAttachment: ...
+
+
+def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
     return xmtpv3  # pragma: no cover - requires native bindings

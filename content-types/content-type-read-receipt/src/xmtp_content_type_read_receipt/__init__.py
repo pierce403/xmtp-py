@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, TypeAlias
+from typing import Protocol, TypeAlias
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -12,7 +12,19 @@ from xmtp_content_type_primitives import (
 )
 
 
-def _bindings() -> Any:  # pragma: no cover - requires native bindings
+class _FfiReadReceipt(Protocol):
+    pass
+
+
+class _Bindings(Protocol):
+    FfiReadReceipt: type[_FfiReadReceipt]
+
+    def encode_read_receipt(self, payload: _FfiReadReceipt) -> bytes: ...
+
+    def decode_read_receipt(self, data: bytes) -> object: ...
+
+
+def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
     return xmtpv3  # pragma: no cover - requires native bindings

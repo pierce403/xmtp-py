@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Protocol
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -13,7 +13,32 @@ from xmtp_content_type_primitives import (
 )
 
 
-def _bindings() -> Any:  # pragma: no cover - requires native bindings
+class _FfiTransactionMetadata(Protocol):
+    transaction_type: str
+    currency: str
+    amount: float
+    decimals: int
+    from_address: str
+    to_address: str
+
+
+class _FfiTransactionReference(Protocol):
+    namespace: str | None
+    network_id: str
+    reference: str
+    metadata: _FfiTransactionMetadata | None
+
+
+class _Bindings(Protocol):
+    FfiTransactionMetadata: type[_FfiTransactionMetadata]
+    FfiTransactionReference: type[_FfiTransactionReference]
+
+    def encode_transaction_reference(self, payload: _FfiTransactionReference) -> bytes: ...
+
+    def decode_transaction_reference(self, data: bytes) -> _FfiTransactionReference: ...
+
+
+def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
     return xmtpv3  # pragma: no cover - requires native bindings

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Protocol
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -15,7 +15,36 @@ from xmtp_content_type_primitives import (
 )
 
 
-def _bindings() -> Any:  # pragma: no cover - requires native bindings
+class _FfiReactionAction(Protocol):
+    ADDED: object
+    REMOVED: object
+
+
+class _FfiReactionSchema(Protocol):
+    UNICODE: object
+    SHORTCODE: object
+    CUSTOM: object
+
+
+class _FfiReactionPayload(Protocol):
+    reference: str
+    reference_inbox_id: str
+    action: object
+    content: str
+    schema: object
+
+
+class _Bindings(Protocol):
+    FfiReactionAction: _FfiReactionAction
+    FfiReactionSchema: _FfiReactionSchema
+    FfiReactionPayload: type[_FfiReactionPayload]
+
+    def encode_reaction(self, payload: _FfiReactionPayload) -> bytes: ...
+
+    def decode_reaction(self, data: bytes) -> _FfiReactionPayload: ...
+
+
+def _bindings() -> _Bindings:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
     return xmtpv3  # pragma: no cover - requires native bindings
