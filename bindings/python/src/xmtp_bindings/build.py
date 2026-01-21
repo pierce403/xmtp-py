@@ -170,3 +170,11 @@ class BdistWheel(bdist_wheel):
     def finalize_options(self) -> None:
         super().finalize_options()
         self.root_is_pure = False
+
+    def run(self) -> None:
+        self.root_is_pure = False
+        super().run()
+
+    def write_wheelfile(self, *args: object, **kwargs: object) -> None:
+        self.root_is_pure = False
+        super().write_wheelfile(*args, **kwargs)
