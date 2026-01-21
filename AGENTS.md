@@ -101,6 +101,7 @@ ruff format .               # Formatting
 - Agent SDK includes `resolve_recipient()` (ENS/address/inbox ID) and `backoff_reconnect()` helper plus `test_utils` for mock streams/record-replay.
 - Packaging: root `pyproject.toml` defines the `xmtp` distribution, bundling `xmtp`, `xmtp_agent`, and all content types; `xmtp-bindings` remains a separate dist.
 - Packaging: keep root `pyproject.toml` using `[tool.setuptools.package-dir]` (not an inline `package-dir = { ... }` table) to avoid TOML parse errors during `pip install -e`.
+- Bindings build helper expects `_project_root()` to resolve to `bindings/python` (use `parents[2]` from `build.py`) so sdist/cibuildwheel builds can find `src/xmtp_bindings`.
 
 ## Agent tips
 
