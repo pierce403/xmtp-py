@@ -5,6 +5,15 @@ Add new work items below as needed.
 
 ---
 
+## PyPI release checklist
+
+- [ ] Reserve project names on PyPI + TestPyPI: `xmtp` and `xmtp-bindings`
+- [ ] Enable Trusted Publishing (OIDC) for both PyPI projects
+- [ ] Run packaging QA locally: `python -m build` for root + bindings, then `twine check`
+- [ ] Install built wheels in a clean venv and run `sdks/python-sdk/tests/test_smoke_imports.py`
+- [ ] Verify GitHub Actions release workflow publishes both `xmtp` and `xmtp-bindings`
+- [ ] Document final release confirmation steps in `docs/release.md` if needed
+
 ## Notes
 
 - Test parity map: `docs/test_parity.rst`
