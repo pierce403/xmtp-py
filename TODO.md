@@ -21,6 +21,7 @@ Add new work items below as needed.
 ## Release workflow fixes (2026-01-21)
 
 - [x] Install perl-IPC-Cmd in manylinux before building bindings wheels to fix openssl-sys
+- [x] Install perl-Time-Piece in manylinux to satisfy OpenSSL build dependencies
 
 ## PyPI release checklist
 
