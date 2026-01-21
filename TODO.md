@@ -26,6 +26,8 @@ Add new work items below as needed.
 - [x] Force Root-Is-Purelib false in bindings wheel metadata for auditwheel
 - [x] Skip auditwheel repair in release build while platlib placement is unresolved
 - [x] Ensure cibuildwheel repair step copies wheels to {dest_dir} when auditwheel is skipped
+- [x] Temporarily limit Linux wheels to x86_64 to avoid aarch64 exec format errors
+- [x] Temporarily limit macOS wheels to arm64 to avoid delocate arch mismatch on x86_64
 
 ## PyPI release checklist
 
