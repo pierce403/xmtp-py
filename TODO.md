@@ -16,6 +16,7 @@ Add new work items below as needed.
 - [x] Make backoff reconnect time mock infinite to avoid StopIteration during teardown
 - [x] Regenerate llms reference files after API/type updates
 - [x] Make CI coverage artifact name unique per OS to avoid upload conflicts
+- [x] Make CI pytest command PowerShell-friendly on Windows
 
 ## PyPI release checklist
 
