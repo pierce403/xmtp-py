@@ -13,6 +13,7 @@ Add new work items below as needed.
 - [x] Add Protocol __init__ signatures + casted binding modules to satisfy mypy for content-type FFI helpers
 - [x] Fix mypy no-any-return in agent attachment fetch
 - [x] Stabilize backoff reconnect timing + add tests to cover error/recipient branches for 100% coverage
+- [x] Make backoff reconnect time mock infinite to avoid StopIteration during teardown
 
 ## PyPI release checklist
 

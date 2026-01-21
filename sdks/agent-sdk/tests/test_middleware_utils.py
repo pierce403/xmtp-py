@@ -1,4 +1,5 @@
 import asyncio
+import itertools
 
 import pytest
 
@@ -41,7 +42,7 @@ async def test_backoff_reconnect_passthrough() -> None:
 
 @pytest.mark.asyncio
 async def test_backoff_reconnect_resets_after(monkeypatch) -> None:
-    times = iter([0.0, 10.0, 20.0])
+    times = itertools.chain([0.0, 10.0, 20.0], itertools.repeat(20.0))
 
     def fake_monotonic() -> float:
         return next(times)
