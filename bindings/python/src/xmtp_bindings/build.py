@@ -81,15 +81,31 @@ def _select_built_library(target_dir: Path) -> Path:
     raise FileNotFoundError(f"libxmtp build output not found in {target_dir}")
 
 
+def _find_bindings_dir(libxmtp_dir: Path) -> Path:
+    candidates = [
+        libxmtp_dir / "bindings_ffi",
+        libxmtp_dir / "bindings" / "ffi",
+    ]
+    for candidate in candidates:
+        if (candidate / "Cargo.toml").exists():
+            return candidate
+    for cargo_toml in libxmtp_dir.rglob("Cargo.toml"):
+        try:
+            content = cargo_toml.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if "ffi-uniffi-bindgen" in content:
+            return cargo_toml.parent
+    raise FileNotFoundError(f"bindings_ffi not found in {libxmtp_dir}")
+
+
 def _generate_bindings(
     libxmtp_dir: Path,
     built_library: Path,
     package_dir: Path,
     announce: Callable[[str], None],
 ) -> None:
-    bindings_dir = libxmtp_dir / "bindings_ffi"
-    if not bindings_dir.exists():
-        raise FileNotFoundError(f"bindings_ffi not found in {libxmtp_dir}")
+    bindings_dir = _find_bindings_dir(libxmtp_dir)
     announce("Regenerating UniFFI Python bindings from libxmtp...")
     _run(
         [

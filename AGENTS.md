@@ -116,6 +116,7 @@ ruff format .               # Formatting
 - Runtime `undefined symbol` errors (e.g., `uniffi_xmtpv3_fn_method_fficonversation_add_members_by_inbox_id`) mean `xmtp_bindings/xmtpv3.py` was generated from a newer libxmtp commit than the bundled `libxmtpv3` shared library. This can happen if bindings are regenerated from a newer libxmtp ref while installs/builds pull a different ref or reuse a stale `.deps/libxmtp` checkout.
 - To prevent bindings/library mismatches, pin `XMTP_LIBXMTP_REF` in CI/publish to the same libxmtp commit used to generate `xmtpv3.py`, or regenerate the bindings during CI from the checked-out libxmtp repo. For local rebuilds, set `XMTP_BINDINGS_FORCE_BUILD=1` (and optionally `XMTP_LIBXMTP_REF=main`) or delete `.deps/libxmtp` before reinstalling.
 - Bindings builds now regenerate `xmtpv3.py` via `bindings_ffi` during the libxmtp build step, ensuring the wrapper matches the built shared library for wheels and source installs.
+- libxmtp may place the UniFFI bindgen crate under `bindings_ffi` or `bindings/ffi`; bindings build now auto-detects the directory by scanning for the `ffi-uniffi-bindgen` Cargo target.
 
 ## Agent tips
 

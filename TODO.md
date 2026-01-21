@@ -33,6 +33,7 @@ Add new work items below as needed.
 - [x] Re-enable auditwheel repair so Linux wheels publish with manylinux tags (PyPI rejects `linux_x86_64`)
 - [x] Force bindings install to platlib (install_lib=install_platlib) so auditwheel sees shared libs
 - [x] Regenerate UniFFI bindings during builds so `xmtpv3.py` always matches built libxmtp
+- [x] Auto-detect libxmtp UniFFI bindgen directory (bindings_ffi vs bindings/ffi) during builds
 
 ## PyPI release checklist
 
