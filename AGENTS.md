@@ -107,6 +107,7 @@ ruff format .               # Formatting
 - CIBW requires `CIBW_REPAIR_WHEEL_COMMAND_LINUX` to emit a wheel into `{dest_dir}`; if skipping auditwheel, use `cp {wheel} {dest_dir}` instead of `true`.
 - CIBW aarch64 manylinux builds on GitHub Ubuntu runners can fail with `exec format error` unless QEMU/binfmt is set up; limit `CIBW_ARCHS_LINUX` or add QEMU.
 - macOS x86_64 wheel builds on arm64 runners can fail delocate’s arch check; limit `CIBW_ARCHS_MACOS` or set up proper cross-builds/universal2.
+- PyPI trusted publishing requires the GitHub Actions environment to match the configured publisher; missing/mismatched environment triggers `invalid-publisher` during publish.
 
 ## Agent tips
 

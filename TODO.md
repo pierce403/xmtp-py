@@ -28,6 +28,7 @@ Add new work items below as needed.
 - [x] Ensure cibuildwheel repair step copies wheels to {dest_dir} when auditwheel is skipped
 - [x] Temporarily limit Linux wheels to x86_64 to avoid aarch64 exec format errors
 - [x] Temporarily limit macOS wheels to arm64 to avoid delocate arch mismatch on x86_64
+- [x] Add `publish` job environment to align with PyPI trusted publisher claims
 
 ## PyPI release checklist
 
