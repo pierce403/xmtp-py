@@ -80,8 +80,7 @@ class Conversation:
         if content_type is None:
             raise MissingContentTypeError()
 
-        encoded = self._client.encode_content(content, content_type)
-        opts = _default_send_opts(should_push=True)
+        encoded, opts = self._client.prepare_for_send(content, content_type)
         return await self._ffi.send(encoded, cast("NativeBindings.FfiSendMessageOpts", opts))
 
 

@@ -4,13 +4,19 @@ import builtins
 import os
 import sys
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 import pytest
 
 from xmtp import Client
 from xmtp.client import _content_type_from_ffi, _default_send_opts, _encoded_from_ffi, _identifier_to_ffi
-from xmtp.errors import ClientNotInitializedError, CodecNotFoundError, SignerUnavailableError
+from xmtp.errors import (
+    ClientNotInitializedError,
+    CodecNotFoundError,
+    DatabaseOpenError,
+    SignerUnavailableError,
+)
 from xmtp.identifiers import Identifier, IdentifierKind
 from xmtp.signers.base import SignerType
 from xmtp.types import ClientOptions
@@ -262,6 +268,26 @@ def test_client_encode_content_success() -> None:
     assert client.codec_for(dummy.content_type) is dummy
     assert client.codec_for(str(dummy.content_type)) is dummy
     assert client.encode_content('payload', dummy.content_type) == b'dummy'
+
+
+def test_client_prepare_for_send_missing_codec() -> None:
+    client = Client()
+    client._codecs.clear()
+    with pytest.raises(CodecNotFoundError):
+        client.prepare_for_send('hi', ContentTypeText)
+
+
+def test_client_prepare_for_send_uses_should_push() -> None:
+    class _NoPushCodec(_DummyCodec):
+        def should_push(self, content: Any) -> bool:
+            return False
+
+    client = Client()
+    codec = _NoPushCodec()
+    client.register_codec(codec)
+    payload, opts = client.prepare_for_send('payload', codec.content_type)
+    assert payload == b'dummy'
+    assert opts.should_push is False
 
 
 def test_client_register_codecs() -> None:
@@ -565,6 +591,20 @@ async def test_client_create_from_env(monkeypatch) -> None:
 
 
 @pytest.mark.asyncio
+async def test_client_from_env_alias(monkeypatch) -> None:
+    called = {'count': 0}
+
+    async def fake_create_from_env(cls, options=None):
+        called['count'] += 1
+        return Client()
+
+    monkeypatch.setattr(Client, 'create_from_env', classmethod(fake_create_from_env))
+    client = await Client.from_env()
+    assert isinstance(client, Client)
+    assert called['count'] == 1
+
+
+@pytest.mark.asyncio
 async def test_client_init_noop_when_initialized(fake_bindings) -> None:
     client = Client()
     client._client = object()
@@ -574,6 +614,84 @@ async def test_client_init_noop_when_initialized(fake_bindings) -> None:
 
     fake_bindings.connect_to_backend = connect_to_backend
     await client._init(Identifier(kind=IdentifierKind.ETHEREUM, value='0xabc'))
+
+
+@pytest.mark.asyncio
+async def test_client_init_db_error(monkeypatch) -> None:
+    class _Bindings:
+        class FfiIdentifierKind(str, Enum):
+            ETHEREUM = 'ethereum'
+            PASSKEY = 'passkey'
+
+        @dataclass(frozen=True)
+        class FfiIdentifier:
+            identifier: str
+            identifier_kind: "_Bindings.FfiIdentifierKind"
+
+        class FfiSyncWorkerMode(str, Enum):
+            DISABLED = 'disabled'
+            ENABLED = 'enabled'
+
+        @staticmethod
+        async def connect_to_backend(*args, **kwargs):
+            return object()
+
+        @staticmethod
+        async def get_inbox_id_for_identifier(*args, **kwargs):
+            return None
+
+        @staticmethod
+        def generate_inbox_id(*args, **kwargs):
+            return 'inbox'
+
+        @staticmethod
+        async def create_client(*args, **kwargs):
+            raise RuntimeError('sqlcipher failure')
+
+    monkeypatch.setattr('xmtp.client.NativeBindings', _Bindings, raising=False)
+
+    client = Client()
+    with pytest.raises(DatabaseOpenError, match='SQLCipher'):
+        await client._init(Identifier(kind=IdentifierKind.ETHEREUM, value='0xabc'))
+
+
+@pytest.mark.asyncio
+async def test_client_init_non_db_error(monkeypatch) -> None:
+    class _Bindings:
+        class FfiIdentifierKind(str, Enum):
+            ETHEREUM = 'ethereum'
+            PASSKEY = 'passkey'
+
+        @dataclass(frozen=True)
+        class FfiIdentifier:
+            identifier: str
+            identifier_kind: "_Bindings.FfiIdentifierKind"
+
+        class FfiSyncWorkerMode(str, Enum):
+            DISABLED = 'disabled'
+            ENABLED = 'enabled'
+
+        @staticmethod
+        async def connect_to_backend(*args, **kwargs):
+            return object()
+
+        @staticmethod
+        async def get_inbox_id_for_identifier(*args, **kwargs):
+            return None
+
+        @staticmethod
+        def generate_inbox_id(*args, **kwargs):
+            return 'inbox'
+
+        @staticmethod
+        async def create_client(*args, **kwargs):
+            raise RuntimeError('boom')
+
+    monkeypatch.setattr('xmtp.client.NativeBindings', _Bindings, raising=False)
+
+    client = Client()
+    with pytest.raises(RuntimeError, match='boom'):
+        await client._init(Identifier(kind=IdentifierKind.ETHEREUM, value='0xabc'))
 
 
 @pytest.mark.asyncio

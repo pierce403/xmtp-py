@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 import os
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, TypeVar, cast
 
@@ -13,7 +14,12 @@ from xmtp_content_type_primitives import ContentCodec, ContentTypeId, EncodedCon
 from xmtp.bindings import NativeBindings
 from xmtp.conversations import Conversations
 from xmtp.env import load_client_options_from_env, load_signer_from_env
-from xmtp.errors import ClientNotInitializedError, CodecNotFoundError, SignerUnavailableError
+from xmtp.errors import (
+    ClientNotInitializedError,
+    CodecNotFoundError,
+    DatabaseOpenError,
+    SignerUnavailableError,
+)
 from xmtp.identifiers import Identifier, IdentifierKind
 from xmtp.messages import DecodedMessage
 from xmtp.preferences import Preferences
@@ -22,6 +28,17 @@ from xmtp.types import ClientOptions
 from xmtp.utils import coerce_db_encryption_key
 
 ContentT = TypeVar('ContentT')
+
+_DB_ERROR_MARKERS = (
+    'sqlcipher',
+    'sqlite',
+    'database',
+    'db3',
+    'file is encrypted',
+    'not a database',
+    'cipher',
+    'malformed',
+)
 
 
 def _identifier_to_ffi(identifier: Identifier) -> NativeBindings.FfiIdentifier:
@@ -32,8 +49,18 @@ def _identifier_to_ffi(identifier: Identifier) -> NativeBindings.FfiIdentifier:
     return NativeBindings.FfiIdentifier(identifier=identifier.value, identifier_kind=kind)
 
 
-def _default_send_opts() -> NativeBindings.FfiSendMessageOpts:
-    return NativeBindings.FfiSendMessageOpts(should_push=True)
+@dataclass(slots=True)
+class _SendMessageOpts:
+    should_push: bool
+
+
+def _default_send_opts(
+    should_push: bool = True,
+) -> NativeBindings.FfiSendMessageOpts | _SendMessageOpts:
+    try:
+        return NativeBindings.FfiSendMessageOpts(should_push=should_push)
+    except Exception:
+        return _SendMessageOpts(should_push=should_push)
 
 
 def _content_type_from_ffi(
@@ -60,6 +87,11 @@ def _encoded_from_ffi(encoded: NativeBindings.FfiEncodedContent) -> EncodedConte
         compression=encoded.compression,
         content=encoded.content,
     )
+
+
+def _looks_like_db_error(error: Exception) -> bool:
+    message = str(error).lower()
+    return any(marker in message for marker in _DB_ERROR_MARKERS)
 
 
 class Client:
@@ -132,6 +164,12 @@ class Client:
         return await cls.create(signer, opts)
 
     @classmethod
+    async def from_env(cls, options: ClientOptions | None = None) -> Client:
+        """Alias for create_from_env."""
+
+        return await cls.create_from_env(options)
+
+    @classmethod
     async def build(cls, identifier: Identifier, options: ClientOptions | None = None) -> Client:
         """Create a client with an identifier (no signer)."""
 
@@ -197,20 +235,25 @@ class Client:
             else NativeBindings.FfiSyncWorkerMode.ENABLED
         )
 
-        self._client = await NativeBindings.create_client(
-            api,
-            sync_api,
-            db_path,
-            encryption_key,
-            inbox_id,
-            ffi_identifier,
-            nonce,
-            None,
-            history_sync_url,
-            device_sync_mode,
-            None,
-            None,
-        )
+        try:
+            self._client = await NativeBindings.create_client(
+                api,
+                sync_api,
+                db_path,
+                encryption_key,
+                inbox_id,
+                ffi_identifier,
+                nonce,
+                None,
+                history_sync_url,
+                device_sync_mode,
+                None,
+                None,
+            )
+        except Exception as exc:
+            if _looks_like_db_error(exc):
+                raise DatabaseOpenError(db_path, str(exc)) from exc
+            raise
 
         conversations = Conversations(self, self._client.conversations())
         self._conversations = conversations
@@ -338,6 +381,21 @@ class Client:
             raise CodecNotFoundError(str(content_type))
         encoded = cast(ContentCodec[ContentT], codec).encode(content, self)
         return encoded.content
+
+    def prepare_for_send(
+        self,
+        content: ContentT,
+        content_type: ContentTypeId | str,
+    ) -> tuple[bytes, NativeBindings.FfiSendMessageOpts | _SendMessageOpts]:
+        """Prepare content for sending with codec-derived send options."""
+
+        codec = self.codec_for(content_type)
+        if codec is None:
+            raise CodecNotFoundError(str(content_type))
+        encoded = cast(ContentCodec[ContentT], codec).encode(content, self)
+        should_push = cast(ContentCodec[ContentT], codec).should_push(content)
+        send_opts = _default_send_opts(should_push=should_push)
+        return encoded.content, send_opts
 
     def _decode_message(self, message: NativeBindings.FfiMessage) -> DecodedMessage[object]:
         if self._client is None:

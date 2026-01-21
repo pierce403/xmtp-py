@@ -114,11 +114,16 @@ class _SyncAdminConversation(_FakeFfiConversation):
 
 class _FakeClient:
     def __init__(self) -> None:
-        self.encoded: tuple[Any, Any] | None = None
+        self.prepared: tuple[Any, Any] | None = None
 
-    def encode_content(self, content: Any, content_type: Any) -> bytes:
-        self.encoded = (content, content_type)
-        return b'encoded'
+    def prepare_for_send(self, content: Any, content_type: Any):
+        self.prepared = (content, content_type)
+        return b'encoded', _SendOpts(should_push=True)
+
+
+@dataclass
+class _SendOpts:
+    should_push: bool
 
 
 @pytest.mark.asyncio
@@ -159,6 +164,8 @@ def test_default_send_opts_fallback(monkeypatch) -> None:
     monkeypatch.setattr(conversation, 'NativeBindings', _Bindings(), raising=False)
     opts = conversation._default_send_opts()
     assert opts.should_push is True
+    opts = conversation._default_send_opts(should_push=False)
+    assert opts.should_push is False
 
 
 @pytest.mark.asyncio
@@ -168,9 +175,21 @@ async def test_conversation_send_encoded() -> None:
     convo = Conversation(client, ffi)
     result = await convo.send({'x': 1}, 'custom')
     assert result == b'msg-id'
-    assert client.encoded == ({'x': 1}, 'custom')
+    assert client.prepared == ({'x': 1}, 'custom')
     assert ffi.sent_payload == b'encoded'
     assert ffi.sent_opts.should_push is True
+
+
+@pytest.mark.asyncio
+async def test_conversation_send_uses_should_push() -> None:
+    class _Client(_FakeClient):
+        def prepare_for_send(self, content: Any, content_type: Any):
+            return b'encoded', _SendOpts(should_push=False)
+
+    ffi = _FakeFfiConversation()
+    convo = Conversation(_Client(), ffi)
+    await convo.send({'x': 2}, 'custom')
+    assert ffi.sent_opts.should_push is False
 
 
 def test_consent_state_optional() -> None:

@@ -75,3 +75,21 @@ class InvalidGroupMembershipChangeError(XmtpError):
 
     def __init__(self, message_id: str) -> None:
         super().__init__(f'Invalid group membership change for message {message_id}')
+
+
+class DatabaseOpenError(XmtpError):
+    """Raised when the local XMTP database cannot be opened."""
+
+    def __init__(self, db_path: str | None, detail: str | None = None) -> None:
+        message = 'Failed to open the local XMTP database.'
+        if db_path:
+            message = f'{message} Path: "{db_path}".'
+        message = (
+            f'{message} If this is a SQLCipher error, verify that '
+            'XMTP_DB_ENCRYPTION_KEY is stable and hex-encoded. '
+            'To recover from a bad key or corrupted DB, delete the .db3 file '
+            'or point XMTP_DB_DIRECTORY/ClientOptions.db_path to a fresh location.'
+        )
+        if detail:
+            message = f'{message} Root error: {detail}'
+        super().__init__(message)
