@@ -14,6 +14,7 @@ Add new work items below as needed.
 - [x] Fix mypy no-any-return in agent attachment fetch
 - [x] Stabilize backoff reconnect timing + add tests to cover error/recipient branches for 100% coverage
 - [x] Make backoff reconnect time mock infinite to avoid StopIteration during teardown
+- [x] Regenerate llms reference files after API/type updates
 
 ## PyPI release checklist
 

@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 1:41 PM UTC / January 21, 2026
+> Generated at: 5:14 PM UTC / January 21, 2026
 > Included Sections:
 > - README.md
 > - sdks/python-sdk/README.md
@@ -637,6 +637,8 @@ Classes:
 
 Doc: Bindings loader for libxmtp (UniFFI).
 
+Exports: NativeBindings
+
 ### Module: xmtp.client
 
 Doc: XMTP client entry point.
@@ -1029,7 +1031,7 @@ Classes:
   - async close(self) -> None
 
 Functions:
-- create_mock_message(content: ContentT, **overrides: Any) -> DecodedMessage[ContentT]: Create a decoded message with sensible defaults for tests.
+- create_mock_message(content: ContentT, **overrides: object) -> DecodedMessage[ContentT]: Create a decoded message with sensible defaults for tests.
 - serialize_message(message: DecodedMessage[Any]) -> dict[str, Any]: Serialize a decoded message to a JSON-friendly dict.
 - deserialize_message(payload: dict[str, Any]) -> DecodedMessage[Any]: Deserialize a decoded message from a JSON-friendly dict.
 - async record_messages(stream: AsyncStream[DecodedMessage[Any]], limit: int | None = None) -> list[dict[str, Any]]: Record decoded messages from a stream.
@@ -1141,18 +1143,19 @@ Classes:
 
 Doc: Read receipt content type for XMTP.
 
-Exports: ContentTypeReadReceipt, ReadReceiptCodec
+Exports: ContentTypeReadReceipt, ReadReceipt, ReadReceiptCodec
 
 Constants:
 - ContentTypeReadReceipt = ContentTypeId(authority_id='xmtp.org', type_id='readReceipt', version_major=1, version_minor=0)
+- ReadReceipt = dict[str, object]
 
 Classes:
-- class ReadReceiptCodec(ContentCodec[dict]): Codec for read receipt messages.
+- class ReadReceiptCodec(ContentCodec[ReadReceipt]): Codec for read receipt messages.
   - content_type(self) -> ContentTypeId
-  - encode(self, content: dict, registry: CodecRegistry | None = None) -> EncodedContent
-  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> dict
-  - fallback(self, content: dict) -> str | None
-  - should_push(self, content: dict) -> bool
+  - encode(self, content: ReadReceipt, registry: CodecRegistry | None = None) -> EncodedContent
+  - decode(self, content: EncodedContent, registry: CodecRegistry | None = None) -> ReadReceipt
+  - fallback(self, content: ReadReceipt) -> str | None
+  - should_push(self, content: ReadReceipt) -> bool
 
 ### Module: xmtp_content_type_remote_attachment
 
