@@ -1,0 +1,107 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xmtp"
+version = "0.1.0"
+description = "Unofficial Python SDK for the XMTP network."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+keywords = ["xmtp", "messaging", "web3"]
+authors = [
+  { name = "XMTP Python SDK contributors" },
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Typing :: Typed",
+]
+dependencies = [
+  "eth-account>=0.12",
+  "xmtp-bindings>=0.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7",
+  "pytest-asyncio>=0.21",
+  "pytest-cov>=5",
+  "mypy>=1.7",
+  "ruff>=0.1",
+  "sphinx>=7",
+  "sphinx-autodoc-typehints>=1.24",
+  "build>=1.2",
+  "twine>=5",
+]
+
+[project.urls]
+Homepage = "https://github.com/pierce403/xmtp-py"
+Source = "https://github.com/pierce403/xmtp-py"
+Issues = "https://github.com/pierce403/xmtp-py/issues"
+Documentation = "https://github.com/pierce403/xmtp-py#readme"
+
+[tool.setuptools]
+packages = [
+  "xmtp",
+  "xmtp_agent",
+  "xmtp_content_type_primitives",
+  "xmtp_content_type_text",
+  "xmtp_content_type_markdown",
+  "xmtp_content_type_reaction",
+  "xmtp_content_type_read_receipt",
+  "xmtp_content_type_reply",
+  "xmtp_content_type_remote_attachment",
+  "xmtp_content_type_group_updated",
+  "xmtp_content_type_transaction_reference",
+  "xmtp_content_type_wallet_send_calls",
+]
+package-dir = {
+  "xmtp" = "sdks/python-sdk/src/xmtp",
+  "xmtp_agent" = "sdks/agent-sdk/src/xmtp_agent",
+  "xmtp_content_type_primitives" = "content-types/content-type-primitives/src/xmtp_content_type_primitives",
+  "xmtp_content_type_text" = "content-types/content-type-text/src/xmtp_content_type_text",
+  "xmtp_content_type_markdown" = "content-types/content-type-markdown/src/xmtp_content_type_markdown",
+  "xmtp_content_type_reaction" = "content-types/content-type-reaction/src/xmtp_content_type_reaction",
+  "xmtp_content_type_read_receipt" = "content-types/content-type-read-receipt/src/xmtp_content_type_read_receipt",
+  "xmtp_content_type_reply" = "content-types/content-type-reply/src/xmtp_content_type_reply",
+  "xmtp_content_type_remote_attachment" = "content-types/content-type-remote-attachment/src/xmtp_content_type_remote_attachment",
+  "xmtp_content_type_group_updated" = "content-types/content-type-group-updated/src/xmtp_content_type_group_updated",
+  "xmtp_content_type_transaction_reference" = "content-types/content-type-transaction-reference/src/xmtp_content_type_transaction_reference",
+  "xmtp_content_type_wallet_send_calls" = "content-types/content-type-wallet-send-calls/src/xmtp_content_type_wallet_send_calls",
+}
+include-package-data = true
+
+[tool.setuptools.package-data]
+"xmtp" = ["py.typed"]
+"xmtp_agent" = ["py.typed"]
+"xmtp_content_type_primitives" = ["py.typed"]
+"xmtp_content_type_text" = ["py.typed"]
+"xmtp_content_type_markdown" = ["py.typed"]
+"xmtp_content_type_reaction" = ["py.typed"]
+"xmtp_content_type_read_receipt" = ["py.typed"]
+"xmtp_content_type_reply" = ["py.typed"]
+"xmtp_content_type_remote_attachment" = ["py.typed"]
+"xmtp_content_type_group_updated" = ["py.typed"]
+"xmtp_content_type_transaction_reference" = ["py.typed"]
+"xmtp_content_type_wallet_send_calls" = ["py.typed"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+show_error_codes = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["ANN", "B", "E", "F", "I", "UP"]

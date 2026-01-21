@@ -99,6 +99,7 @@ ruff format .               # Formatting
 - Coverage omits `xmtp_bindings/build.py` because it is an install-time helper that is hard to exercise in unit tests.
 - `Client.prepare_for_send()` now mirrors xmtp-js send options by using codec `should_push`, and `Conversation.send()` uses it for non-text content.
 - Agent SDK includes `resolve_recipient()` (ENS/address/inbox ID) and `backoff_reconnect()` helper plus `test_utils` for mock streams/record-replay.
+- Packaging: root `pyproject.toml` defines the `xmtp` distribution, bundling `xmtp`, `xmtp_agent`, and all content types; `xmtp-bindings` remains a separate dist.
 
 ## Agent tips
 
@@ -116,3 +117,4 @@ ruff format .               # Formatting
 ## Collaborator preferences
 
 - Project must remain Apache 2.0 licensed.
+- Always commit and push after every update.

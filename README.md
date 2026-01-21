@@ -1,4 +1,4 @@
-# xmtp-py
+# xmtp
 
 Unofficial Python client SDKs for the XMTP network.
 
@@ -37,10 +37,18 @@ This is a community project that mirrors the structure and interfaces of the off
 pip install xmtp
 ```
 
-### From source (recommended until PyPI release)
+This installs the client SDK, agent SDK, and built-in content types in one package.
 
-Clone the repo and install into a virtualenv. You must install the bindings
-and content types in the same environment before the SDK:
+### Install from GitHub main
+
+```bash
+pip install "xmtp @ git+https://github.com/pierce403/xmtp-py.git@main"
+```
+
+### From source (dev)
+
+Clone the repo and install into a virtualenv. Install the bindings first so
+the local editable package can resolve them:
 
 ```bash
 python3 -m venv .venv
@@ -48,17 +56,7 @@ source .venv/bin/activate
 python -m pip install -U pip
 
 pip install -e bindings/python
-pip install -e content-types/content-type-primitives
-for pkg in content-types/*; do
-  if [ "$pkg" != "content-types/content-type-primitives" ]; then
-    pip install -e "$pkg"
-  fi
-done
-
-# Choose one SDK:
-pip install -e sdks/python-sdk
-# or:
-pip install -e sdks/agent-sdk
+pip install -e ".[dev]"
 ```
 
 ## Quick start
@@ -88,8 +86,8 @@ async for message in client.conversations.stream_all_messages():
 ### Agent SDK
 
 ```python
-from xmtp.agent import Agent
-from xmtp.agent.user import create_user, create_signer
+from xmtp_agent import Agent
+from xmtp_agent.user import create_user, create_signer
 from xmtp.types import ClientOptions
 
 # Create a user and signer
@@ -122,7 +120,7 @@ Endpoint overrides via env:
 - `XMTP_DISABLE_HISTORY_SYNC=1` to force identity calls through the primary API
 
 Common issues:
-- **Missing `libxmtpv3.so`**: install will build it automatically, but you need Rust (`cargo`) and `git`. See `bindings/python/README.md` for overrides.
+- **Missing `libxmtpv3.so`**: install will build it automatically, but you need Rust (`cargo`) and `git`. See `bindings/python/README.md` for overrides. If no prebuilt wheels are available, `pip install xmtp` will fall back to a source build.
 - **History sync gRPC errors**: set `XMTP_DISABLE_HISTORY_SYNC=1`, or set `XMTP_HISTORY_SYNC_URL` to a working gRPC endpoint. You can also pass `history_sync_url=''` in `ClientOptions`.
 - **Gateway host errors**: `gateway_host` is an advanced setting; only set it when you have a gateway that supports XMTP gRPC.
 

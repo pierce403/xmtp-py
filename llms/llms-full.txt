@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 2:57 PM UTC / January 13, 2026
+> Generated at: 1:41 PM UTC / January 21, 2026
 > Included Sections:
 > - README.md
 > - sdks/python-sdk/README.md
@@ -38,7 +38,7 @@ description: >
 
 ### README.md
 
-# xmtp-py
+# xmtp
 
 Unofficial Python client SDKs for the XMTP network.
 
@@ -77,10 +77,18 @@ This is a community project that mirrors the structure and interfaces of the off
 pip install xmtp
 ```
 
-### From source (recommended until PyPI release)
+This installs the client SDK, agent SDK, and built-in content types in one package.
 
-Clone the repo and install into a virtualenv. You must install the bindings
-and content types in the same environment before the SDK:
+### Install from GitHub main
+
+```bash
+pip install "xmtp @ git+https://github.com/pierce403/xmtp-py.git@main"
+```
+
+### From source (dev)
+
+Clone the repo and install into a virtualenv. Install the bindings first so
+the local editable package can resolve them:
 
 ```bash
 python3 -m venv .venv
@@ -88,17 +96,7 @@ source .venv/bin/activate
 python -m pip install -U pip
 
 pip install -e bindings/python
-pip install -e content-types/content-type-primitives
-for pkg in content-types/*; do
-  if [ "$pkg" != "content-types/content-type-primitives" ]; then
-    pip install -e "$pkg"
-  fi
-done
-
-# Choose one SDK:
-pip install -e sdks/python-sdk
-# or:
-pip install -e sdks/agent-sdk
+pip install -e ".[dev]"
 ```
 
 ## Quick start
@@ -128,8 +126,8 @@ async for message in client.conversations.stream_all_messages():
 ### Agent SDK
 
 ```python
-from xmtp.agent import Agent
-from xmtp.agent.user import create_user, create_signer
+from xmtp_agent import Agent
+from xmtp_agent.user import create_user, create_signer
 from xmtp.types import ClientOptions
 
 # Create a user and signer
@@ -162,7 +160,7 @@ Endpoint overrides via env:
 - `XMTP_DISABLE_HISTORY_SYNC=1` to force identity calls through the primary API
 
 Common issues:
-- **Missing `libxmtpv3.so`**: install will build it automatically, but you need Rust (`cargo`) and `git`. See `bindings/python/README.md` for overrides.
+- **Missing `libxmtpv3.so`**: install will build it automatically, but you need Rust (`cargo`) and `git`. See `bindings/python/README.md` for overrides. If no prebuilt wheels are available, `pip install xmtp` will fall back to a source build.
 - **History sync gRPC errors**: set `XMTP_DISABLE_HISTORY_SYNC=1`, or set `XMTP_HISTORY_SYNC_URL` to a working gRPC endpoint. You can also pass `history_sync_url=''` in `ClientOptions`.
 - **Gateway host errors**: `gateway_host` is an advanced setting; only set it when you have a gateway that supports XMTP gRPC.
 
@@ -650,6 +648,7 @@ Classes:
 - class Client: Main client for interacting with the XMTP network.
   - async create(cls, signer: Signer, options: ClientOptions | None = None) -> Client: Create a client with a signer.
   - async create_from_env(cls, options: ClientOptions | None = None) -> Client: Create a client using XMTP environment variables.
+  - async from_env(cls, options: ClientOptions | None = None) -> Client: Alias for create_from_env.
   - async build(cls, identifier: Identifier, options: ClientOptions | None = None) -> Client: Create a client with an identifier (no signer).
   - inbox_id(self) -> str | None: Inbox identifier for the user.
   - installation_id(self) -> bytes | None: Installation identifier for the user.
@@ -665,6 +664,7 @@ Classes:
   - register_codecs(self, codecs: Sequence[ContentCodec[ContentT]]) -> None: Register multiple content codecs.
   - codec_for(self, content_type: ContentTypeId | str) -> ContentCodec[object] | None: Return the codec for a content type, if registered.
   - encode_content(self, content: ContentT, content_type: ContentTypeId | str) -> bytes: Encode content for sending.
+  - prepare_for_send(self, content: ContentT, content_type: ContentTypeId | str) -> tuple[bytes, NativeBindings.FfiSendMessageOpts | _SendMessageOpts]: Prepare content for sending with codec-derived send options.
 
 ### Module: xmtp.constants
 
@@ -747,6 +747,7 @@ Classes:
 - class StreamInvalidRetryAttemptsError(XmtpError): Raised when retry attempts are invalid.
 - class NotImplementedXmtpError(XmtpError): Raised when a feature has not been implemented yet.
 - class InvalidGroupMembershipChangeError(XmtpError): Raised when group membership changes are invalid.
+- class DatabaseOpenError(XmtpError): Raised when the local XMTP database cannot be opened.
 
 ### Module: xmtp.identifiers
 
@@ -853,7 +854,7 @@ Functions:
 
 Doc: XMTP agent SDK (unofficial).
 
-Exports: Agent, ClientContext, ConversationContext, CommandRouter, MessageContext, create_identifier, create_name_resolver, create_signer, create_user, download_remote_attachment, filter, get_installation_info, get_test_url, log_details
+Exports: Agent, backoff_reconnect, ClientContext, ConversationContext, CommandRouter, MessageContext, MockAsyncStream, ResolvedRecipient, create_identifier, create_mock_message, create_name_resolver, create_signer, create_user, deserialize_message, download_remote_attachment, filter, flush_asyncio, get_installation_info, get_test_url, log_details, record_messages, replay_messages, resolve_recipient, serialize_message
 
 ### Module: xmtp_agent.agent
 
@@ -980,6 +981,8 @@ Functions:
 
 Doc: Middleware interfaces for the agent SDK.
 
+Exports: ErrorMiddleware, ErrorNextHandler, Handler, LifecycleHandler, Middleware, NextHandler, ConversationHandler, backoff_reconnect
+
 Constants:
 - Handler = Callable[[MessageContext], Awaitable[None]]
 - ConversationHandler = Callable[[ConversationContext], Awaitable[None]]
@@ -989,6 +992,9 @@ Constants:
 - Middleware = Callable[[MessageContext, NextHandler], Awaitable[None]]
 - ErrorMiddleware = Callable[[Exception, MessageContext | ClientContext, ErrorNextHandler], Awaitable[None]]
 
+Functions:
+- backoff_reconnect(*, initial_delay: float = 0.5, max_delay: float = 30.0, multiplier: float = 2.0, reset_after: float = 60.0) -> ErrorMiddleware: Return error middleware that handles stream errors with backoff.
+
 ### Module: xmtp_agent.name_resolver
 
 Doc: Name resolution utilities.
@@ -997,6 +1003,38 @@ Exports: create_name_resolver
 
 Functions:
 - create_name_resolver(api_key: str | None = None) -> Callable[[str], Awaitable[str | None]]: Create an async name resolver backed by web3.bio.
+
+### Module: xmtp_agent.recipient_resolver
+
+Doc: Recipient resolution helpers for agents.
+
+Exports: ResolvedRecipient, resolve_recipient
+
+Classes:
+- class ResolvedRecipient: Resolved recipient details.
+
+Functions:
+- async resolve_recipient(client: Client, recipient: str | Identifier, *, name_resolver: Callable[[str], Awaitable[str | None]] | None = None, consent_state: NativeBindings.FfiConsentState | None = None) -> ResolvedRecipient: Resolve an inbox ID or address for a recipient.
+
+### Module: xmtp_agent.test_utils
+
+Doc: Testing utilities for agent development.
+
+Exports: MockAsyncStream, create_mock_message, deserialize_message, flush_asyncio, record_messages, replay_messages, serialize_message
+
+Classes:
+- class MockAsyncStream(AsyncStream[ContentT], Generic[ContentT]): Async stream helper with push/end for tests.
+  - push(self, value: ContentT) -> None
+  - end(self) -> None
+  - async close(self) -> None
+
+Functions:
+- create_mock_message(content: ContentT, **overrides: Any) -> DecodedMessage[ContentT]: Create a decoded message with sensible defaults for tests.
+- serialize_message(message: DecodedMessage[Any]) -> dict[str, Any]: Serialize a decoded message to a JSON-friendly dict.
+- deserialize_message(payload: dict[str, Any]) -> DecodedMessage[Any]: Deserialize a decoded message from a JSON-friendly dict.
+- async record_messages(stream: AsyncStream[DecodedMessage[Any]], limit: int | None = None) -> list[dict[str, Any]]: Record decoded messages from a stream.
+- replay_messages(records: Iterable[dict[str, Any]]) -> MockAsyncStream[DecodedMessage[Any]]: Replay recorded messages as an async stream.
+- async flush_asyncio() -> None: Flush the asyncio event loop for tests.
 
 ### Module: xmtp_agent.user
 

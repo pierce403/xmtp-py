@@ -1,0 +1,4 @@
+include README.md LICENSE
+recursive-include sdks/python-sdk/src/xmtp *.py py.typed
+recursive-include sdks/agent-sdk/src/xmtp_agent *.py py.typed
+recursive-include content-types/content-type-*/src/xmtp_content_type_* *.py py.typed
