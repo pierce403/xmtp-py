@@ -109,6 +109,7 @@ ruff format .               # Formatting
 - macOS x86_64 wheel builds on arm64 runners can fail delocate’s arch check; limit `CIBW_ARCHS_MACOS` or set up proper cross-builds/universal2.
 - PyPI trusted publishing requires the GitHub Actions environment to match the configured publisher; missing/mismatched environment triggers `invalid-publisher` during publish.
 - PyPI OIDC uploads cannot create new projects; the first release for each distribution must be created with a user/token or an existing project.
+- PyPI rejects wheels tagged `linux_x86_64`; Linux wheels must be repaired to a manylinux tag (auditwheel) before upload.
 - As of 2026-01-21, the PyPI project `xmtp` is configured as a Trusted Publisher for repo `pierce403/xmtp-py`, workflow `publish.yml`, environment `pypi`.
 - When re-tagging the same version after partial PyPI uploads, set `skip-existing: true` in the publish action to avoid file-name reuse errors.
 

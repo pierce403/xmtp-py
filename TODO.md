@@ -30,6 +30,7 @@ Add new work items below as needed.
 - [x] Temporarily limit macOS wheels to arm64 to avoid delocate arch mismatch on x86_64
 - [x] Add `publish` job environment to align with PyPI trusted publisher claims
 - [x] Set PyPI publish `skip-existing` to handle retries after partial uploads
+- [x] Re-enable auditwheel repair so Linux wheels publish with manylinux tags (PyPI rejects `linux_x86_64`)
 
 ## PyPI release checklist
 
