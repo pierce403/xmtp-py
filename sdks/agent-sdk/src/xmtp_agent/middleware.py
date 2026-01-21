@@ -50,7 +50,7 @@ def backoff_reconnect(
         await asyncio.sleep(delay)
         last_error_at = time.monotonic()
         delay = min(max_delay, delay * multiplier)
-        await next_handler()
+        await next_handler(None)
 
     return _middleware
 

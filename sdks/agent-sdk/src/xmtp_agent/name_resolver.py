@@ -67,7 +67,7 @@ def create_name_resolver(api_key: str | None = None) -> Callable[[str], Awaitabl
                         f"{response.status} {response.reason}"
                     )
                 data = response.read()
-            return json.loads(data.decode("utf-8"))
+            return cast(list[dict[str, object]], json.loads(data.decode("utf-8")))
 
         results = await asyncio.to_thread(fetch)
         address_value = results[0].get("address") if results else None

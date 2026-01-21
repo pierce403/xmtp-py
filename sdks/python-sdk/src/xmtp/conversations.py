@@ -167,17 +167,17 @@ class Conversations:
             def on_conversation(
                 self,
                 conversation: NativeBindings.FfiConversation,
-            ) -> None:  # type: ignore[override]
+            ) -> None:
                 conv = self_outer._wrap_conversation(conversation)
                 loop.call_soon_threadsafe(queue.put_nowait, conv)
 
             def on_error(
                 self,
                 error: NativeBindings.FfiSubscribeError,
-            ) -> None:  # type: ignore[override]
+            ) -> None:
                 loop.call_soon_threadsafe(queue.put_nowait, error)
 
-            def on_close(self) -> None:  # type: ignore[override]
+            def on_close(self) -> None:
                 loop.call_soon_threadsafe(stream._end)
 
         self_outer = self
@@ -208,17 +208,17 @@ class Conversations:
             def on_message(
                 self,
                 message: NativeBindings.FfiMessage,
-            ) -> None:  # type: ignore[override]
+            ) -> None:
                 decoded = client._decode_message(message)
                 loop.call_soon_threadsafe(queue.put_nowait, decoded)
 
             def on_error(
                 self,
                 error: NativeBindings.FfiSubscribeError,
-            ) -> None:  # type: ignore[override]
+            ) -> None:
                 loop.call_soon_threadsafe(queue.put_nowait, error)
 
-            def on_close(self) -> None:  # type: ignore[override]
+            def on_close(self) -> None:
                 loop.call_soon_threadsafe(stream._end)
 
         callback = Callback()

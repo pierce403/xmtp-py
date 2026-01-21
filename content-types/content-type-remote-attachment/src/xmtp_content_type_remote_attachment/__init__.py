@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import Any
 from urllib.parse import urlparse
 
 from xmtp_content_type_primitives import (
@@ -13,11 +13,8 @@ from xmtp_content_type_primitives import (
     EncodedContent,
 )
 
-if TYPE_CHECKING:
-    from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
-
-def _bindings() -> xmtpv3:  # pragma: no cover - requires native bindings
+def _bindings() -> Any:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
     return xmtpv3  # pragma: no cover - requires native bindings

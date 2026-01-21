@@ -23,3 +23,5 @@ except (ImportError, OSError) as exc:  # pragma: no cover - import guard
     NativeBindings = _MissingBindings(exc)  # type: ignore[assignment]
 else:
     NativeBindings = _xmtpv3
+
+__all__ = ["NativeBindings"]

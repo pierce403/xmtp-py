@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import Any, cast
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -12,11 +12,8 @@ from xmtp_content_type_primitives import (
     EncodedContent,
 )
 
-if TYPE_CHECKING:
-    from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
-
-def _bindings() -> xmtpv3:  # pragma: no cover - requires native bindings
+def _bindings() -> Any:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
     return xmtpv3  # pragma: no cover - requires native bindings
@@ -58,7 +55,7 @@ class MarkdownCodec(ContentCodec[str]):
             raise ValueError(f"unrecognized encoding {encoding}")
         if not isinstance(content.content, (bytes, bytearray)):
             raise TypeError("Markdown content payload must be bytes")
-        return _bindings().decode_markdown(bytes(content.content))
+        return cast(str, _bindings().decode_markdown(bytes(content.content)))
 
     def fallback(self, content: str) -> str | None:
         return None

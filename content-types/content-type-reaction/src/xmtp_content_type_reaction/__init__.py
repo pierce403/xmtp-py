@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import Any
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -14,11 +14,8 @@ from xmtp_content_type_primitives import (
     EncodedContent,
 )
 
-if TYPE_CHECKING:
-    from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
-
-def _bindings() -> xmtpv3:  # pragma: no cover - requires native bindings
+def _bindings() -> Any:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
     return xmtpv3  # pragma: no cover - requires native bindings

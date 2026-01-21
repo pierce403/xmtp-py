@@ -28,7 +28,7 @@ class _MessageOverrides(Generic[ContentT]):
 def create_mock_message(content: ContentT, **overrides: object) -> DecodedMessage[ContentT]:
     """Create a decoded message with sensible defaults for tests."""
 
-    opts = _MessageOverrides[ContentT](content=content, **overrides)
+    opts = _MessageOverrides[ContentT](content=content, **overrides)  # type: ignore[arg-type]
     return DecodedMessage(
         id=opts.id or b"mock-message-id",
         conversation_id=opts.conversation_id or b"test-conversation-id",

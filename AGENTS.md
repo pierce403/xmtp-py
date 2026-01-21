@@ -97,6 +97,7 @@ ruff format .               # Formatting
 - `xmtp-bindings` now builds libxmtp during install via setuptools cmdclasses; requires `cargo` + `git` and honors `XMTP_LIBXMTP_*` env overrides.
 - `bindings/python/pyproject.toml` cmdclass entries must use dotted paths (e.g., `xmtp_bindings.build.BuildPy`), not `module:Class`.
 - Coverage omits `xmtp_bindings/build.py` because it is an install-time helper that is hard to exercise in unit tests.
+- Mypy strict ignores `xmtp_bindings.build` and `xmtp_bindings.xmtpv3` via `pyproject.toml` overrides; content-type `_bindings()` helpers return `Any` and use casts where needed to avoid `no-any-return`.
 - `Client.prepare_for_send()` now mirrors xmtp-js send options by using codec `should_push`, and `Conversation.send()` uses it for non-text content.
 - Agent SDK includes `resolve_recipient()` (ENS/address/inbox ID) and `backoff_reconnect()` helper plus `test_utils` for mock streams/record-replay.
 - Packaging: root `pyproject.toml` defines the `xmtp` distribution, bundling `xmtp`, `xmtp_agent`, and all content types; `xmtp-bindings` remains a separate dist.

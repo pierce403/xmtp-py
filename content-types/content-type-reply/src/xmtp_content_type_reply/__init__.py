@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from xmtp_content_type_primitives import (
     CodecRegistry,
@@ -12,11 +12,8 @@ from xmtp_content_type_primitives import (
     EncodedContent,
 )
 
-if TYPE_CHECKING:
-    from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
-
-def _bindings() -> xmtpv3:  # pragma: no cover - requires native bindings
+def _bindings() -> Any:  # pragma: no cover - requires native bindings
     from xmtp_bindings import xmtpv3  # pragma: no cover - requires native bindings
 
     return xmtpv3  # pragma: no cover - requires native bindings
@@ -40,7 +37,7 @@ class Reply:
     content_type: ContentTypeId
 
 
-def _content_type_to_ffi(content_type: ContentTypeId) -> xmtpv3.FfiContentTypeId:
+def _content_type_to_ffi(content_type: ContentTypeId) -> Any:
     return _bindings().FfiContentTypeId(
         authority_id=content_type.authority_id,
         type_id=content_type.type_id,
@@ -49,7 +46,7 @@ def _content_type_to_ffi(content_type: ContentTypeId) -> xmtpv3.FfiContentTypeId
     )
 
 
-def _content_type_from_ffi(ffi: xmtpv3.FfiContentTypeId | None) -> ContentTypeId:
+def _content_type_from_ffi(ffi: Any) -> ContentTypeId:
     if ffi is None:
         raise ValueError("Missing content type in encoded reply")
     return ContentTypeId(
@@ -60,7 +57,7 @@ def _content_type_from_ffi(ffi: xmtpv3.FfiContentTypeId | None) -> ContentTypeId
     )
 
 
-def _encoded_to_ffi(encoded: EncodedContent) -> xmtpv3.FfiEncodedContent:
+def _encoded_to_ffi(encoded: EncodedContent) -> Any:
     return _bindings().FfiEncodedContent(
         type_id=_content_type_to_ffi(encoded.type_id),
         parameters=encoded.parameters,
@@ -70,7 +67,7 @@ def _encoded_to_ffi(encoded: EncodedContent) -> xmtpv3.FfiEncodedContent:
     )
 
 
-def _encoded_from_ffi(encoded: xmtpv3.FfiEncodedContent) -> EncodedContent:
+def _encoded_from_ffi(encoded: Any) -> EncodedContent:
     return EncodedContent(
         type_id=_content_type_from_ffi(encoded.type_id),
         parameters=encoded.parameters,

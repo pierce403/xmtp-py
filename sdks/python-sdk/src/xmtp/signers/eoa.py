@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from eth_account import Account
 from eth_account.messages import encode_defunct
 
@@ -20,7 +22,7 @@ class EoaSigner(Signer):
     async def get_address(self) -> str:
         """Return the wallet address for this signer."""
 
-        return self._account.address
+        return cast(str, self._account.address)
 
     async def get_identifier(self) -> Identifier:
         """Return the XMTP identifier for this signer."""
@@ -32,7 +34,7 @@ class EoaSigner(Signer):
 
         signable = encode_defunct(message)
         signed = self._account.sign_message(signable)
-        return signed.signature
+        return cast(bytes, signed.signature)
 
     async def get_chain_id(self) -> int:
         """Return the chain ID (not applicable for EOA)."""

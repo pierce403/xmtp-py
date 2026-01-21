@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+from typing import cast
 from urllib.request import Request, urlopen
 
 from xmtp_content_type_remote_attachment import RemoteAttachment
@@ -25,7 +26,7 @@ async def download_remote_attachment(remote_attachment: RemoteAttachment) -> byt
                 )
             return response.read()
 
-    payload = await asyncio.to_thread(fetch)
+    payload = cast(bytes, await asyncio.to_thread(fetch))
     digest = _sha256_hex(payload)
     if digest.lower() != remote_attachment.content_digest.lower():
         raise ValueError("Remote attachment digest does not match payload")
