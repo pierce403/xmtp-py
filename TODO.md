@@ -22,6 +22,7 @@ Add new work items below as needed.
 
 - [x] Install perl-IPC-Cmd in manylinux before building bindings wheels to fix openssl-sys
 - [x] Install perl-Time-Piece in manylinux to satisfy OpenSSL build dependencies
+- [x] Mark bindings wheel as platform-specific to avoid pure-Python wheel rejection
 
 ## PyPI release checklist
 

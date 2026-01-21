@@ -36,6 +36,7 @@ package-dir = {"" = "src"}
 build_py = "xmtp_bindings.build.BuildPy"
 build_ext = "xmtp_bindings.build.BuildExt"
 develop = "xmtp_bindings.build.Develop"
+bdist_wheel = "xmtp_bindings.build.BdistWheel"
 
 [tool.setuptools.packages.find]
 where = ["src"]

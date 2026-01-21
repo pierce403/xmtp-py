@@ -12,6 +12,7 @@ from pathlib import Path
 from setuptools.command.build_ext import build_ext
 from setuptools.command.build_py import build_py
 from setuptools.command.develop import develop
+from wheel.bdist_wheel import bdist_wheel
 
 
 def _is_truthy(value: str | None) -> bool:
@@ -161,3 +162,11 @@ class Develop(develop):
 
     def _announce(self, message: str) -> None:
         self.announce(message, level=2)
+
+
+class BdistWheel(bdist_wheel):
+    """Mark the wheel as platform-specific when bundling native libraries."""
+
+    def finalize_options(self) -> None:
+        super().finalize_options()
+        self.root_is_pure = False
