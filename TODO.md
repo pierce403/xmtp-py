@@ -31,6 +31,7 @@ Add new work items below as needed.
 - [x] Add `publish` job environment to align with PyPI trusted publisher claims
 - [x] Set PyPI publish `skip-existing` to handle retries after partial uploads
 - [x] Re-enable auditwheel repair so Linux wheels publish with manylinux tags (PyPI rejects `linux_x86_64`)
+- [x] Force bindings `build_py` output to platlib so auditwheel can repair wheels
 
 ## PyPI release checklist
 

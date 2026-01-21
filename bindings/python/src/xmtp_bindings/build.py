@@ -134,6 +134,11 @@ def _ensure_libxmtp(announce: Callable[[str], None]) -> None:
 class BuildPy(build_py):
     """Ensure libxmtp is built before packaging."""
 
+    def finalize_options(self) -> None:
+        super().finalize_options()
+        build_cmd = self.get_finalized_command("build")
+        self.build_lib = build_cmd.build_platlib
+
     def run(self) -> None:
         _ensure_libxmtp(self._announce)
         super().run()

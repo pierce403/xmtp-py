@@ -110,6 +110,7 @@ ruff format .               # Formatting
 - PyPI trusted publishing requires the GitHub Actions environment to match the configured publisher; missing/mismatched environment triggers `invalid-publisher` during publish.
 - PyPI OIDC uploads cannot create new projects; the first release for each distribution must be created with a user/token or an existing project.
 - PyPI rejects wheels tagged `linux_x86_64`; Linux wheels must be repaired to a manylinux tag (auditwheel) before upload.
+- Auditwheel will fail if shared libraries are packaged under purelib; for bindings, set `build_py.build_lib` to `build_platlib` so `.so` lands in platlib.
 - As of 2026-01-21, the PyPI project `xmtp` is configured as a Trusted Publisher for repo `pierce403/xmtp-py`, workflow `publish.yml`, environment `pypi`.
 - When re-tagging the same version after partial PyPI uploads, set `skip-existing: true` in the publish action to avoid file-name reuse errors.
 
