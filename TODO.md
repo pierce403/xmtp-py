@@ -18,6 +18,10 @@ Add new work items below as needed.
 - [x] Make CI coverage artifact name unique per OS to avoid upload conflicts
 - [x] Make CI pytest command PowerShell-friendly on Windows
 
+## Release workflow fixes (2026-01-21)
+
+- [x] Install perl-IPC-Cmd in manylinux before building bindings wheels to fix openssl-sys
+
 ## PyPI release checklist
 
 - [ ] Reserve project names on PyPI + TestPyPI: `xmtp` and `xmtp-bindings`
