@@ -25,6 +25,7 @@ Add new work items below as needed.
 - [x] Mark bindings wheel as platform-specific to avoid pure-Python wheel rejection
 - [x] Force Root-Is-Purelib false in bindings wheel metadata for auditwheel
 - [x] Skip auditwheel repair in release build while platlib placement is unresolved
+- [x] Ensure cibuildwheel repair step copies wheels to {dest_dir} when auditwheel is skipped
 
 ## PyPI release checklist
 
