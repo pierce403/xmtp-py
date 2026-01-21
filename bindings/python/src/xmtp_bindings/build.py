@@ -21,8 +21,8 @@ def _is_truthy(value: str | None) -> bool:
 
 
 def _project_root() -> Path:
-    # bindings/python
-    return Path(__file__).resolve().parents[3]
+    # bindings/python (or sdist root when building from source distribution)
+    return Path(__file__).resolve().parents[2]
 
 
 def _repo_root(project_root: Path) -> Path:
