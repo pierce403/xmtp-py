@@ -474,6 +474,7 @@ async def test_client_build_with_history_sync(fake_bindings) -> None:
     options = ClientOptions(
         env='dev',
         history_sync_url='https://history',
+        disable_history_sync=False,
         db_path=lambda inbox_id: f'/tmp/{inbox_id}.db',
         disable_device_sync=True,
         db_encryption_key='0x' + '2' * 64,
@@ -534,7 +535,7 @@ async def test_client_build_with_empty_history_sync(fake_bindings) -> None:
     fake_bindings.generate_inbox_id = lambda identifier, nonce: 'unused'
     fake_bindings.create_client = create_client
 
-    options = ClientOptions(env='dev', history_sync_url='')
+    options = ClientOptions(env='dev', history_sync_url='', disable_history_sync=False)
     client = await Client.build(Identifier(IdentifierKind.ETHEREUM, '0xabc'), options)
     assert client._client is fake_client
     assert len(calls['connect']) == 1

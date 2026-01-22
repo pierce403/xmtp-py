@@ -21,6 +21,7 @@ def test_load_client_options_from_env(monkeypatch, tmp_path) -> None:
     assert options.env == 'production'
     assert options.api_url == 'https://api.example'
     assert options.history_sync_url == 'https://history.example'
+    assert options.disable_history_sync is False
     assert options.gateway_host == 'gateway.example'
     assert options.db_encryption_key == '0xdeadbeef'
     assert options.debug_events_enabled is True
@@ -40,6 +41,7 @@ def test_load_client_options_from_env_defaults(monkeypatch) -> None:
     assert options.env == 'dev'
     assert options.structured_logging is False
     assert options.debug_events_enabled is False
+    assert options.disable_history_sync is True
 
 
 def test_load_client_options_invalid_env(monkeypatch) -> None:

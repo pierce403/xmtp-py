@@ -51,6 +51,11 @@ Add new work items below as needed.
 
 - [x] Bump package versions to 0.1.3 before tagging
 
+## Defaults & docs (2026-01-22)
+
+- [x] Disable history sync by default in `ClientOptions` and allow env overrides to re-enable
+- [x] Update docs/examples to prefer Agent SDK and note history sync defaults
+
 ## PyPI release checklist
 
 - [x] Reserve project name on PyPI: `xmtp` (exists)

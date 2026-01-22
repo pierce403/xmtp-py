@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 1:19 AM UTC / January 22, 2026
+> Generated at: 2:26 AM UTC / January 22, 2026
 > Included Sections:
 > - README.md
 > - sdks/python-sdk/README.md
@@ -93,29 +93,7 @@ pip install -e ".[dev]"
 
 ## Quick start
 
-### Python SDK
-
-```python
-from xmtp import Client
-from xmtp.signers import create_signer
-from xmtp.types import ClientOptions
-
-# Create a signer from a private key
-signer = create_signer(private_key)
-
-# Create the client
-client = await Client.create(signer, ClientOptions(env='dev'))
-
-# Create a conversation
-dm = await client.conversations.new_dm("0x...")
-await dm.send("Hello from Python!")
-
-# Stream messages
-async for message in client.conversations.stream_all_messages():
-    print(f"Received: {message.content}")
-```
-
-### Agent SDK
+### Agent SDK (recommended)
 
 ```python
 from xmtp_agent import Agent
@@ -127,7 +105,10 @@ user = create_user()
 signer = create_signer(user)
 
 # Create the agent
-agent = await Agent.create(signer, ClientOptions(env='dev', db_path=None))
+agent = await Agent.create(
+    signer,
+    ClientOptions(env='dev', disable_history_sync=True, db_path=None),
+)
 
 # Handle text messages
 @agent.on("text")
@@ -136,6 +117,28 @@ async def handle_text(ctx):
 
 # Start the agent
 await agent.start()
+```
+
+### Python SDK (low-level)
+
+```python
+from xmtp import Client
+from xmtp.signers import create_signer
+from xmtp.types import ClientOptions
+
+# Create a signer from a private key
+signer = create_signer(private_key)
+
+# Create the client
+client = await Client.create(signer, ClientOptions(env='dev', disable_history_sync=True))
+
+# Create a conversation
+dm = await client.conversations.new_dm("0x...")
+await dm.send("Hello from Python!")
+
+# Stream messages
+async for message in client.conversations.stream_all_messages():
+    print(f"Received: {message.content}")
 ```
 
 ## Key management tips
@@ -147,13 +150,17 @@ await agent.start()
 
 ## Configuration & troubleshooting
 
+History sync is disabled by default. To enable it, pass
+`disable_history_sync=False` (and optionally `history_sync_url`) in `ClientOptions`,
+or set `XMTP_HISTORY_SYNC_URL`.
+
 Endpoint overrides via env:
 - `XMTP_ENV`, `XMTP_API_URL`, `XMTP_HISTORY_SYNC_URL`, `XMTP_GATEWAY_HOST`
 - `XMTP_DISABLE_HISTORY_SYNC=1` to force identity calls through the primary API
 
 Common issues:
 - **Missing `libxmtpv3.so`**: install will build it automatically, but you need Rust (`cargo`) and `git`. See `bindings/python/README.md` for overrides. If no prebuilt wheels are available, `pip install xmtp` will fall back to a source build.
-- **History sync gRPC errors**: set `XMTP_DISABLE_HISTORY_SYNC=1`, or set `XMTP_HISTORY_SYNC_URL` to a working gRPC endpoint. You can also pass `history_sync_url=''` in `ClientOptions`.
+- **History sync gRPC errors**: leave history sync disabled, or set `XMTP_DISABLE_HISTORY_SYNC=1`. To re-enable, pass `disable_history_sync=False` (and optionally `history_sync_url`) in `ClientOptions`.
 - **Gateway host errors**: `gateway_host` is an advanced setting; only set it when you have a gateway that supports XMTP gRPC.
 
 ## LibXMTP bindings
@@ -191,7 +198,7 @@ from xmtp.signers import create_signer
 from xmtp.types import ClientOptions
 
 signer = create_signer('0xYOUR_PRIVATE_KEY')
-client = await Client.create(signer, ClientOptions(env='dev'))
+client = await Client.create(signer, ClientOptions(env='dev', disable_history_sync=True))
 
 dm = await client.conversations.new_dm('0x...')
 await dm.send('Hello from Python!')
@@ -207,7 +214,11 @@ await dm.send('Hello from Python!')
 
 Endpoint overrides via env: `XMTP_API_URL`, `XMTP_HISTORY_SYNC_URL`, `XMTP_GATEWAY_HOST`, `XMTP_DISABLE_HISTORY_SYNC=1`.
 
-If you see history sync gRPC errors, set `XMTP_DISABLE_HISTORY_SYNC=1` or pass `history_sync_url=''` in `ClientOptions`.
+History sync is disabled by default. Set `disable_history_sync=False` (and optionally
+`history_sync_url`) to enable it.
+
+If you see history sync gRPC errors, leave history sync disabled or set
+`XMTP_DISABLE_HISTORY_SYNC=1`.
 
 ### docs/python_sdk.rst
 
@@ -225,6 +236,8 @@ Configuration & troubleshooting
 -------------------------------
 
 - Override endpoints with ``XMTP_API_URL``, ``XMTP_HISTORY_SYNC_URL``, or ``XMTP_GATEWAY_HOST``.
+- History sync is disabled by default. Set ``disable_history_sync=False`` (and optionally
+  ``history_sync_url``) to enable it.
 - Set ``XMTP_DISABLE_HISTORY_SYNC=1`` if the history sync endpoint returns gRPC errors.
 
 .. automodule:: xmtp.client

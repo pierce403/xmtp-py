@@ -93,7 +93,7 @@ ruff format .               # Formatting
 - `sdks/python-sdk/tests/conftest.py` installs a fake `xmtp_bindings.xmtpv3` module when native bindings are unavailable so content-type and bindings smoke tests still run.
 - As of 2026-01-13, agent SDK key lifecycle is caller-owned: `create_user()` generates an in-memory key if none provided, `create_signer()` just wraps a key, and `Agent.create_from_env()` only reads `XMTP_WALLET_KEY` without any persistence or rotation helpers.
 - xmtp-js agent-sdk mirrors this: `createUser()`/`createSigner()` are in-memory helpers, `Agent.createFromEnv()` reads `XMTP_WALLET_KEY` (expects 0x hex), and key generation lives in the `xmtp-cli keys` command rather than the SDK.
-- History sync can be disabled via `ClientOptions.disable_history_sync` or `XMTP_DISABLE_HISTORY_SYNC`; endpoint overrides via `XMTP_API_URL`, `XMTP_HISTORY_SYNC_URL`, and `XMTP_GATEWAY_HOST`.
+- History sync is disabled by default; set `disable_history_sync=False` (and optionally `history_sync_url`) to enable. Endpoint overrides via `XMTP_API_URL`, `XMTP_HISTORY_SYNC_URL`, and `XMTP_GATEWAY_HOST`.
 - `xmtp-bindings` now builds libxmtp during install via setuptools cmdclasses; requires `cargo` + `git` and honors `XMTP_LIBXMTP_*` env overrides.
 - Bindings builds default to the pinned libxmtp tag stored in `bindings/python/src/xmtp_bindings/libxmtp.ref`; override with `XMTP_LIBXMTP_REF` when intentionally updating. Current pin: `swift-bindings-1.9.0.d206831`.
 - `bindings/python/pyproject.toml` cmdclass entries must use dotted paths (e.g., `xmtp_bindings.build.BuildPy`), not `module:Class`.

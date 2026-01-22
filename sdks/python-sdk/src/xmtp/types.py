@@ -33,6 +33,7 @@ class ClientOptions:
         api_url: Optional override for the XMTP API URL.
         history_sync_url: Optional override for history sync URL.
         disable_history_sync: Disable history sync and use the primary API for identity calls.
+            Defaults to True.
         gateway_host: Optional gateway host for d14n.
         db_path: Optional database path (string, None, or function).
         db_encryption_key: Optional database encryption key bytes or hex string.
@@ -49,7 +50,7 @@ class ClientOptions:
     env: XmtpEnv = "dev"
     api_url: str | None = None
     history_sync_url: str | None = None
-    disable_history_sync: bool = False
+    disable_history_sync: bool = True
     gateway_host: str | None = None
     db_path: str | None | Literal["auto"] | Callable[[str], str] = "auto"
     db_encryption_key: bytes | str | None = None

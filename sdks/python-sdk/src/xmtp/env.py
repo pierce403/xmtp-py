@@ -48,6 +48,7 @@ def load_client_options_from_env(options: ClientOptions | None = None) -> Client
             updated.history_sync_url = None
         else:
             updated.history_sync_url = history_sync_url
+            updated.disable_history_sync = False
 
     gateway_host = os.getenv("XMTP_GATEWAY_HOST")
     if gateway_host:

@@ -12,6 +12,8 @@ Configuration & troubleshooting
 -------------------------------
 
 - Override endpoints with ``XMTP_API_URL``, ``XMTP_HISTORY_SYNC_URL``, or ``XMTP_GATEWAY_HOST``.
+- History sync is disabled by default. Set ``disable_history_sync=False`` (and optionally
+  ``history_sync_url``) to enable it.
 - Set ``XMTP_DISABLE_HISTORY_SYNC=1`` if the history sync endpoint returns gRPC errors.
 
 .. automodule:: xmtp_agent.agent

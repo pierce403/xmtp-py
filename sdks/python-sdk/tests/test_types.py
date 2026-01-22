@@ -8,7 +8,7 @@ def test_constants_have_expected_envs() -> None:
 
 
 def test_client_options_resolve_urls() -> None:
-    options = ClientOptions(env='local')
+    options = ClientOptions(env='local', disable_history_sync=False)
     assert options.resolved_api_url() == API_URLS['local']
     assert options.resolved_history_sync_url() == HISTORY_SYNC_URLS['local']
 

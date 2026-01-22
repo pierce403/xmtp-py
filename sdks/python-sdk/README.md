@@ -12,7 +12,7 @@ from xmtp.signers import create_signer
 from xmtp.types import ClientOptions
 
 signer = create_signer('0xYOUR_PRIVATE_KEY')
-client = await Client.create(signer, ClientOptions(env='dev'))
+client = await Client.create(signer, ClientOptions(env='dev', disable_history_sync=True))
 
 dm = await client.conversations.new_dm('0x...')
 await dm.send('Hello from Python!')
@@ -28,4 +28,8 @@ await dm.send('Hello from Python!')
 
 Endpoint overrides via env: `XMTP_API_URL`, `XMTP_HISTORY_SYNC_URL`, `XMTP_GATEWAY_HOST`, `XMTP_DISABLE_HISTORY_SYNC=1`.
 
-If you see history sync gRPC errors, set `XMTP_DISABLE_HISTORY_SYNC=1` or pass `history_sync_url=''` in `ClientOptions`.
+History sync is disabled by default. Set `disable_history_sync=False` (and optionally
+`history_sync_url`) to enable it.
+
+If you see history sync gRPC errors, leave history sync disabled or set
+`XMTP_DISABLE_HISTORY_SYNC=1`.
