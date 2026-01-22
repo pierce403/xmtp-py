@@ -2,7 +2,13 @@ import os
 
 import pytest
 
-from xmtp.env import _is_truthy, _parse_log_level, load_client_options_from_env, load_signer_from_env
+from xmtp.env import (
+    _is_truthy,
+    _parse_log_level,
+    apply_rust_log_from_options,
+    load_client_options_from_env,
+    load_signer_from_env,
+)
 from xmtp.types import ClientOptions, LogLevel
 
 
@@ -15,6 +21,7 @@ def test_load_client_options_from_env(monkeypatch, tmp_path) -> None:
     monkeypatch.setenv('XMTP_DB_DIRECTORY', str(tmp_path))
     monkeypatch.setenv('XMTP_FORCE_DEBUG', '1')
     monkeypatch.setenv('XMTP_FORCE_DEBUG_LEVEL', 'debug')
+    monkeypatch.setenv('XMTP_RUST_LOG', 'warn')
 
     options = load_client_options_from_env(ClientOptions())
 
@@ -28,6 +35,7 @@ def test_load_client_options_from_env(monkeypatch, tmp_path) -> None:
     assert options.structured_logging is True
     assert options.logging_level == LogLevel.DEBUG
     assert options.db_path is not None
+    assert options.rust_log == 'warn'
 
     db_path = options.db_path('inbox') if callable(options.db_path) else options.db_path
     assert db_path is not None
@@ -42,6 +50,7 @@ def test_load_client_options_from_env_defaults(monkeypatch) -> None:
     assert options.structured_logging is False
     assert options.debug_events_enabled is False
     assert options.disable_history_sync is True
+    assert options.rust_log is None
 
 
 def test_load_client_options_invalid_env(monkeypatch) -> None:
@@ -98,6 +107,19 @@ def test_load_signer_from_env(monkeypatch) -> None:
     monkeypatch.setenv('XMTP_WALLET_KEY', '0x' + '1' * 64)
     signer = load_signer_from_env()
     assert signer is not None
+
+
+def test_apply_rust_log_from_options(monkeypatch) -> None:
+    monkeypatch.delenv('RUST_LOG', raising=False)
+    apply_rust_log_from_options(ClientOptions(env='dev'))
+    assert os.environ['RUST_LOG'] == 'off'
+
+    monkeypatch.setenv('RUST_LOG', 'info')
+    apply_rust_log_from_options(ClientOptions(env='dev'))
+    assert os.environ['RUST_LOG'] == 'info'
+
+    apply_rust_log_from_options(ClientOptions(env='dev', rust_log='error'))
+    assert os.environ['RUST_LOG'] == 'error'
 
     monkeypatch.setenv('XMTP_WALLET_KEY', '1' * 64)
     signer = load_signer_from_env()

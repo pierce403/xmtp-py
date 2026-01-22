@@ -49,7 +49,7 @@ Add new work items below as needed.
 
 ## Release prep (2026-01-22)
 
-- [x] Bump package versions to 0.1.3 before tagging
+- [x] Bump package versions to 0.1.4 before tagging
 
 ## Defaults & docs (2026-01-22)
 
@@ -59,6 +59,7 @@ Add new work items below as needed.
 - [x] Update README quick start examples (agent + client) to send "Hello from xmtp-py <version>" directly (async main + asyncio.run)
 - [x] Remove stray top-level await from README agent example
 - [x] Add LogLevel.OFF to match xmtp-js log level list
+- [x] Add ClientOptions.rust_log + XMTP_RUST_LOG env hook (default off)
 
 ## PyPI release checklist
 

@@ -159,11 +159,13 @@ or set `XMTP_HISTORY_SYNC_URL`.
 Endpoint overrides via env:
 - `XMTP_ENV`, `XMTP_API_URL`, `XMTP_HISTORY_SYNC_URL`, `XMTP_GATEWAY_HOST`
 - `XMTP_DISABLE_HISTORY_SYNC=1` to force identity calls through the primary API
+- `XMTP_RUST_LOG` to override Rust logging (defaults to `off`)
 
 Common issues:
 - **Missing `libxmtpv3.so`**: install will build it automatically, but you need Rust (`cargo`) and `git`. See `bindings/python/README.md` for overrides. If no prebuilt wheels are available, `pip install xmtp` will fall back to a source build.
 - **History sync gRPC errors**: leave history sync disabled, or set `XMTP_DISABLE_HISTORY_SYNC=1`. To re-enable, pass `disable_history_sync=False` (and optionally `history_sync_url`) in `ClientOptions`.
 - **Gateway host errors**: `gateway_host` is an advanced setting; only set it when you have a gateway that supports XMTP gRPC.
+- **Noisy Rust logs**: set `XMTP_RUST_LOG=error` or pass `rust_log="error"` in `ClientOptions`.
 
 ## LibXMTP bindings
 

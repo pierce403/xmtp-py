@@ -13,7 +13,11 @@ from xmtp_content_type_primitives import ContentCodec, ContentTypeId, EncodedCon
 
 from xmtp.bindings import NativeBindings
 from xmtp.conversations import Conversations
-from xmtp.env import load_client_options_from_env, load_signer_from_env
+from xmtp.env import (
+    apply_rust_log_from_options,
+    load_client_options_from_env,
+    load_signer_from_env,
+)
 from xmtp.errors import (
     ClientNotInitializedError,
     CodecNotFoundError,
@@ -183,6 +187,7 @@ class Client:
 
         self._identifier = identifier
         options = self._options
+        apply_rust_log_from_options(options)
         host = options.resolved_api_url()
         gateway_host = options.gateway_host
         is_secure = host.startswith("https")

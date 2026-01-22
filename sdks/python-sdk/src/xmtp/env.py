@@ -54,6 +54,10 @@ def load_client_options_from_env(options: ClientOptions | None = None) -> Client
     if gateway_host:
         updated.gateway_host = gateway_host
 
+    rust_log = os.getenv("XMTP_RUST_LOG")
+    if rust_log is not None:
+        updated.rust_log = rust_log
+
     db_encryption_key = os.getenv("XMTP_DB_ENCRYPTION_KEY")
     if db_encryption_key:
         updated.db_encryption_key = db_encryption_key
@@ -82,6 +86,15 @@ def load_client_options_from_env(options: ClientOptions | None = None) -> Client
     return updated
 
 
+def apply_rust_log_from_options(options: ClientOptions) -> None:
+    """Apply Rust log filtering based on client options."""
+
+    if options.rust_log is not None:
+        os.environ["RUST_LOG"] = options.rust_log
+    else:
+        os.environ.setdefault("RUST_LOG", "off")
+
+
 def load_signer_from_env() -> Signer:
     """Create an EOA signer from XMTP_WALLET_KEY."""
 
@@ -95,4 +108,8 @@ def load_signer_from_env() -> Signer:
     return create_signer(wallet_key)
 
 
-__all__ = ["load_client_options_from_env", "load_signer_from_env"]
+__all__ = [
+    "apply_rust_log_from_options",
+    "load_client_options_from_env",
+    "load_signer_from_env",
+]

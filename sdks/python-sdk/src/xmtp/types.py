@@ -40,6 +40,7 @@ class ClientOptions:
         db_encryption_key: Optional database encryption key bytes or hex string.
         structured_logging: Enable structured JSON logging.
         logging_level: Logging level for libxmtp.
+        rust_log: Override RUST_LOG for native bindings (defaults to "off" if unset).
         disable_auto_register: Skip automatic registration.
         disable_device_sync: Disable device sync worker.
         app_version: Optional app version string to pass to the backend.
@@ -57,6 +58,7 @@ class ClientOptions:
     db_encryption_key: bytes | str | None = None
     structured_logging: bool = False
     logging_level: LogLevel | None = None
+    rust_log: str | None = None
     disable_auto_register: bool = False
     disable_device_sync: bool = False
     app_version: str | None = None

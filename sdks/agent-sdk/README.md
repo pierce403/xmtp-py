@@ -30,9 +30,13 @@ await agent.start()
 ## Configuration & troubleshooting
 
 Endpoint overrides via env: `XMTP_API_URL`, `XMTP_HISTORY_SYNC_URL`, `XMTP_GATEWAY_HOST`, `XMTP_DISABLE_HISTORY_SYNC=1`.
+Rust log override via env: `XMTP_RUST_LOG=error`.
 
 History sync is disabled by default. Set `disable_history_sync=False` (and optionally
 `history_sync_url`) to enable it.
 
 If you see history sync gRPC errors, leave history sync disabled or set
 `XMTP_DISABLE_HISTORY_SYNC=1`.
+
+If Rust logs are too noisy, set `XMTP_RUST_LOG=error` or pass `rust_log="error"`
+in `ClientOptions`.

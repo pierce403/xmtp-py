@@ -15,6 +15,7 @@ Configuration & troubleshooting
 - History sync is disabled by default. Set ``disable_history_sync=False`` (and optionally
   ``history_sync_url``) to enable it.
 - Set ``XMTP_DISABLE_HISTORY_SYNC=1`` if the history sync endpoint returns gRPC errors.
+- Set ``XMTP_RUST_LOG=error`` (or pass ``rust_log="error"``) to reduce Rust logs.
 
 .. automodule:: xmtp.client
    :members:
