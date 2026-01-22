@@ -70,7 +70,7 @@ import xmtp
 from xmtp_agent import Agent
 from xmtp_agent.name_resolver import create_name_resolver
 from xmtp_agent.user import create_user, create_signer
-from xmtp.types import ClientOptions, LogLevel
+from xmtp.types import ClientOptions
 
 recipient = "deanpierce.eth"
 
@@ -84,9 +84,8 @@ async def main() -> None:
     agent = await Agent.create(
         signer,
         ClientOptions(
-            env="dev",
+            env="production",
             disable_history_sync=True,
-            logging_level=LogLevel.WARN,
             db_path=None,
         ),
     )
@@ -113,7 +112,7 @@ import xmtp
 
 from xmtp import Client
 from xmtp.signers import create_signer
-from xmtp.types import ClientOptions, LogLevel
+from xmtp.types import ClientOptions
 from xmtp_agent.name_resolver import create_name_resolver
 
 recipient = "deanpierce.eth"
@@ -124,9 +123,8 @@ async def main() -> None:
     client = await Client.create(
         signer,
         ClientOptions(
-            env="dev",
+            env="production",
             disable_history_sync=True,
-            logging_level=LogLevel.WARN,
         ),
     )
 

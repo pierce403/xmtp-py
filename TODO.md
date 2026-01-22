@@ -61,6 +61,7 @@ Add new work items below as needed.
 - [x] Add LogLevel.OFF to match xmtp-js log level list
 - [x] Add ClientOptions.rust_log + XMTP_RUST_LOG env hook (default off)
 - [x] Re-enable aarch64 bindings wheels via QEMU in publish workflow
+- [x] Set examples to production env and remove explicit logging level
 
 ## PyPI release checklist
 

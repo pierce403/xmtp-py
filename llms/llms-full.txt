@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 3:51 AM UTC / January 22, 2026
+> Generated at: 4:30 AM UTC / January 22, 2026
 > Included Sections:
 > - README.md
 > - sdks/python-sdk/README.md
@@ -110,7 +110,7 @@ import xmtp
 from xmtp_agent import Agent
 from xmtp_agent.name_resolver import create_name_resolver
 from xmtp_agent.user import create_user, create_signer
-from xmtp.types import ClientOptions, LogLevel
+from xmtp.types import ClientOptions
 
 recipient = "deanpierce.eth"
 
@@ -124,9 +124,8 @@ async def main() -> None:
     agent = await Agent.create(
         signer,
         ClientOptions(
-            env="dev",
+            env="production",
             disable_history_sync=True,
-            logging_level=LogLevel.WARN,
             db_path=None,
         ),
     )
@@ -153,7 +152,7 @@ import xmtp
 
 from xmtp import Client
 from xmtp.signers import create_signer
-from xmtp.types import ClientOptions, LogLevel
+from xmtp.types import ClientOptions
 from xmtp_agent.name_resolver import create_name_resolver
 
 recipient = "deanpierce.eth"
@@ -164,9 +163,8 @@ async def main() -> None:
     client = await Client.create(
         signer,
         ClientOptions(
-            env="dev",
+            env="production",
             disable_history_sync=True,
-            logging_level=LogLevel.WARN,
         ),
     )
 
@@ -242,7 +240,7 @@ from xmtp.signers import create_signer
 from xmtp.types import ClientOptions
 
 signer = create_signer('0xYOUR_PRIVATE_KEY')
-client = await Client.create(signer, ClientOptions(env='dev', disable_history_sync=True))
+client = await Client.create(signer, ClientOptions(env='production', disable_history_sync=True))
 
 dm = await client.conversations.new_dm('0x...')
 await dm.send('Hello from Python!')
@@ -281,10 +279,11 @@ This package provides an event-driven agent framework inspired by xmtp-js.
 ```python
 from xmtp_agent import Agent
 from xmtp_agent.user import create_signer, create_user
+from xmtp.types import ClientOptions
 
 user = create_user()
 signer = create_signer(user)
-agent = await Agent.create(signer)
+agent = await Agent.create(signer, ClientOptions(env="production"))
 
 @agent.on('text')
 async def on_text(ctx):
@@ -458,6 +457,8 @@ Python SDK
 
    import asyncio
 
+   import xmtp
+
    from xmtp import Client
    from xmtp.signers import create_signer
    from xmtp.types import ClientOptions
@@ -465,11 +466,11 @@ Python SDK
 
    async def main() -> None:
        signer = create_signer('0xYOUR_PRIVATE_KEY')
-       options = ClientOptions(env='dev')
+       options = ClientOptions(env='production', disable_history_sync=True)
        client = await Client.create(signer, options)
 
        dm = await client.conversations.new_dm('0x...')
-       await dm.send('Hello from Python!')
+       await dm.send(f'Hello from xmtp-py {xmtp.__version__}')
 
 
    asyncio.run(main())
@@ -481,20 +482,20 @@ Agent SDK
 
    import asyncio
 
+   import xmtp
+
    from xmtp_agent import Agent
    from xmtp_agent.user import create_signer, create_user
+   from xmtp.types import ClientOptions
 
 
    async def main() -> None:
        user = create_user()
        signer = create_signer(user)
-       agent = await Agent.create(signer)
+       agent = await Agent.create(signer, ClientOptions(env='production'))
 
-       @agent.on('text')
-       async def handle_text(ctx):
-           await ctx.send_text('Hello from my XMTP Agent!')
-
-       await agent.start()
+       dm = await agent.client.conversations.new_dm('0x...')
+       await dm.send(f'Hello from xmtp-py {xmtp.__version__}')
 
 
    asyncio.run(main())

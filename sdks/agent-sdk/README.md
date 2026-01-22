@@ -9,10 +9,11 @@ This package provides an event-driven agent framework inspired by xmtp-js.
 ```python
 from xmtp_agent import Agent
 from xmtp_agent.user import create_signer, create_user
+from xmtp.types import ClientOptions
 
 user = create_user()
 signer = create_signer(user)
-agent = await Agent.create(signer)
+agent = await Agent.create(signer, ClientOptions(env="production"))
 
 @agent.on('text')
 async def on_text(ctx):
