@@ -94,6 +94,7 @@ ruff format .               # Formatting
 - As of 2026-01-13, agent SDK key lifecycle is caller-owned: `create_user()` generates an in-memory key if none provided, `create_signer()` just wraps a key, and `Agent.create_from_env()` only reads `XMTP_WALLET_KEY` without any persistence or rotation helpers.
 - xmtp-js agent-sdk mirrors this: `createUser()`/`createSigner()` are in-memory helpers, `Agent.createFromEnv()` reads `XMTP_WALLET_KEY` (expects 0x hex), and key generation lives in the `xmtp-cli keys` command rather than the SDK.
 - History sync is disabled by default; set `disable_history_sync=False` (and optionally `history_sync_url`) to enable. Endpoint overrides via `XMTP_API_URL`, `XMTP_HISTORY_SYNC_URL`, and `XMTP_GATEWAY_HOST`.
+- xmtp-js node-sdk defaults `dbPath` to `xmtp-<env>-<inboxId>.db3` under the current working directory when unset; `dbPath` accepts string, null, or function. SQLite WAL mode creates `*.db3`, `*.db3-wal`, and `*.db3-shm` sidecar files.
 - `xmtp-bindings` now builds libxmtp during install via setuptools cmdclasses; requires `cargo` + `git` and honors `XMTP_LIBXMTP_*` env overrides.
 - Bindings builds default to the pinned libxmtp tag stored in `bindings/python/src/xmtp_bindings/libxmtp.ref`; override with `XMTP_LIBXMTP_REF` when intentionally updating. Current pin: `swift-bindings-1.9.0.d206831`.
 - `bindings/python/pyproject.toml` cmdclass entries must use dotted paths (e.g., `xmtp_bindings.build.BuildPy`), not `module:Class`.

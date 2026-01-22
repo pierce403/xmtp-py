@@ -55,6 +55,7 @@ Add new work items below as needed.
 
 - [x] Disable history sync by default in `ClientOptions` and allow env overrides to re-enable
 - [x] Update docs/examples to prefer Agent SDK and note history sync defaults
+- [x] Note xmtp-js dbPath default + sqlite sidecar files in AGENTS
 
 ## PyPI release checklist
 
