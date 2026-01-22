@@ -17,6 +17,7 @@ XmtpEnv = Literal["local", "dev", "production"]
 class LogLevel(str, Enum):
     """Logging levels for libxmtp."""
 
+    OFF = "off"
     ERROR = "error"
     WARN = "warn"
     INFO = "info"
