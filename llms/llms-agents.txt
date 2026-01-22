@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 2:28 AM UTC / January 22, 2026
+> Generated at: 2:30 AM UTC / January 22, 2026
 > Included Sections:
 > - README.md
 > - sdks/agent-sdk/README.md
@@ -96,9 +96,11 @@ pip install -e ".[dev]"
 ### Agent SDK (recommended)
 
 ```python
+import xmtp
+
 from xmtp_agent import Agent
 from xmtp_agent.user import create_user, create_signer
-from xmtp.types import ClientOptions
+from xmtp.types import ClientOptions, LogLevel
 
 # Create a user and signer
 user = create_user()
@@ -107,38 +109,21 @@ signer = create_signer(user)
 # Create the agent
 agent = await Agent.create(
     signer,
-    ClientOptions(env='dev', disable_history_sync=True, db_path=None),
+    ClientOptions(
+        env="dev",
+        disable_history_sync=True,
+        logging_level=LogLevel.WARN,
+        db_path=None,
+    ),
 )
 
 # Handle text messages
 @agent.on("text")
 async def handle_text(ctx):
-    await ctx.send_text("Hello from my XMTP Agent! ")
+    await ctx.send_text(f"Hello from xmtp-py {xmtp.__version__}")
 
 # Start the agent
 await agent.start()
-```
-
-### Python SDK (low-level)
-
-```python
-from xmtp import Client
-from xmtp.signers import create_signer
-from xmtp.types import ClientOptions
-
-# Create a signer from a private key
-signer = create_signer(private_key)
-
-# Create the client
-client = await Client.create(signer, ClientOptions(env='dev', disable_history_sync=True))
-
-# Create a conversation
-dm = await client.conversations.new_dm("0x...")
-await dm.send("Hello from Python!")
-
-# Stream messages
-async for message in client.conversations.stream_all_messages():
-    print(f"Received: {message.content}")
 ```
 
 ## Key management tips
