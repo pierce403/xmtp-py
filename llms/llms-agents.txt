@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 2:52 AM UTC / January 22, 2026
+> Generated at: 3:00 AM UTC / January 22, 2026
 > Included Sections:
 > - README.md
 > - sdks/agent-sdk/README.md
@@ -96,6 +96,7 @@ pip install -e ".[dev]"
 ### Agent SDK (recommended)
 
 ```python
+import asyncio
 import xmtp
 
 from xmtp_agent import Agent
@@ -105,29 +106,35 @@ from xmtp.types import ClientOptions, LogLevel
 
 recipient = "deanpierce.eth"
 
-# Create a user and signer
-user = create_user()
-signer = create_signer(user)
 
-# Create the agent
-agent = await Agent.create(
-    signer,
-    ClientOptions(
-        env="dev",
-        disable_history_sync=True,
-        logging_level=LogLevel.WARN,
-        db_path=None,
-    ),
-)
+async def main() -> None:
+    # Create a user and signer
+    user = create_user()
+    signer = create_signer(user)
 
-# Resolve the recipient and send a message
-resolver = create_name_resolver()
-address = await resolver(recipient)
-if address is None:
-    raise ValueError(f'Could not resolve address for "{recipient}"')
+    # Create the agent
+    agent = await Agent.create(
+        signer,
+        ClientOptions(
+            env="dev",
+            disable_history_sync=True,
+            logging_level=LogLevel.WARN,
+            db_path=None,
+        ),
+    )
 
-dm = await agent.client.conversations.new_dm(address)
-await dm.send(f"Hello from xmtp-py {xmtp.__version__}")
+    # Resolve the recipient and send a message
+    resolver = create_name_resolver()
+    address = await resolver(recipient)
+    if address is None:
+        raise ValueError(f'Could not resolve address for "{recipient}"')
+
+    dm = await agent.client.conversations.new_dm(address)
+    await dm.send(f"Hello from xmtp-py {xmtp.__version__}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 
 # Start the agent
 await agent.start()
@@ -136,6 +143,7 @@ await agent.start()
 ### Python SDK (client)
 
 ```python
+import asyncio
 import xmtp
 
 from xmtp import Client
@@ -145,19 +153,29 @@ from xmtp_agent.name_resolver import create_name_resolver
 
 recipient = "deanpierce.eth"
 
-signer = create_signer(private_key)
-client = await Client.create(
-    signer,
-    ClientOptions(env="dev", disable_history_sync=True, logging_level=LogLevel.WARN),
-)
 
-resolver = create_name_resolver()
-address = await resolver(recipient)
-if address is None:
-    raise ValueError(f'Could not resolve address for "{recipient}"')
+async def main() -> None:
+    signer = create_signer(private_key)
+    client = await Client.create(
+        signer,
+        ClientOptions(
+            env="dev",
+            disable_history_sync=True,
+            logging_level=LogLevel.WARN,
+        ),
+    )
 
-dm = await client.conversations.new_dm(address)
-await dm.send(f"Hello from xmtp-py {xmtp.__version__}")
+    resolver = create_name_resolver()
+    address = await resolver(recipient)
+    if address is None:
+        raise ValueError(f'Could not resolve address for "{recipient}"')
+
+    dm = await client.conversations.new_dm(address)
+    await dm.send(f"Hello from xmtp-py {xmtp.__version__}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 ## Key management tips
