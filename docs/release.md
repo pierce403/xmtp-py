@@ -28,6 +28,9 @@ python -m build bindings/python
 python -m build .
 
 twine check dist/* bindings/python/dist/*
+
+# DM API compatibility check (ensures bindings/SDK signatures match)
+python -m pytest sdks/python-sdk/tests/test_conversations.py -k new_dm
 ```
 
 Smoke test install:

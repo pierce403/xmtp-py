@@ -38,6 +38,7 @@ Add new work items below as needed.
 ## Client/API fixes (2026-01-22)
 
 - [x] Resolve inbox IDs before creating DMs and fall back across libxmtp DM creation APIs
+- [x] Add conversation tests covering inbox-id DM creation and legacy fallbacks
 
 ## PyPI release checklist
 

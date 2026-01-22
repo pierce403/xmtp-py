@@ -49,9 +49,15 @@ class _FakeConversations:
         self.synced = False
         self.synced_all = False
         self.synced_all_consents = None
+        self.last_dm_identifier = None
+        self.last_dm_inbox_id = None
 
     async def find_or_create_dm(self, identifier: Any, options: Any) -> Any:
         self.last_dm_identifier = identifier
+        return self.dm
+
+    async def find_or_create_dm_by_inbox_id(self, inbox_id: str, options: Any) -> Any:
+        self.last_dm_inbox_id = inbox_id
         return self.dm
 
     async def create_group(self, identifiers: list[Any], options: Any) -> Any:
@@ -86,11 +92,15 @@ class _FakeConversations:
 
 
 class _FakeClient:
-    def __init__(self, ffi_client: Any) -> None:
+    def __init__(self, ffi_client: Any, inbox_id: str | None = "inbox-abc") -> None:
         self._client = ffi_client
+        self._inbox_id = inbox_id
 
     def _decode_message(self, message: Any) -> Any:
         return f'decoded:{message.id}'
+
+    async def get_inbox_id_by_identifier(self, _: Identifier) -> str | None:
+        return self._inbox_id
 
 
 class _FakeFfiClient:
@@ -135,11 +145,65 @@ async def test_conversations_new_dm_and_group(fake_bindings) -> None:
 
     dm_result = await conversations.new_dm('0xabc')
     assert isinstance(dm_result, Dm)
-    assert ffi.last_dm_identifier.identifier == '0xabc'
+    assert ffi.last_dm_inbox_id == "inbox-abc"
 
     group_result = await conversations.new_group(['0xabc'])
     assert isinstance(group_result, Group)
     assert len(ffi.last_group_identifiers) == 1
+
+
+@pytest.mark.asyncio
+async def test_conversations_new_dm_falls_back_without_inbox_api(fake_bindings) -> None:
+    dm = _FakeConversation(fake_bindings.FfiConversationType.DM)
+    group = _FakeConversation(fake_bindings.FfiConversationType.GROUP)
+
+    class _LegacyConversations:
+        def __init__(self) -> None:
+            self.dm = dm
+            self.group = group
+            self.last_dm_identifier = None
+
+        async def find_or_create_dm(self, identifier: Any, options: Any) -> Any:
+            self.last_dm_identifier = identifier
+            return self.dm
+
+    ffi = _LegacyConversations()
+    client = _FakeClient(ffi)
+    conversations = Conversations(client, ffi)
+
+    dm_result = await conversations.new_dm("0xabc")
+    assert isinstance(dm_result, Dm)
+    assert ffi.last_dm_identifier.identifier == "0xabc"
+
+
+@pytest.mark.asyncio
+async def test_conversations_new_dm_falls_back_on_type_error(fake_bindings) -> None:
+    dm = _FakeConversation(fake_bindings.FfiConversationType.DM)
+    group = _FakeConversation(fake_bindings.FfiConversationType.GROUP)
+
+    class _BrokenInboxIdConversations(_FakeConversations):
+        async def find_or_create_dm_by_inbox_id(self, inbox_id: str, options: Any) -> Any:
+            raise TypeError("bad inbox id signature")
+
+    ffi = _BrokenInboxIdConversations(dm, group)
+    client = _FakeClient(ffi)
+    conversations = Conversations(client, ffi)
+
+    dm_result = await conversations.new_dm("0xabc")
+    assert isinstance(dm_result, Dm)
+    assert ffi.last_dm_identifier.identifier == "0xabc"
+
+
+@pytest.mark.asyncio
+async def test_conversations_new_dm_requires_inbox_id(fake_bindings) -> None:
+    dm = _FakeConversation(fake_bindings.FfiConversationType.DM)
+    group = _FakeConversation(fake_bindings.FfiConversationType.GROUP)
+    ffi = _FakeConversations(dm, group)
+    client = _FakeClient(ffi, inbox_id=None)
+    conversations = Conversations(client, ffi)
+
+    with pytest.raises(ValueError):
+        await conversations.new_dm("0xabc")
 
 
 @pytest.mark.asyncio
