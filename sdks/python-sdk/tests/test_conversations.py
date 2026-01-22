@@ -153,6 +153,77 @@ async def test_conversations_new_dm_and_group(fake_bindings) -> None:
 
 
 @pytest.mark.asyncio
+async def test_conversations_new_dm_by_identity(fake_bindings) -> None:
+    dm = _FakeConversation(fake_bindings.FfiConversationType.DM)
+
+    class _IdentityConversations:
+        def __init__(self) -> None:
+            self.last_identity = None
+
+        async def find_or_create_dm_by_identity(self, identity: Any, options: Any) -> Any:
+            self.last_identity = identity
+            return dm
+
+    ffi = _IdentityConversations()
+    client = _FakeClient(ffi, inbox_id=None)
+    conversations = Conversations(client, ffi)
+
+    dm_result = await conversations.new_dm("0xabc")
+    assert isinstance(dm_result, Dm)
+    assert ffi.last_identity.identifier == "0xabc"
+
+
+@pytest.mark.asyncio
+async def test_conversations_new_dm_by_identity_string(fake_bindings) -> None:
+    dm = _FakeConversation(fake_bindings.FfiConversationType.DM)
+
+    class _IdentityStringConversations:
+        def __init__(self) -> None:
+            self.last_identity = None
+
+        async def find_or_create_dm_by_identity(self, identity: Any, options: Any) -> Any:
+            if not isinstance(identity, str):
+                raise TypeError("Expected string identity")
+            self.last_identity = identity
+            return dm
+
+    ffi = _IdentityStringConversations()
+    client = _FakeClient(ffi, inbox_id=None)
+    conversations = Conversations(client, ffi)
+
+    dm_result = await conversations.new_dm("0xabc")
+    assert isinstance(dm_result, Dm)
+    assert ffi.last_identity == "0xabc"
+
+
+@pytest.mark.asyncio
+async def test_conversations_new_dm_by_identity_falls_back(fake_bindings) -> None:
+    dm = _FakeConversation(fake_bindings.FfiConversationType.DM)
+
+    class _IdentityFallbackConversations:
+        def __init__(self) -> None:
+            self.identity_calls = []
+            self.last_dm_inbox_id = None
+
+        async def find_or_create_dm_by_identity(self, identity: Any, options: Any) -> Any:
+            self.identity_calls.append(identity)
+            raise TypeError("unsupported identity signature")
+
+        async def find_or_create_dm_by_inbox_id(self, inbox_id: str, options: Any) -> Any:
+            self.last_dm_inbox_id = inbox_id
+            return dm
+
+    ffi = _IdentityFallbackConversations()
+    client = _FakeClient(ffi)
+    conversations = Conversations(client, ffi)
+
+    dm_result = await conversations.new_dm("0xabc")
+    assert isinstance(dm_result, Dm)
+    assert len(ffi.identity_calls) == 2
+    assert ffi.last_dm_inbox_id == "inbox-abc"
+
+
+@pytest.mark.asyncio
 async def test_conversations_new_dm_falls_back_without_inbox_api(fake_bindings) -> None:
     dm = _FakeConversation(fake_bindings.FfiConversationType.DM)
     group = _FakeConversation(fake_bindings.FfiConversationType.GROUP)
@@ -192,6 +263,32 @@ async def test_conversations_new_dm_falls_back_on_type_error(fake_bindings) -> N
     dm_result = await conversations.new_dm("0xabc")
     assert isinstance(dm_result, Dm)
     assert ffi.last_dm_identifier.identifier == "0xabc"
+
+
+@pytest.mark.asyncio
+async def test_conversations_new_dm_falls_back_on_legacy_type_error(
+    fake_bindings,
+) -> None:
+    dm = _FakeConversation(fake_bindings.FfiConversationType.DM)
+
+    class _LegacyStringConversations:
+        def __init__(self) -> None:
+            self.dm_calls = []
+
+        async def find_or_create_dm(self, identifier: Any, options: Any) -> Any:
+            self.dm_calls.append(identifier)
+            if not isinstance(identifier, str):
+                raise TypeError("expected inbox id string")
+            return dm
+
+    ffi = _LegacyStringConversations()
+    client = _FakeClient(ffi)
+    conversations = Conversations(client, ffi)
+
+    dm_result = await conversations.new_dm("0xabc")
+    assert isinstance(dm_result, Dm)
+    assert len(ffi.dm_calls) == 2
+    assert ffi.dm_calls[1] == "inbox-abc"
 
 
 @pytest.mark.asyncio

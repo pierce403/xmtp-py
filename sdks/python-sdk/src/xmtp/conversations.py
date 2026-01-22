@@ -103,7 +103,10 @@ class Conversations:
 
         if hasattr(ffi, "find_or_create_dm_by_identity"):
             try:
-                group = await ffi.find_or_create_dm_by_identity(_identifier_to_ffi(identifier), options)
+                group = await ffi.find_or_create_dm_by_identity(
+                    _identifier_to_ffi(identifier),
+                    options,
+                )
                 return Dm(self._client, group)
             except TypeError:
                 try:

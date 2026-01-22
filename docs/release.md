@@ -67,9 +67,10 @@ PY
 2. Update `bindings/python/src/xmtp_bindings/libxmtp.ref` if pinning a new libxmtp commit.
 3. Update `CHANGELOG` (if added later).
 4. Commit and push.
-5. Tag the release: `git tag vX.Y.Z && git push origin vX.Y.Z`.
-6. GitHub Actions `Release` workflow builds and publishes to PyPI via Trusted Publishing.
-7. Verify the release on PyPI and run the smoke test in a clean environment.
+5. Ensure the latest `ci.yml` workflow run on `main` is green.
+6. Tag the release: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+7. GitHub Actions `Release` workflow builds and publishes to PyPI via Trusted Publishing.
+8. Verify the release on PyPI and run the smoke test in a clean environment.
 
 ## TestPyPI (optional)
 

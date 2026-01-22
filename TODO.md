@@ -40,6 +40,8 @@ Add new work items below as needed.
 - [x] Resolve inbox IDs before creating DMs and fall back across libxmtp DM creation APIs
 - [x] Add conversation tests covering inbox-id DM creation and legacy fallbacks
 - [x] Pin libxmtp release tag for bindings builds via `libxmtp.ref` (swift-bindings-1.9.0.d206831)
+- [x] Add DM tests for `find_or_create_dm_by_identity` fallback variants
+- [x] Cover DM fallback TypeErrors and send-options fallback to satisfy 100% coverage
 
 ## PyPI release checklist
 

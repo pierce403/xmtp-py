@@ -128,6 +128,7 @@ ruff format .               # Formatting
 - LLM reference files live in `llms/` and are generated via `scripts/generate_llms.py`; regenerate after API/docs changes to satisfy CI `--check`
 - CI enforces 100% branch coverage with pytest-cov and `.coveragerc`; `xmtp_bindings/xmtpv3.py` is omitted but bindings smoke tests are required
 - Before tagging a release, run the DM API compatibility tests (`python -m pytest sdks/python-sdk/tests/test_conversations.py -k new_dm`) to ensure bindings expectations match the SDK.
+- Before tagging a release, confirm the latest `ci.yml` workflow run on `main` has succeeded in GitHub Actions.
 - CI runs ruff with `ANN`, `I`, and `UP` rules; avoid `Any`, import abstract types from `collections.abc`, and keep imports isort-ordered
 - Pytest runs with `--import-mode=importlib`; keep `sdks/python-sdk/tests` without `__init__.py` to avoid `tests.conftest` collisions
 - The xmtp-js reference in `code/` is comprehensive—use it

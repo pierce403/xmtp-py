@@ -10,7 +10,13 @@ from typing import Any
 import pytest
 
 from xmtp import Client
-from xmtp.client import _content_type_from_ffi, _default_send_opts, _encoded_from_ffi, _identifier_to_ffi
+from xmtp.client import (
+    _SendMessageOpts,
+    _content_type_from_ffi,
+    _default_send_opts,
+    _encoded_from_ffi,
+    _identifier_to_ffi,
+)
 from xmtp.errors import (
     ClientNotInitializedError,
     CodecNotFoundError,
@@ -189,6 +195,18 @@ def test_content_type_from_ffi(fake_bindings) -> None:
 def test_default_send_opts(fake_bindings) -> None:
     opts = _default_send_opts()
     assert opts.should_push is True
+
+
+def test_default_send_opts_falls_back(
+    fake_bindings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class _Boom:
+        def __init__(self, **_: object) -> None:
+            raise RuntimeError('boom')
+
+    monkeypatch.setattr(fake_bindings, 'FfiSendMessageOpts', _Boom, raising=False)
+    opts = _default_send_opts()
+    assert isinstance(opts, _SendMessageOpts)
 
 
 def test_encoded_from_ffi(fake_bindings) -> None:
