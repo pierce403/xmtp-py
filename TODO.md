@@ -47,6 +47,10 @@ Add new work items below as needed.
 
 - [x] Regenerate `llms/*.txt` after release/checklist guidance updates
 
+## Release prep (2026-01-22)
+
+- [x] Bump package versions to 0.1.3 before tagging
+
 ## PyPI release checklist
 
 - [x] Reserve project name on PyPI: `xmtp` (exists)
