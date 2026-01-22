@@ -39,6 +39,7 @@ Add new work items below as needed.
 
 - [x] Resolve inbox IDs before creating DMs and fall back across libxmtp DM creation APIs
 - [x] Add conversation tests covering inbox-id DM creation and legacy fallbacks
+- [x] Pin libxmtp commit for bindings builds via `libxmtp.ref`
 
 ## PyPI release checklist
 

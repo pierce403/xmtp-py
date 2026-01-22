@@ -95,6 +95,7 @@ ruff format .               # Formatting
 - xmtp-js agent-sdk mirrors this: `createUser()`/`createSigner()` are in-memory helpers, `Agent.createFromEnv()` reads `XMTP_WALLET_KEY` (expects 0x hex), and key generation lives in the `xmtp-cli keys` command rather than the SDK.
 - History sync can be disabled via `ClientOptions.disable_history_sync` or `XMTP_DISABLE_HISTORY_SYNC`; endpoint overrides via `XMTP_API_URL`, `XMTP_HISTORY_SYNC_URL`, and `XMTP_GATEWAY_HOST`.
 - `xmtp-bindings` now builds libxmtp during install via setuptools cmdclasses; requires `cargo` + `git` and honors `XMTP_LIBXMTP_*` env overrides.
+- Bindings builds default to the pinned libxmtp commit stored in `bindings/python/src/xmtp_bindings/libxmtp.ref`; override with `XMTP_LIBXMTP_REF` when intentionally updating.
 - `bindings/python/pyproject.toml` cmdclass entries must use dotted paths (e.g., `xmtp_bindings.build.BuildPy`), not `module:Class`.
 - Coverage omits `xmtp_bindings/build.py` because it is an install-time helper that is hard to exercise in unit tests.
 - Mypy strict ignores `xmtp_bindings.build` and `xmtp_bindings.xmtpv3` via `pyproject.toml` overrides; content-type `_bindings()` helpers return `Any` and use casts where needed to avoid `no-any-return`.

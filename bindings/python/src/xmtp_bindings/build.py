@@ -81,6 +81,23 @@ def _select_built_library(target_dir: Path) -> Path:
     raise FileNotFoundError(f"libxmtp build output not found in {target_dir}")
 
 
+def _read_pinned_ref(project_root: Path) -> str | None:
+    candidates = [
+        project_root / "src" / "xmtp_bindings" / "libxmtp.ref",
+        project_root / "libxmtp.ref",
+    ]
+    for candidate in candidates:
+        if not candidate.exists():
+            continue
+        try:
+            value = candidate.read_text(encoding="utf-8").strip()
+        except OSError:
+            continue
+        if value:
+            return value
+    return None
+
+
 def _find_bindings_dir(libxmtp_dir: Path) -> Path:
     candidates = [
         libxmtp_dir / "bindings_ffi",
@@ -155,7 +172,10 @@ def _ensure_libxmtp(announce: Callable[[str], None]) -> None:
     deps_dir.mkdir(parents=True, exist_ok=True)
 
     repo_url = os.getenv("XMTP_LIBXMTP_REPO", "https://github.com/xmtp/libxmtp")
-    ref = os.getenv("XMTP_LIBXMTP_REF")
+    env_ref = os.getenv("XMTP_LIBXMTP_REF")
+    ref = env_ref.strip() if env_ref else None
+    if not ref:
+        ref = _read_pinned_ref(project_root)
 
     if not libxmtp_dir.exists():
         announce(f"Cloning libxmtp from {repo_url} into {libxmtp_dir}")

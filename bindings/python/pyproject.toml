@@ -43,4 +43,4 @@ bdist_wheel = "xmtp_bindings.build.BdistWheel"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"xmtp_bindings" = ["*.so", "*.dylib", "*.dll", "py.typed"]
+"xmtp_bindings" = ["*.so", "*.dylib", "*.dll", "py.typed", "libxmtp.ref"]

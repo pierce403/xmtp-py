@@ -64,11 +64,12 @@ PY
    - `bindings/python/pyproject.toml`
    - `sdks/python-sdk/src/xmtp/__init__.py`
    - `sdks/agent-sdk/src/xmtp_agent/__init__.py`
-2. Update `CHANGELOG` (if added later).
-3. Commit and push.
-4. Tag the release: `git tag vX.Y.Z && git push origin vX.Y.Z`.
-5. GitHub Actions `Release` workflow builds and publishes to PyPI via Trusted Publishing.
-6. Verify the release on PyPI and run the smoke test in a clean environment.
+2. Update `bindings/python/src/xmtp_bindings/libxmtp.ref` if pinning a new libxmtp commit.
+3. Update `CHANGELOG` (if added later).
+4. Commit and push.
+5. Tag the release: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+6. GitHub Actions `Release` workflow builds and publishes to PyPI via Trusted Publishing.
+7. Verify the release on PyPI and run the smoke test in a clean environment.
 
 ## TestPyPI (optional)
 
