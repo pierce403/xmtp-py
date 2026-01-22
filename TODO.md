@@ -57,6 +57,7 @@ Add new work items below as needed.
 - [x] Update docs/examples to prefer Agent SDK and note history sync defaults
 - [x] Note xmtp-js dbPath default + sqlite sidecar files in AGENTS
 - [x] Update README quick start examples (agent + client) to send "Hello from xmtp-py <version>" directly (async main + asyncio.run)
+- [x] Remove stray top-level await from README agent example
 
 ## PyPI release checklist
 

@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 3:00 AM UTC / January 22, 2026
+> Generated at: 3:12 AM UTC / January 22, 2026
 > Included Sections:
 > - README.md
 > - sdks/python-sdk/README.md
@@ -143,9 +143,6 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-# Start the agent
-await agent.start()
 ```
 
 ### Python SDK (client)
