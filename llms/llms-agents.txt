@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 5:14 PM UTC / January 21, 2026
+> Generated at: 1:19 AM UTC / January 22, 2026
 > Included Sections:
 > - README.md
 > - sdks/agent-sdk/README.md

@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 5:14 PM UTC / January 21, 2026
+> Generated at: 1:19 AM UTC / January 22, 2026
 > Included Sections:
 > - README.md
 > - sdks/python-sdk/README.md
@@ -524,6 +524,13 @@ Environment overrides:
 - `XMTP_LIBXMTP_REPO`: override the libxmtp git URL
 - `XMTP_BINDINGS_SKIP_BUILD=1`: skip native build (requires a prebuilt `libxmtpv3` next to `xmtpv3.py`)
 - `XMTP_BINDINGS_FORCE_BUILD=1`: rebuild even if a native library already exists
+
+If `XMTP_LIBXMTP_REF` is not set, builds default to the pinned ref stored in
+`src/xmtp_bindings/libxmtp.ref`.
+
+During builds, the UniFFI Python bindings (`xmtpv3.py`) are regenerated from the
+same libxmtp checkout used to build the native library to keep the wrapper and
+shared library in sync.
 
 ## Manual build
 
@@ -1275,6 +1282,12 @@ Classes:
   - run(self) -> None
 - class Develop(develop): Ensure libxmtp is built for editable installs.
   - run(self) -> None
+- class Install(install): Install pure-Python packages into platlib for bundled shared libraries.
+  - finalize_options(self) -> None
+- class BdistWheel(bdist_wheel): Mark the wheel as platform-specific when bundling native libraries.
+  - finalize_options(self) -> None
+  - run(self) -> None
+  - write_wheelfile(self, *args: object, **kwargs: object) -> None
 
 ### Module: xmtp_bindings.xmtpv3
 

@@ -43,6 +43,10 @@ Add new work items below as needed.
 - [x] Add DM tests for `find_or_create_dm_by_identity` fallback variants
 - [x] Cover DM fallback TypeErrors and send-options fallback to satisfy 100% coverage
 
+## Docs/LLM updates (2026-01-22)
+
+- [x] Regenerate `llms/*.txt` after release/checklist guidance updates
+
 ## PyPI release checklist
 
 - [x] Reserve project name on PyPI: `xmtp` (exists)
