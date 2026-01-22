@@ -114,6 +114,7 @@ ruff format .               # Formatting
 - PyPI OIDC uploads cannot create new projects; the first release for each distribution must be created with a user/token or an existing project.
 - PyPI rejects wheels tagged `linux_x86_64`; Linux wheels must be repaired to a manylinux tag (auditwheel) before upload.
 - Auditwheel will fail if shared libraries are packaged under purelib; for bindings, force install to platlib (override `install_lib` to `install_platlib`) so `.so` lands in platlib.
+- Linux aarch64 wheels require QEMU on GitHub Actions; keep `docker/setup-qemu-action` enabled and include `aarch64` in `CIBW_ARCHS_LINUX` to avoid source builds (and missing `cargo`) on ARM hosts.
 - As of 2026-01-21, the PyPI project `xmtp` is configured as a Trusted Publisher for repo `pierce403/xmtp-py`, workflow `publish.yml`, environment `pypi`.
 - When re-tagging the same version after partial PyPI uploads, set `skip-existing: true` in the publish action to avoid file-name reuse errors.
 - Runtime `undefined symbol` errors (e.g., `uniffi_xmtpv3_fn_method_fficonversation_add_members_by_inbox_id`) mean `xmtp_bindings/xmtpv3.py` was generated from a newer libxmtp commit than the bundled `libxmtpv3` shared library. This can happen if bindings are regenerated from a newer libxmtp ref while installs/builds pull a different ref or reuse a stale `.deps/libxmtp` checkout.

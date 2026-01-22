@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xmtp"
-version = "0.1.4"
+version = "0.1.5"
 description = "Unofficial Python SDK for the XMTP network."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -27,7 +27,7 @@ classifiers = [
 ]
 dependencies = [
   "eth-account>=0.12",
-  "xmtp-bindings>=0.1.4",
+  "xmtp-bindings>=0.1.5",
 ]
 
 [project.optional-dependencies]

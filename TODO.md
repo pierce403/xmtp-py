@@ -49,7 +49,7 @@ Add new work items below as needed.
 
 ## Release prep (2026-01-22)
 
-- [x] Bump package versions to 0.1.4 before tagging
+- [x] Bump package versions to 0.1.5 before tagging
 
 ## Defaults & docs (2026-01-22)
 
@@ -60,6 +60,7 @@ Add new work items below as needed.
 - [x] Remove stray top-level await from README agent example
 - [x] Add LogLevel.OFF to match xmtp-js log level list
 - [x] Add ClientOptions.rust_log + XMTP_RUST_LOG env hook (default off)
+- [x] Re-enable aarch64 bindings wheels via QEMU in publish workflow
 
 ## PyPI release checklist
 
