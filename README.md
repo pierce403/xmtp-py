@@ -67,8 +67,11 @@ pip install -e ".[dev]"
 import xmtp
 
 from xmtp_agent import Agent
+from xmtp_agent.name_resolver import create_name_resolver
 from xmtp_agent.user import create_user, create_signer
 from xmtp.types import ClientOptions, LogLevel
+
+recipient = "deanpierce.eth"
 
 # Create a user and signer
 user = create_user()
@@ -85,10 +88,14 @@ agent = await Agent.create(
     ),
 )
 
-# Handle text messages
-@agent.on("text")
-async def handle_text(ctx):
-    await ctx.send_text(f"Hello from xmtp-py {xmtp.__version__}")
+# Resolve the recipient and send a message
+resolver = create_name_resolver()
+address = await resolver(recipient)
+if address is None:
+    raise ValueError(f'Could not resolve address for "{recipient}"')
+
+dm = await agent.client.conversations.new_dm(address)
+await dm.send(f"Hello from xmtp-py {xmtp.__version__}")
 
 # Start the agent
 await agent.start()
@@ -102,6 +109,9 @@ import xmtp
 from xmtp import Client
 from xmtp.signers import create_signer
 from xmtp.types import ClientOptions, LogLevel
+from xmtp_agent.name_resolver import create_name_resolver
+
+recipient = "deanpierce.eth"
 
 signer = create_signer(private_key)
 client = await Client.create(
@@ -109,7 +119,12 @@ client = await Client.create(
     ClientOptions(env="dev", disable_history_sync=True, logging_level=LogLevel.WARN),
 )
 
-dm = await client.conversations.new_dm("0x...")
+resolver = create_name_resolver()
+address = await resolver(recipient)
+if address is None:
+    raise ValueError(f'Could not resolve address for "{recipient}"')
+
+dm = await client.conversations.new_dm(address)
 await dm.send(f"Hello from xmtp-py {xmtp.__version__}")
 ```
 
