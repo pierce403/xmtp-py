@@ -35,6 +35,10 @@ Add new work items below as needed.
 - [x] Regenerate UniFFI bindings during builds so `xmtpv3.py` always matches built libxmtp
 - [x] Auto-detect libxmtp UniFFI bindgen directory (bindings_ffi vs bindings/ffi) during builds
 
+## Client/API fixes (2026-01-22)
+
+- [x] Resolve inbox IDs before creating DMs and fall back across libxmtp DM creation APIs
+
 ## PyPI release checklist
 
 - [x] Reserve project name on PyPI: `xmtp` (exists)

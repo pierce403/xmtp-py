@@ -98,10 +98,24 @@ class Conversations:
     async def new_dm_with_identifier(self, identifier: Identifier) -> Dm:
         """Create a new direct message using an identifier."""
 
-        group = await self._ensure().find_or_create_dm(
-            _identifier_to_ffi(identifier),
-            _default_dm_options(),
-        )
+        inbox_id = await self._client.get_inbox_id_by_identifier(identifier)
+        if inbox_id is None:
+            raise ValueError(f'No inbox id found for identifier "{identifier.value}"')
+
+        ffi = self._ensure()
+        options = _default_dm_options()
+
+        if hasattr(ffi, "find_or_create_dm_by_inbox_id"):
+            try:
+                group = await ffi.find_or_create_dm_by_inbox_id(inbox_id, options)
+                return Dm(self._client, group)
+            except TypeError:
+                pass
+
+        try:
+            group = await ffi.find_or_create_dm(_identifier_to_ffi(identifier), options)
+        except TypeError:
+            group = await ffi.find_or_create_dm(inbox_id, options)
         return Dm(self._client, group)
 
     async def new_group(self, members: list[str]) -> Group:

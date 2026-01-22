@@ -117,6 +117,7 @@ ruff format .               # Formatting
 - To prevent bindings/library mismatches, pin `XMTP_LIBXMTP_REF` in CI/publish to the same libxmtp commit used to generate `xmtpv3.py`, or regenerate the bindings during CI from the checked-out libxmtp repo. For local rebuilds, set `XMTP_BINDINGS_FORCE_BUILD=1` (and optionally `XMTP_LIBXMTP_REF=main`) or delete `.deps/libxmtp` before reinstalling.
 - Bindings builds now regenerate `xmtpv3.py` via `bindings_ffi` during the libxmtp build step, ensuring the wrapper matches the built shared library for wheels and source installs.
 - libxmtp may place the UniFFI bindgen crate under `bindings_ffi` or `bindings/ffi`; bindings build now auto-detects the directory by scanning for the `ffi-uniffi-bindgen` Cargo target.
+- libxmtp DM creation APIs can shift between identifier-based and inbox-id-based signatures; the Python SDK now resolves inbox IDs and prefers `find_or_create_dm_by_inbox_id` with fallbacks for older bindings.
 
 ## Agent tips
 
