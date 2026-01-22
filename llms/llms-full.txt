@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 2:30 AM UTC / January 22, 2026
+> Generated at: 2:34 AM UTC / January 22, 2026
 > Included Sections:
 > - README.md
 > - sdks/python-sdk/README.md
@@ -132,6 +132,25 @@ async def handle_text(ctx):
 
 # Start the agent
 await agent.start()
+```
+
+### Python SDK (client)
+
+```python
+import xmtp
+
+from xmtp import Client
+from xmtp.signers import create_signer
+from xmtp.types import ClientOptions, LogLevel
+
+signer = create_signer(private_key)
+client = await Client.create(
+    signer,
+    ClientOptions(env="dev", disable_history_sync=True, logging_level=LogLevel.WARN),
+)
+
+dm = await client.conversations.new_dm("0x...")
+await dm.send(f"Hello from xmtp-py {xmtp.__version__}")
 ```
 
 ## Key management tips

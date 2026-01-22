@@ -94,6 +94,25 @@ async def handle_text(ctx):
 await agent.start()
 ```
 
+### Python SDK (client)
+
+```python
+import xmtp
+
+from xmtp import Client
+from xmtp.signers import create_signer
+from xmtp.types import ClientOptions, LogLevel
+
+signer = create_signer(private_key)
+client = await Client.create(
+    signer,
+    ClientOptions(env="dev", disable_history_sync=True, logging_level=LogLevel.WARN),
+)
+
+dm = await client.conversations.new_dm("0x...")
+await dm.send(f"Hello from xmtp-py {xmtp.__version__}")
+```
+
 ## Key management tips
 
 - `create_user()` generates an in-memory key; persist the private key yourself if you want a stable inbox across restarts.
