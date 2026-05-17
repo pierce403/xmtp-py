@@ -426,6 +426,7 @@ def test_content_type_for_standard_reply_body_variants() -> None:
         content_type = client._content_type_for_decoded_body(_DecodedContent(variant, object()))
         assert content_type is not None
         assert str(content_type) == expected
+    assert client._content_type_for_decoded_body(_DecodedContent("UNKNOWN", object())) is None
 
 
 def test_content_type_for_encoded_and_custom_reply_body_variants(
