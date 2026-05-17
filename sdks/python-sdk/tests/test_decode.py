@@ -348,6 +348,7 @@ async def test_decode_message_branches(fake_bindings: _FakeBindings) -> None:
     assert client._decode_ffi_content(_DecodedContent("ACTIONS", "actions")) == "actions"
     assert client._decode_ffi_content(_DecodedContent("INTENT", "intent")) == "intent"
     assert client._decode_ffi_content(_DecodedContent("LEAVE_REQUEST", "leave")) == "leave"
+    assert client._decode_ffi_content(_DecodedContent("DELETED_MESSAGE", "deleted")) == "deleted"
 
     bad_custom = fake_bindings.FfiEncodedContent(
         type_id=None,
@@ -381,6 +382,17 @@ async def test_decode_message_branches(fake_bindings: _FakeBindings) -> None:
     assert client._decode_ffi_content(unknown) is unknown
 
 
+def test_decode_reply_with_empty_body_uses_unknown_content_type() -> None:
+    client = Client()
+    reply_payload = _FakeReplyPayload(reference="ref", reference_inbox_id=None, content=None)
+
+    decoded = client._decode_ffi_content(_DecodedContent("REPLY", reply_payload))
+
+    assert isinstance(decoded, Reply)
+    assert decoded.content is None
+    assert str(decoded.content_type) == "unknown/unknown:0.0"
+
+
 def test_decode_remote_attachment_without_content_length() -> None:
     client = Client()
     payload = _FakeOptionalRemoteAttachment(
@@ -395,6 +407,53 @@ def test_decode_remote_attachment_without_content_length() -> None:
     )
     decoded = client._decode_ffi_content(_DecodedContent("REMOTE_ATTACHMENT", payload))
     assert decoded.content_length == 0
+
+
+def test_content_type_for_standard_reply_body_variants() -> None:
+    client = Client()
+    variants = {
+        "TEXT": "xmtp.org/text:1.0",
+        "MARKDOWN": "xmtp.org/markdown:1.0",
+        "REACTION": "xmtp.org/reaction:1.0",
+        "REMOTE_ATTACHMENT": "xmtp.org/remoteStaticAttachment:1.0",
+        "ATTACHMENT": "xmtp.org/attachment:1.0",
+        "READ_RECEIPT": "xmtp.org/readReceipt:1.0",
+        "TRANSACTION_REFERENCE": "xmtp.org/transactionReference:1.0",
+        "WALLET_SEND_CALLS": "xmtp.org/walletSendCalls:1.0",
+        "GROUP_UPDATED": "xmtp.org/group_updated:1.0",
+    }
+    for variant, expected in variants.items():
+        content_type = client._content_type_for_decoded_body(_DecodedContent(variant, object()))
+        assert content_type is not None
+        assert str(content_type) == expected
+
+
+def test_content_type_for_encoded_and_custom_reply_body_variants(
+    fake_bindings: _FakeBindings,
+) -> None:
+    client = Client()
+    encoded = fake_bindings.FfiEncodedContent(
+        type_id=fake_bindings.FfiContentTypeId("xmtp.org", "text", 1, 0),
+        parameters={},
+        fallback=None,
+        compression=None,
+        content=b"data",
+    )
+    bad_encoded = fake_bindings.FfiEncodedContent(
+        type_id=None,
+        parameters={},
+        fallback=None,
+        compression=None,
+        content=b"data",
+    )
+
+    assert client._content_type_for_decoded_body(encoded) == ContentTypeText
+    assert client._content_type_for_decoded_body(bad_encoded) is None
+    assert (
+        client._content_type_for_decoded_body(_DecodedContent("CUSTOM", encoded))
+        == ContentTypeText
+    )
+    assert client._content_type_for_decoded_body(_DecodedContent("CUSTOM", bad_encoded)) is None
 
 
 def test_content_type_for_newer_reply_body_variants() -> None:
