@@ -93,6 +93,27 @@ def _encoded_from_ffi(encoded: NativeBindings.FfiEncodedContent) -> EncodedConte
     )
 
 
+def _is_ffi_variant(content: object, variant: str) -> bool:
+    checker = getattr(content, f"is_{variant}", None)
+    return callable(checker) and bool(checker())
+
+
+def _looks_like_ffi_encoded_content(content: object) -> bool:
+    return all(
+        hasattr(content, field)
+        for field in ("type_id", "parameters", "fallback", "compression", "content")
+    )
+
+
+def _unknown_content_type() -> ContentTypeId:
+    return ContentTypeId(
+        authority_id="unknown",
+        type_id="unknown",
+        version_major=0,
+        version_minor=0,
+    )
+
+
 def _looks_like_db_error(error: Exception) -> bool:
     message = str(error).lower()
     return any(marker in message for marker in _DB_ERROR_MARKERS)
@@ -420,14 +441,105 @@ class Client:
             content_type_id=content_type_id,
         )
 
-    def _decode_ffi_content(self, content: NativeBindings.FfiDecodedMessageContent) -> object:
-        if content.is_TEXT():
+    def _content_type_for_decoded_body(self, content: object) -> ContentTypeId | None:
+        if content is None:
+            return None
+        if _looks_like_ffi_encoded_content(content):
+            try:
+                return _encoded_from_ffi(cast("NativeBindings.FfiEncodedContent", content)).type_id
+            except ValueError:
+                return None
+        if _is_ffi_variant(content, "TEXT"):
+            from xmtp_content_type_text import ContentTypeText
+
+            return ContentTypeText
+        if _is_ffi_variant(content, "MARKDOWN"):
+            from xmtp_content_type_markdown import ContentTypeMarkdown
+
+            return ContentTypeMarkdown
+        if _is_ffi_variant(content, "REACTION"):
+            from xmtp_content_type_reaction import ContentTypeReaction
+
+            return ContentTypeReaction
+        if _is_ffi_variant(content, "REMOTE_ATTACHMENT"):
+            from xmtp_content_type_remote_attachment import ContentTypeRemoteAttachment
+
+            return ContentTypeRemoteAttachment
+        if _is_ffi_variant(content, "MULTI_REMOTE_ATTACHMENT"):
+            return ContentTypeId(
+                authority_id="xmtp.org",
+                type_id="multiRemoteStaticAttachment",
+                version_major=1,
+                version_minor=0,
+            )
+        if _is_ffi_variant(content, "ATTACHMENT"):
+            from xmtp_content_type_remote_attachment import ContentTypeAttachment
+
+            return ContentTypeAttachment
+        if _is_ffi_variant(content, "READ_RECEIPT"):
+            from xmtp_content_type_read_receipt import ContentTypeReadReceipt
+
+            return ContentTypeReadReceipt
+        if _is_ffi_variant(content, "TRANSACTION_REFERENCE"):
+            from xmtp_content_type_transaction_reference import ContentTypeTransactionReference
+
+            return ContentTypeTransactionReference
+        if _is_ffi_variant(content, "WALLET_SEND_CALLS"):
+            from xmtp_content_type_wallet_send_calls import ContentTypeWalletSendCalls
+
+            return ContentTypeWalletSendCalls
+        if _is_ffi_variant(content, "GROUP_UPDATED"):
+            from xmtp_content_type_group_updated import ContentTypeGroupUpdated
+
+            return ContentTypeGroupUpdated
+        if _is_ffi_variant(content, "INTENT"):
+            return ContentTypeId(
+                authority_id="coinbase.com",
+                type_id="intent",
+                version_major=1,
+                version_minor=0,
+            )
+        if _is_ffi_variant(content, "ACTIONS"):
+            return ContentTypeId(
+                authority_id="coinbase.com",
+                type_id="actions",
+                version_major=1,
+                version_minor=0,
+            )
+        if _is_ffi_variant(content, "LEAVE_REQUEST"):
+            return ContentTypeId(
+                authority_id="xmtp.org",
+                type_id="leave_request",
+                version_major=1,
+                version_minor=0,
+            )
+        if _is_ffi_variant(content, "DELETED_MESSAGE"):
+            return ContentTypeId(
+                authority_id="xmtp.org",
+                type_id="deleteMessage",
+                version_major=1,
+                version_minor=0,
+            )
+        if _is_ffi_variant(content, "CUSTOM"):
+            custom_payload = cast(Any, content)[0]
+            try:
+                return _encoded_from_ffi(custom_payload).type_id
+            except ValueError:
+                return None
+        return None
+
+    def _decode_ffi_content(self, content: object) -> object:
+        if _looks_like_ffi_encoded_content(content):
+            encoded = _encoded_from_ffi(cast("NativeBindings.FfiEncodedContent", content))
+            codec = self.codec_for(encoded.type_id)
+            return codec.decode(encoded, self) if codec is not None else encoded.content
+        if _is_ffi_variant(content, "TEXT"):
             text_payload = cast("NativeBindings.FfiDecodedMessageContent.TEXT", content)
             return text_payload[0].content
-        if content.is_MARKDOWN():
+        if _is_ffi_variant(content, "MARKDOWN"):
             markdown_payload = cast("NativeBindings.FfiDecodedMessageContent.MARKDOWN", content)
             return markdown_payload[0].content
-        if content.is_REACTION():
+        if _is_ffi_variant(content, "REACTION"):
             from xmtp_content_type_reaction import Reaction, ReactionAction, ReactionSchema
 
             reaction_payload = cast("NativeBindings.FfiDecodedMessageContent.REACTION", content)[0]
@@ -448,20 +560,23 @@ class Client:
                 content=reaction_payload.content,
                 schema=schema_map[reaction_payload.schema],
             )
-        if content.is_REPLY():
+        if _is_ffi_variant(content, "REPLY"):
             from xmtp_content_type_reply import Reply
 
             reply_payload = cast("NativeBindings.FfiDecodedMessageContent.REPLY", content)[0]
-            encoded = _encoded_from_ffi(reply_payload.content)
-            codec = self.codec_for(encoded.type_id)
-            nested_content = codec.decode(encoded, self) if codec is not None else encoded.content
+            nested_content = (
+                None
+                if reply_payload.content is None
+                else self._decode_ffi_content(reply_payload.content)
+            )
+            content_type = self._content_type_for_decoded_body(reply_payload.content)
             return Reply(
                 reference=reply_payload.reference,
                 reference_inbox_id=reply_payload.reference_inbox_id or None,
                 content=nested_content,
-                content_type=encoded.type_id,
+                content_type=content_type or _unknown_content_type(),
             )
-        if content.is_REMOTE_ATTACHMENT():
+        if _is_ffi_variant(content, "REMOTE_ATTACHMENT"):
             from xmtp_content_type_remote_attachment import RemoteAttachment
 
             attachment = cast(
@@ -475,12 +590,18 @@ class Client:
                 salt=attachment.salt,
                 nonce=attachment.nonce,
                 scheme=attachment.scheme,
-                content_length=attachment.content_length,
+                content_length=attachment.content_length or 0,
                 filename=attachment.filename,
             )
-        if content.is_READ_RECEIPT():
+        if _is_ffi_variant(content, "MULTI_REMOTE_ATTACHMENT"):
+            multi_payload = cast(
+                "NativeBindings.FfiDecodedMessageContent.MULTI_REMOTE_ATTACHMENT",
+                content,
+            )
+            return multi_payload[0]
+        if _is_ffi_variant(content, "READ_RECEIPT"):
             return {}
-        if content.is_TRANSACTION_REFERENCE():
+        if _is_ffi_variant(content, "TRANSACTION_REFERENCE"):
             from xmtp_content_type_transaction_reference import (
                 TransactionMetadata,
                 TransactionReference,
@@ -506,7 +627,7 @@ class Client:
                 reference=transaction_payload.reference,
                 metadata=metadata,
             )
-        if content.is_WALLET_SEND_CALLS():
+        if _is_ffi_variant(content, "WALLET_SEND_CALLS"):
             from xmtp_content_type_wallet_send_calls import (
                 WalletCall,
                 WalletCallMetadata,
@@ -542,13 +663,13 @@ class Client:
                 calls=calls,
                 capabilities=wallet_payload.capabilities,
             )
-        if content.is_GROUP_UPDATED():
+        if _is_ffi_variant(content, "GROUP_UPDATED"):
             group_payload = cast(
                 "NativeBindings.FfiDecodedMessageContent.GROUP_UPDATED",
                 content,
             )
             return group_payload[0]
-        if content.is_ATTACHMENT():
+        if _is_ffi_variant(content, "ATTACHMENT"):
             from xmtp_content_type_remote_attachment import Attachment
 
             attachment = cast(
@@ -560,25 +681,31 @@ class Client:
                 mime_type=attachment.mime_type,
                 data=attachment.content,
             )
-        if content.is_ACTIONS():
+        if _is_ffi_variant(content, "ACTIONS"):
             actions_payload = cast(
                 "NativeBindings.FfiDecodedMessageContent.ACTIONS",
                 content,
             )
             return actions_payload[0]
-        if content.is_INTENT():
+        if _is_ffi_variant(content, "INTENT"):
             intent_payload = cast(
                 "NativeBindings.FfiDecodedMessageContent.INTENT",
                 content,
             )
             return intent_payload[0]
-        if content.is_LEAVE_REQUEST():
+        if _is_ffi_variant(content, "LEAVE_REQUEST"):
             leave_payload = cast(
                 "NativeBindings.FfiDecodedMessageContent.LEAVE_REQUEST",
                 content,
             )
             return leave_payload[0]
-        if content.is_CUSTOM():
+        if _is_ffi_variant(content, "DELETED_MESSAGE"):
+            deleted_payload = cast(
+                Any,
+                content,
+            )
+            return deleted_payload[0]
+        if _is_ffi_variant(content, "CUSTOM"):
             custom_payload = cast(
                 "NativeBindings.FfiDecodedMessageContent.CUSTOM",
                 content,

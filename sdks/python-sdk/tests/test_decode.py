@@ -2,87 +2,129 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any
+from typing import Protocol
 
 import pytest
+from xmtp_content_type_primitives import ContentTypeId, EncodedContent
+from xmtp_content_type_remote_attachment import Attachment, RemoteAttachment
+from xmtp_content_type_reply import Reply
+from xmtp_content_type_text import ContentTypeText
+from xmtp_content_type_transaction_reference import TransactionReference
+from xmtp_content_type_wallet_send_calls import WalletSendCalls
 
 from xmtp.client import Client
-from xmtp.identifiers import Identifier, IdentifierKind
-from xmtp_content_type_primitives import ContentTypeId, EncodedContent
-from xmtp_content_type_reply import Reply
-from xmtp_content_type_remote_attachment import Attachment, RemoteAttachment
-from xmtp_content_type_text import ContentTypeText, TextCodec
-from xmtp_content_type_transaction_reference import TransactionMetadata, TransactionReference
-from xmtp_content_type_wallet_send_calls import WalletCall, WalletCallMetadata, WalletSendCalls
+
+
+class _FakeReactionActionEnum(Protocol):
+    ADDED: object
+
+
+class _FakeReactionSchemaEnum(Protocol):
+    UNICODE: object
+
+
+class _FakeContentTypeIdFactory(Protocol):
+    def __call__(
+        self,
+        authority_id: str,
+        type_id: str,
+        version_major: int,
+        version_minor: int,
+    ) -> object: ...
+
+
+class _FakeEncodedContentFactory(Protocol):
+    def __call__(
+        self,
+        *,
+        type_id: object | None,
+        parameters: dict[str, str],
+        fallback: str | None,
+        compression: int | None,
+        content: bytes,
+    ) -> object: ...
+
+
+class _FakeBindings(Protocol):
+    FfiReactionAction: _FakeReactionActionEnum
+    FfiReactionSchema: _FakeReactionSchemaEnum
+    FfiContentTypeId: _FakeContentTypeIdFactory
+    FfiEncodedContent: _FakeEncodedContentFactory
 
 
 class _DecodedContent:
-    def __init__(self, kind: str, payload: Any) -> None:
+    def __init__(self, kind: str, payload: object) -> None:
         self._kind = kind
         self._payload = payload
 
-    def __getitem__(self, index: int) -> Any:
+    def __getitem__(self, index: int) -> object:
         if index != 0:
             raise IndexError
         return self._payload
 
     def is_TEXT(self) -> bool:
-        return self._kind == 'TEXT'
+        return self._kind == "TEXT"
 
     def is_MARKDOWN(self) -> bool:
-        return self._kind == 'MARKDOWN'
+        return self._kind == "MARKDOWN"
 
     def is_REACTION(self) -> bool:
-        return self._kind == 'REACTION'
+        return self._kind == "REACTION"
 
     def is_REPLY(self) -> bool:
-        return self._kind == 'REPLY'
+        return self._kind == "REPLY"
 
     def is_REMOTE_ATTACHMENT(self) -> bool:
-        return self._kind == 'REMOTE_ATTACHMENT'
+        return self._kind == "REMOTE_ATTACHMENT"
+
+    def is_MULTI_REMOTE_ATTACHMENT(self) -> bool:
+        return self._kind == "MULTI_REMOTE_ATTACHMENT"
 
     def is_READ_RECEIPT(self) -> bool:
-        return self._kind == 'READ_RECEIPT'
+        return self._kind == "READ_RECEIPT"
 
     def is_TRANSACTION_REFERENCE(self) -> bool:
-        return self._kind == 'TRANSACTION_REFERENCE'
+        return self._kind == "TRANSACTION_REFERENCE"
 
     def is_WALLET_SEND_CALLS(self) -> bool:
-        return self._kind == 'WALLET_SEND_CALLS'
+        return self._kind == "WALLET_SEND_CALLS"
 
     def is_GROUP_UPDATED(self) -> bool:
-        return self._kind == 'GROUP_UPDATED'
+        return self._kind == "GROUP_UPDATED"
 
     def is_ATTACHMENT(self) -> bool:
-        return self._kind == 'ATTACHMENT'
+        return self._kind == "ATTACHMENT"
 
     def is_ACTIONS(self) -> bool:
-        return self._kind == 'ACTIONS'
+        return self._kind == "ACTIONS"
 
     def is_INTENT(self) -> bool:
-        return self._kind == 'INTENT'
+        return self._kind == "INTENT"
 
     def is_LEAVE_REQUEST(self) -> bool:
-        return self._kind == 'LEAVE_REQUEST'
+        return self._kind == "LEAVE_REQUEST"
+
+    def is_DELETED_MESSAGE(self) -> bool:
+        return self._kind == "DELETED_MESSAGE"
 
     def is_CUSTOM(self) -> bool:
-        return self._kind == 'CUSTOM'
+        return self._kind == "CUSTOM"
 
 
 @dataclass
 class _FakeReaction:
     reference: str
     reference_inbox_id: str
-    action: Any
+    action: object
     content: str
-    schema: Any
+    schema: object
 
 
 @dataclass
 class _FakeReplyPayload:
     reference: str
     reference_inbox_id: str | None
-    content: Any
+    content: object
 
 
 @dataclass
@@ -94,6 +136,18 @@ class _FakeRemoteAttachment:
     nonce: bytes
     scheme: str
     content_length: int
+    filename: str | None
+
+
+@dataclass
+class _FakeOptionalRemoteAttachment:
+    url: str
+    content_digest: str
+    secret: bytes
+    salt: bytes
+    nonce: bytes
+    scheme: str
+    content_length: int | None
     filename: str | None
 
 
@@ -148,12 +202,12 @@ class _FakeWalletSendCalls:
 
 
 class _FakeEncoded:
-    def __init__(self, type_id: Any) -> None:
+    def __init__(self, type_id: object) -> None:
         self.type_id = type_id
-        self.parameters = {'encoding': 'UTF-8'}
+        self.parameters = {"encoding": "UTF-8"}
         self.fallback = None
         self.compression = None
-        self.content = b'data'
+        self.content = b"data"
 
 
 class _Codec:
@@ -164,203 +218,258 @@ class _Codec:
     def content_type(self) -> ContentTypeId:
         return self._content_type
 
-    def encode(self, content: Any, registry: Any) -> EncodedContent:
-        return EncodedContent(type_id=self._content_type, parameters={}, content=b'decoded')
+    def encode(self, content: object, registry: object) -> EncodedContent:
+        return EncodedContent(type_id=self._content_type, parameters={}, content=b"decoded")
 
-    def decode(self, content: EncodedContent, registry: Any) -> Any:
-        return 'decoded-content'
+    def decode(self, content: EncodedContent, registry: object) -> object:
+        return "decoded-content"
 
-    def fallback(self, content: Any) -> str | None:
+    def fallback(self, content: object) -> str | None:
         return None
 
-    def should_push(self, content: Any) -> bool:
+    def should_push(self, content: object) -> bool:
         return True
 
 
 @pytest.mark.asyncio
-async def test_decode_message_branches(fake_bindings) -> None:
+async def test_decode_message_branches(fake_bindings: _FakeBindings) -> None:
     client = Client()
 
     reaction = _FakeReaction(
-        reference='ref',
-        reference_inbox_id='inbox',
+        reference="ref",
+        reference_inbox_id="inbox",
         action=fake_bindings.FfiReactionAction.ADDED,
-        content='smile',
+        content="smile",
         schema=fake_bindings.FfiReactionSchema.UNICODE,
     )
-    reply_inner = _FakeEncoded(
-        fake_bindings.FfiContentTypeId('xmtp.org', 'text', 1, 0)
-    )
-    reply_payload = _FakeReplyPayload(reference='ref', reference_inbox_id=None, content=reply_inner)
+    reply_inner = _FakeEncoded(fake_bindings.FfiContentTypeId("xmtp.org", "text", 1, 0))
+    reply_payload = _FakeReplyPayload(reference="ref", reference_inbox_id=None, content=reply_inner)
     remote_attachment = _FakeRemoteAttachment(
-        url='https://example',
-        content_digest='digest',
-        secret=b'secret',
-        salt=b'salt',
-        nonce=b'nonce',
-        scheme='https',
+        url="https://example",
+        content_digest="digest",
+        secret=b"secret",
+        salt=b"salt",
+        nonce=b"nonce",
+        scheme="https",
         content_length=10,
-        filename='file',
+        filename="file",
     )
-    attachment = _FakeAttachment(filename='file', mime_type='text/plain', content=b'data')
+    attachment = _FakeAttachment(filename="file", mime_type="text/plain", content=b"data")
     tx_meta = _FakeTransactionMetadata(
-        transaction_type='transfer',
-        currency='ETH',
+        transaction_type="transfer",
+        currency="ETH",
         amount=1.0,
         decimals=18,
-        from_address='0xabc',
-        to_address='0xdef',
+        from_address="0xabc",
+        to_address="0xdef",
     )
     tx_payload = _FakeTransactionReference(
-        namespace='eip155',
-        network_id='1',
-        reference='0x123',
+        namespace="eip155",
+        network_id="1",
+        reference="0x123",
         metadata=tx_meta,
     )
     wallet_payload = _FakeWalletSendCalls(
-        version='1.0',
-        chain_id='1',
-        _from='0xabc',
+        version="1.0",
+        chain_id="1",
+        _from="0xabc",
         calls=[
             _FakeWalletCall(
-                to='0xdef',
+                to="0xdef",
                 data=None,
-                value='0x1',
+                value="0x1",
                 gas=None,
                 metadata=_FakeWalletCallMetadata(
-                    description='desc',
-                    transaction_type='transfer',
-                    extra={'foo': 'bar'},
+                    description="desc",
+                    transaction_type="transfer",
+                    extra={"foo": "bar"},
                 ),
             )
         ],
-        capabilities={'cap': '1'},
+        capabilities={"cap": "1"},
     )
 
     client.register_codec(_Codec(ContentTypeText))
 
-    assert client._decode_ffi_content(_DecodedContent('TEXT', type('T', (), {'content': 'hi'})())) == 'hi'
-    assert client._decode_ffi_content(_DecodedContent('MARKDOWN', type('M', (), {'content': '*hi*'})())) == '*hi*'
+    assert (
+        client._decode_ffi_content(_DecodedContent("TEXT", type("T", (), {"content": "hi"})()))
+        == "hi"
+    )
+    assert (
+        client._decode_ffi_content(
+            _DecodedContent("MARKDOWN", type("M", (), {"content": "*hi*"})())
+        )
+        == "*hi*"
+    )
 
-    decoded_reaction = client._decode_ffi_content(_DecodedContent('REACTION', reaction))
-    assert decoded_reaction.content == 'smile'
+    decoded_reaction = client._decode_ffi_content(_DecodedContent("REACTION", reaction))
+    assert decoded_reaction.content == "smile"
 
-    decoded_reply = client._decode_ffi_content(_DecodedContent('REPLY', reply_payload))
+    decoded_reply = client._decode_ffi_content(_DecodedContent("REPLY", reply_payload))
     assert isinstance(decoded_reply, Reply)
-    assert decoded_reply.content == 'decoded-content'
+    assert decoded_reply.content == "decoded-content"
 
-    decoded_remote = client._decode_ffi_content(_DecodedContent('REMOTE_ATTACHMENT', remote_attachment))
+    reply_body_payload = _FakeReplyPayload(
+        reference="ref",
+        reference_inbox_id="reply-inbox",
+        content=_DecodedContent("TEXT", type("T", (), {"content": "reply text"})()),
+    )
+    decoded_reply_body = client._decode_ffi_content(_DecodedContent("REPLY", reply_body_payload))
+    assert isinstance(decoded_reply_body, Reply)
+    assert decoded_reply_body.content == "reply text"
+    assert decoded_reply_body.content_type == ContentTypeText
+
+    decoded_remote = client._decode_ffi_content(
+        _DecodedContent("REMOTE_ATTACHMENT", remote_attachment)
+    )
     assert isinstance(decoded_remote, RemoteAttachment)
 
-    assert client._decode_ffi_content(_DecodedContent('READ_RECEIPT', {})) == {}
+    assert (
+        client._decode_ffi_content(_DecodedContent("MULTI_REMOTE_ATTACHMENT", "multi")) == "multi"
+    )
 
-    decoded_tx = client._decode_ffi_content(_DecodedContent('TRANSACTION_REFERENCE', tx_payload))
+    assert client._decode_ffi_content(_DecodedContent("READ_RECEIPT", {})) == {}
+
+    decoded_tx = client._decode_ffi_content(_DecodedContent("TRANSACTION_REFERENCE", tx_payload))
     assert isinstance(decoded_tx, TransactionReference)
     assert decoded_tx.metadata is not None
 
-    decoded_wallet = client._decode_ffi_content(_DecodedContent('WALLET_SEND_CALLS', wallet_payload))
+    decoded_wallet = client._decode_ffi_content(
+        _DecodedContent("WALLET_SEND_CALLS", wallet_payload)
+    )
     assert isinstance(decoded_wallet, WalletSendCalls)
     assert decoded_wallet.calls[0].metadata is not None
 
-    assert client._decode_ffi_content(_DecodedContent('GROUP_UPDATED', 'payload')) == 'payload'
+    assert client._decode_ffi_content(_DecodedContent("GROUP_UPDATED", "payload")) == "payload"
 
-    decoded_attachment = client._decode_ffi_content(_DecodedContent('ATTACHMENT', attachment))
+    decoded_attachment = client._decode_ffi_content(_DecodedContent("ATTACHMENT", attachment))
     assert isinstance(decoded_attachment, Attachment)
 
-    assert client._decode_ffi_content(_DecodedContent('ACTIONS', 'actions')) == 'actions'
-    assert client._decode_ffi_content(_DecodedContent('INTENT', 'intent')) == 'intent'
-    assert client._decode_ffi_content(_DecodedContent('LEAVE_REQUEST', 'leave')) == 'leave'
+    assert client._decode_ffi_content(_DecodedContent("ACTIONS", "actions")) == "actions"
+    assert client._decode_ffi_content(_DecodedContent("INTENT", "intent")) == "intent"
+    assert client._decode_ffi_content(_DecodedContent("LEAVE_REQUEST", "leave")) == "leave"
 
     bad_custom = fake_bindings.FfiEncodedContent(
         type_id=None,
         parameters={},
         fallback=None,
         compression=None,
-        content=b'data',
+        content=b"data",
     )
-    assert client._decode_ffi_content(_DecodedContent('CUSTOM', bad_custom)) is bad_custom
+    assert client._decode_ffi_content(_DecodedContent("CUSTOM", bad_custom)) is bad_custom
 
     missing_codec = fake_bindings.FfiEncodedContent(
-        type_id=fake_bindings.FfiContentTypeId('xmtp.org', 'missing', 1, 0),
+        type_id=fake_bindings.FfiContentTypeId("xmtp.org", "missing", 1, 0),
         parameters={},
         fallback=None,
         compression=None,
-        content=b'data',
+        content=b"data",
     )
-    assert client._decode_ffi_content(_DecodedContent('CUSTOM', missing_codec)) is missing_codec
+    assert client._decode_ffi_content(_DecodedContent("CUSTOM", missing_codec)) is missing_codec
 
     custom_encoded = fake_bindings.FfiEncodedContent(
-        type_id=fake_bindings.FfiContentTypeId('xmtp.org', 'text', 1, 0),
-        parameters={'encoding': 'UTF-8'},
+        type_id=fake_bindings.FfiContentTypeId("xmtp.org", "text", 1, 0),
+        parameters={"encoding": "UTF-8"},
         fallback=None,
         compression=None,
-        content=b'data',
+        content=b"data",
     )
-    decoded_custom = client._decode_ffi_content(_DecodedContent('CUSTOM', custom_encoded))
-    assert decoded_custom == 'decoded-content'
+    decoded_custom = client._decode_ffi_content(_DecodedContent("CUSTOM", custom_encoded))
+    assert decoded_custom == "decoded-content"
 
-    unknown = _DecodedContent('UNKNOWN', 'value')
+    unknown = _DecodedContent("UNKNOWN", "value")
     assert client._decode_ffi_content(unknown) is unknown
+
+
+def test_decode_remote_attachment_without_content_length() -> None:
+    client = Client()
+    payload = _FakeOptionalRemoteAttachment(
+        url="https://example",
+        content_digest="digest",
+        secret=b"secret",
+        salt=b"salt",
+        nonce=b"nonce",
+        scheme="https",
+        content_length=None,
+        filename="file",
+    )
+    decoded = client._decode_ffi_content(_DecodedContent("REMOTE_ATTACHMENT", payload))
+    assert decoded.content_length == 0
+
+
+def test_content_type_for_newer_reply_body_variants() -> None:
+    client = Client()
+    variants = {
+        "MULTI_REMOTE_ATTACHMENT": "xmtp.org/multiRemoteStaticAttachment:1.0",
+        "INTENT": "coinbase.com/intent:1.0",
+        "ACTIONS": "coinbase.com/actions:1.0",
+        "LEAVE_REQUEST": "xmtp.org/leave_request:1.0",
+        "DELETED_MESSAGE": "xmtp.org/deleteMessage:1.0",
+    }
+    for variant, expected in variants.items():
+        content_type = client._content_type_for_decoded_body(_DecodedContent(variant, object()))
+        assert content_type is not None
+        assert str(content_type) == expected
 
 
 def test_decode_transaction_reference_without_metadata() -> None:
     client = Client()
     payload = _FakeTransactionReference(
-        namespace='eip155',
-        network_id='1',
-        reference='0x123',
+        namespace="eip155",
+        network_id="1",
+        reference="0x123",
         metadata=None,
     )
-    decoded = client._decode_ffi_content(_DecodedContent('TRANSACTION_REFERENCE', payload))
+    decoded = client._decode_ffi_content(_DecodedContent("TRANSACTION_REFERENCE", payload))
     assert decoded.metadata is None
 
 
 def test_decode_wallet_send_calls_without_metadata() -> None:
     client = Client()
     payload = _FakeWalletSendCalls(
-        version='1.0',
-        chain_id='1',
-        _from='0xabc',
+        version="1.0",
+        chain_id="1",
+        _from="0xabc",
         calls=[
             _FakeWalletCall(
-                to='0xdef',
+                to="0xdef",
                 data=None,
-                value='0x1',
+                value="0x1",
                 gas=None,
                 metadata=None,
             )
         ],
         capabilities=None,
     )
-    decoded = client._decode_ffi_content(_DecodedContent('WALLET_SEND_CALLS', payload))
+    decoded = client._decode_ffi_content(_DecodedContent("WALLET_SEND_CALLS", payload))
     assert decoded.calls[0].metadata is None
 
 
 @pytest.mark.asyncio
-async def test_decode_message(fake_bindings) -> None:
+async def test_decode_message(fake_bindings: _FakeBindings) -> None:
     client = Client()
 
     class _Enriched:
         def __init__(self) -> None:
-            self._content = _DecodedContent('TEXT', type('T', (), {'content': 'hi'})())
+            self._content = _DecodedContent("TEXT", type("T", (), {"content": "hi"})())
 
-        def content(self) -> Any:
+        def content(self) -> object:
             return self._content
 
         def sent_at_ns(self) -> int:
             return 1_000_000_000
 
-        def content_type_id(self) -> Any:
-            return fake_bindings.FfiContentTypeId('xmtp.org', 'text', 1, 0)
+        def content_type_id(self) -> object:
+            return fake_bindings.FfiContentTypeId("xmtp.org", "text", 1, 0)
 
         def id(self) -> bytes:
-            return b'id'
+            return b"id"
 
         def conversation_id(self) -> bytes:
-            return b'cid'
+            return b"cid"
 
         def sender_inbox_id(self) -> str:
-            return 'inbox'
+            return "inbox"
 
     class _FfiClient:
         def enriched_message(self, message_id: bytes) -> _Enriched:
@@ -368,11 +477,11 @@ async def test_decode_message(fake_bindings) -> None:
 
     class _Message:
         def __init__(self) -> None:
-            self.id = b'message'
+            self.id = b"message"
 
     client._client = _FfiClient()
     decoded = client._decode_message(_Message())
-    assert decoded.content == 'hi'
+    assert decoded.content == "hi"
     assert decoded.sent_at == datetime.fromtimestamp(1, tz=timezone.utc)
 
 
@@ -381,7 +490,7 @@ def test_decode_message_requires_client() -> None:
 
     class _Message:
         def __init__(self) -> None:
-            self.id = b'message'
+            self.id = b"message"
 
-    with pytest.raises(Exception, match='Client not initialized'):
+    with pytest.raises(Exception, match="Client not initialized"):
         client._decode_message(_Message())

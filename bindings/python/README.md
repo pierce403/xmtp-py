@@ -38,14 +38,14 @@ cd .deps/libxmtp
 cargo build -p xmtpv3 --release
 
 # Generate Python bindings
-cd bindings_ffi
+cd bindings/mobile
 cargo run --bin ffi-uniffi-bindgen --release --features uniffi/cli generate \
-  --library ../target/release/libxmtpv3.so \
-  --out-dir ../../../bindings/python/src/xmtp_bindings \
+  --library ../../target/release/libxmtpv3.so \
+  --out-dir ../../../../bindings/python/src/xmtp_bindings \
   --language python
 
 # Copy the shared library next to the generated module
-cp ../target/release/libxmtpv3.so ../../../bindings/python/src/xmtp_bindings/
+cp ../../target/release/libxmtpv3.so ../../../../bindings/python/src/xmtp_bindings/
 ```
 
 ## Notes

@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 4:30 AM UTC / January 22, 2026
+> Generated at: 8:33 PM UTC / May 17, 2026
 > Included Sections:
 > - README.md
 > - sdks/python-sdk/README.md
@@ -612,14 +612,14 @@ cd .deps/libxmtp
 cargo build -p xmtpv3 --release
 
 # Generate Python bindings
-cd bindings_ffi
+cd bindings/mobile
 cargo run --bin ffi-uniffi-bindgen --release --features uniffi/cli generate \
-  --library ../target/release/libxmtpv3.so \
-  --out-dir ../../../bindings/python/src/xmtp_bindings \
+  --library ../../target/release/libxmtpv3.so \
+  --out-dir ../../../../bindings/python/src/xmtp_bindings \
   --language python
 
 # Copy the shared library next to the generated module
-cp ../target/release/libxmtpv3.so ../../../bindings/python/src/xmtp_bindings/
+cp ../../target/release/libxmtpv3.so ../../../../bindings/python/src/xmtp_bindings/
 ```
 
 ## Notes

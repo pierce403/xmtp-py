@@ -97,7 +97,7 @@ ruff format .               # Formatting
 - Rust logs can be muted by default via `ClientOptions.rust_log` (defaults to `off` if unset). `XMTP_RUST_LOG` overrides the filter.
 - xmtp-js node-sdk defaults `dbPath` to `xmtp-<env>-<inboxId>.db3` under the current working directory when unset; `dbPath` accepts string, null, or function. SQLite WAL mode creates `*.db3`, `*.db3-wal`, and `*.db3-shm` sidecar files.
 - `xmtp-bindings` now builds libxmtp during install via setuptools cmdclasses; requires `cargo` + `git` and honors `XMTP_LIBXMTP_*` env overrides.
-- Bindings builds default to the pinned libxmtp tag stored in `bindings/python/src/xmtp_bindings/libxmtp.ref`; override with `XMTP_LIBXMTP_REF` when intentionally updating. Current pin: `swift-bindings-1.9.0.d206831`.
+- Bindings builds default to the pinned libxmtp tag stored in `bindings/python/src/xmtp_bindings/libxmtp.ref`; override with `XMTP_LIBXMTP_REF` when intentionally updating. Current pin: `wasm-bindings-1.10.0-nightly.20260516.42c6bd1`.
 - `bindings/python/pyproject.toml` cmdclass entries must use dotted paths (e.g., `xmtp_bindings.build.BuildPy`), not `module:Class`.
 - Coverage omits `xmtp_bindings/build.py` because it is an install-time helper that is hard to exercise in unit tests.
 - Mypy strict ignores `xmtp_bindings.build` and `xmtp_bindings.xmtpv3` via `pyproject.toml` overrides; content-type `_bindings()` helpers return `Any` and use casts where needed to avoid `no-any-return`.
@@ -122,6 +122,8 @@ ruff format .               # Formatting
 - Bindings builds now regenerate `xmtpv3.py` via `bindings_ffi` during the libxmtp build step, ensuring the wrapper matches the built shared library for wheels and source installs.
 - libxmtp may place the UniFFI bindgen crate under `bindings_ffi` or `bindings/ffi`; bindings build now auto-detects the directory by scanning for the `ffi-uniffi-bindgen` Cargo target.
 - libxmtp DM creation APIs can shift between identifier-based and inbox-id-based signatures; the Python SDK now resolves inbox IDs and prefers `find_or_create_dm_by_inbox_id` with fallbacks for older bindings.
+- As of libxmtp 1.10/current main, the UniFFI crate lives under `bindings/mobile`; keep it in the explicit bindings-dir candidate list because scanning is slower and manual build docs should use that path.
+- `FfiEnrichedReply.content` is an optional `FfiDecodedMessageBody`, not `FfiEncodedContent`; decode reply bodies by variant (TEXT/MARKDOWN/etc.) before constructing Python `Reply`, or UniFFI stream callbacks can abort the process on Python `AttributeError`.
 
 ## Agent tips
 

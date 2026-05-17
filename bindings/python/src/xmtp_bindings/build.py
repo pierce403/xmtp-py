@@ -102,6 +102,7 @@ def _find_bindings_dir(libxmtp_dir: Path) -> Path:
     candidates = [
         libxmtp_dir / "bindings_ffi",
         libxmtp_dir / "bindings" / "ffi",
+        libxmtp_dir / "bindings" / "mobile",
     ]
     for candidate in candidates:
         if (candidate / "Cargo.toml").exists():
