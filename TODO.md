@@ -75,6 +75,18 @@ Add new work items below as needed.
 - [ ] Verify GitHub Actions release workflow publishes both `xmtp` and `xmtp-bindings`
 - [ ] Document final release confirmation steps in `docs/release.md` if needed
 
+## 0.1.6 compatibility repair
+
+- [x] Pin `xmtp` and `xmtp-bindings` as a lockstep version pair
+- [x] Add binding startup compatibility checks for versions, symbols, and client signatures
+- [x] Support `connect_to_backend` 6/7 arg variants and `create_client` DbOptions/device-sync enum drift
+- [x] Replace agent stream references to native subscribe errors with stable `StreamError`
+- [x] Prevent agent stream recovery from cancelling the current stream task
+- [x] Decode reply bodies that arrive as decoded TEXT/MARKDOWN/REACTION variants
+- [x] Add release artifact wheel smoke before PyPI publish
+- [x] Expand CI test matrix to Python 3.10, 3.11, 3.12, and 3.13
+- [ ] Add live browser-SDK-to-Python-agent broker smoke once test credentials/infrastructure are available
+
 ## Notes
 
 - Test parity map: `docs/test_parity.rst`

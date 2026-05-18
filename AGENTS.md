@@ -124,6 +124,9 @@ ruff format .               # Formatting
 - libxmtp DM creation APIs can shift between identifier-based and inbox-id-based signatures; the Python SDK now resolves inbox IDs and prefers `find_or_create_dm_by_inbox_id` with fallbacks for older bindings.
 - As of libxmtp 1.10/current main, the UniFFI crate lives under `bindings/mobile`; keep it in the explicit bindings-dir candidate list because scanning is slower and manual build docs should use that path.
 - `FfiEnrichedReply.content` is an optional `FfiDecodedMessageBody`, not `FfiEncodedContent`; decode reply bodies by variant (TEXT/MARKDOWN/etc.) before constructing Python `Reply`, or UniFFI stream callbacks can abort the process on Python `AttributeError`.
+- Keep `xmtp` and `xmtp-bindings` pinned as the same version; `xmtp.bindings.check_binding_compatibility()` validates versions plus core symbols/signatures before client startup.
+- Stream callbacks should queue `xmtp.errors.StreamError` instead of exposing native UniFFI error classes; agent stream logic should not hard-reference `FfiSubscribeError`.
+- Agent stream recovery must not cancel `asyncio.current_task()` from inside the failing stream task; log the original stream exception before closing/restarting streams.
 
 ## Agent tips
 

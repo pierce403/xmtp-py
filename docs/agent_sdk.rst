@@ -6,7 +6,18 @@ Key management tips
 
 - ``create_user()`` generates a new in-memory key; persist it if you want a stable inbox.
 - ``XMTP_WALLET_KEY`` should be provided via env vars or a secrets manager.
-- Preserve the database directory and encryption key to avoid extra installations.
+- Preserve the database directory to avoid extra installations.
+- ``XMTP_DB_ENCRYPTION_KEY`` is optional; set it only when using an encrypted
+  local database, and keep it stable once set.
+
+Local database workflow
+-----------------------
+
+Use a stable ``XMTP_DB_DIRECTORY`` or ``ClientOptions.db_path`` for agents that
+must keep the same installation. To wipe a disposable dev agent, stop it and
+delete the matching ``.db3``, ``.db3-wal``, and ``.db3-shm`` files. For
+production, back up the wallet key, database files, and optional encryption key
+together.
 
 Configuration & troubleshooting
 -------------------------------

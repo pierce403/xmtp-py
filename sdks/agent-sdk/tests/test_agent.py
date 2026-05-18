@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import types
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -9,10 +8,11 @@ from typing import Any
 import pytest
 
 from xmtp.messages import DecodedMessage
-from xmtp_agent.agent import Agent
+from xmtp.errors import StreamError
+from xmtp_agent.agent import Agent, _as_stream_error
 from xmtp_agent.context import MessageContext
 from xmtp_agent.debug import InstallationInfo
-from xmtp_agent.errors import AgentError
+from xmtp_agent.errors import AgentError, AgentStreamingError
 from xmtp.types import ClientOptions, LogLevel
 from xmtp_content_type_group_updated import ContentTypeGroupUpdated
 from xmtp_content_type_markdown import ContentTypeMarkdown
@@ -168,6 +168,60 @@ async def test_agent_stop_streams_closes_handles(fake_bindings) -> None:
     assert msg_handle.closed is True
     assert agent._conversation_stream_handle is None
     assert agent._message_stream_handle is None
+
+
+@pytest.mark.asyncio
+async def test_agent_stop_streams_does_not_cancel_current_task(fake_bindings) -> None:
+    conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    current_task = asyncio.current_task()
+    assert current_task is not None
+    agent._message_stream = current_task
+
+    await agent._stop_streams()
+
+    assert current_task.cancelling() == 0
+    assert agent._message_stream is None
+
+
+def test_agent_as_stream_error_wraps_native_errors(monkeypatch) -> None:
+    class NativeStreamError(Exception):
+        pass
+
+    error = NativeStreamError('boom')
+    monkeypatch.setattr('xmtp_agent.agent.get_native_stream_error_types', lambda: (NativeStreamError,))
+
+    wrapped = _as_stream_error(error)
+
+    assert isinstance(wrapped, StreamError)
+    assert wrapped.native_error is error
+
+
+@pytest.mark.asyncio
+async def test_agent_stream_error_from_message_task_logs_without_self_cancel(
+    fake_bindings,
+    monkeypatch,
+    caplog,
+) -> None:
+    conversations = _FakeConversations(_FakeStream([]), _FakeStream([]), _FakeConversation())
+    agent = Agent(_FakeClient(conversations))
+    current_task = asyncio.current_task()
+    assert current_task is not None
+    agent._message_stream = current_task
+
+    async def fake_run_error_chain(_error, _ctx):
+        return False
+
+    monkeypatch.setattr(agent, '_run_error_chain', fake_run_error_chain)
+    caplog.set_level('ERROR', logger='xmtp_agent.agent')
+    error = RuntimeError('stream boom')
+
+    await agent._handle_stream_error(error)
+
+    assert current_task.cancelling() == 0
+    assert caplog.records
+    assert caplog.records[0].exc_info is not None
+    assert caplog.records[0].exc_info[1] is error
 
 
 @pytest.mark.asyncio
@@ -577,7 +631,7 @@ async def test_agent_default_error_handler_emits(fake_bindings) -> None:
 
 @pytest.mark.asyncio
 async def test_agent_stream_error_handling(fake_bindings, monkeypatch) -> None:
-    error_item = fake_bindings.FfiSubscribeError('boom')
+    error_item = StreamError('boom')
     conversation_stream = _FakeStream([error_item])
     message_stream = _FakeStream([])
     conversations = _FakeConversations(conversation_stream, message_stream, _FakeConversation())
@@ -597,7 +651,7 @@ async def test_agent_stream_error_handling(fake_bindings, monkeypatch) -> None:
 
 @pytest.mark.asyncio
 async def test_agent_message_stream_error_handling(fake_bindings, monkeypatch) -> None:
-    error_item = fake_bindings.FfiSubscribeError('boom')
+    error_item = StreamError('boom')
     conversation_stream = _FakeStream([])
     message_stream = _FakeStream([error_item])
     conversations = _FakeConversations(conversation_stream, message_stream, _FakeConversation())
@@ -714,12 +768,7 @@ async def test_agent_consume_conversations_handles_item(fake_bindings, monkeypat
 
 @pytest.mark.asyncio
 async def test_agent_consume_conversations_subscribe_error(fake_bindings, monkeypatch) -> None:
-    import xmtp_agent.agent as agent_module
-
-    patched_bindings = types.SimpleNamespace(FfiSubscribeError=object)
-    monkeypatch.setattr(agent_module, 'NativeBindings', patched_bindings)
-    monkeypatch.setitem(Agent._consume_conversations.__globals__, 'NativeBindings', patched_bindings)
-    error_item = object()
+    error_item = StreamError('boom')
     conversation_stream = _FakeStream([error_item])
     conversations = _FakeConversations(conversation_stream, _FakeStream([]), _FakeConversation())
     agent = Agent(_FakeClient(conversations))
@@ -740,6 +789,7 @@ async def test_agent_consume_conversations_subscribe_error(fake_bindings, monkey
     monkeypatch.setattr(agent, '_handle_stream_error', wrapped_handle)
     await agent._consume_conversations()
     assert handled
+    assert isinstance(handled[0], AgentStreamingError)
     assert agent._conversation_stream_handle is None
 
 
@@ -789,12 +839,7 @@ async def test_agent_consume_messages_handles_item(fake_bindings, monkeypatch) -
 
 @pytest.mark.asyncio
 async def test_agent_consume_messages_subscribe_error(fake_bindings, monkeypatch) -> None:
-    import xmtp_agent.agent as agent_module
-
-    patched_bindings = types.SimpleNamespace(FfiSubscribeError=object)
-    monkeypatch.setattr(agent_module, 'NativeBindings', patched_bindings)
-    monkeypatch.setitem(Agent._consume_messages.__globals__, 'NativeBindings', patched_bindings)
-    error_item = object()
+    error_item = StreamError('boom')
     message_stream = _FakeStream([error_item])
     conversations = _FakeConversations(_FakeStream([]), message_stream, _FakeConversation())
     agent = Agent(_FakeClient(conversations))
@@ -815,6 +860,7 @@ async def test_agent_consume_messages_subscribe_error(fake_bindings, monkeypatch
     monkeypatch.setattr(agent, '_handle_stream_error', wrapped_handle)
     await agent._consume_messages()
     assert handled
+    assert isinstance(handled[0], AgentStreamingError)
     assert agent._message_stream_handle is None
 
 
@@ -836,11 +882,7 @@ async def test_agent_consume_messages_cancelled(fake_bindings, monkeypatch) -> N
 
 @pytest.mark.asyncio
 async def test_agent_consume_conversations_subscribe_error_real_bindings(monkeypatch) -> None:
-    pytest.importorskip('xmtp_bindings')
-    from xmtp.bindings import NativeBindings
-
-    error_type = getattr(NativeBindings, 'FfiSubscribeError', Exception)
-    conversation_stream = _FakeStream([error_type('boom')])
+    conversation_stream = _FakeStream([StreamError('boom')])
     conversations = _FakeConversations(conversation_stream, _FakeStream([]), _FakeConversation())
     agent = Agent(_FakeClient(conversations))
     agent._running = True
@@ -854,11 +896,7 @@ async def test_agent_consume_conversations_subscribe_error_real_bindings(monkeyp
 
 @pytest.mark.asyncio
 async def test_agent_consume_messages_subscribe_error_real_bindings(monkeypatch) -> None:
-    pytest.importorskip('xmtp_bindings')
-    from xmtp.bindings import NativeBindings
-
-    error_type = getattr(NativeBindings, 'FfiSubscribeError', Exception)
-    message_stream = _FakeStream([error_type('boom')])
+    message_stream = _FakeStream([StreamError('boom')])
     conversations = _FakeConversations(_FakeStream([]), message_stream, _FakeConversation())
     agent = Agent(_FakeClient(conversations))
     agent._running = True

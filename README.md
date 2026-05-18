@@ -38,6 +38,8 @@ pip install xmtp
 ```
 
 This installs the client SDK, agent SDK, and built-in content types in one package.
+`xmtp` pins `xmtp-bindings` to the same package version; mismatched installs fail
+startup compatibility checks with an actionable error.
 
 ### Install from GitHub main
 
@@ -144,9 +146,18 @@ if __name__ == "__main__":
 ## Key management tips
 
 - `create_user()` generates an in-memory key; persist the private key yourself if you want a stable inbox across restarts.
-- Prefer `XMTP_WALLET_KEY` and `XMTP_DB_ENCRYPTION_KEY` in environment variables or a secrets manager; never commit them to git.
-- Use a stable `db_path` and keep the database directory between runs. Losing it creates a new installation and can hit installation limits.
+- Prefer `XMTP_WALLET_KEY` in environment variables or a secrets manager; never commit it to git.
+- Use a stable `db_path` and keep the database directory between runs. Losing the database creates a new installation and can hit installation limits.
+- `XMTP_DB_ENCRYPTION_KEY` is optional. Set it only when you intentionally use an encrypted local database, then keep it stable.
 - For production, wrap a hardware wallet or KMS signer by implementing the `Signer` protocol instead of storing raw keys.
+
+## Local database workflows
+
+By default, `db_path="auto"` stores `xmtp-<env>-<inbox_id>.db3` in the current working directory. SQLite may also create `.db3-wal` and `.db3-shm` sidecar files; treat all three as one installation.
+
+For disposable development runs, point `XMTP_DB_DIRECTORY` or `ClientOptions.db_path` at a dev-only directory. To wipe a dev install, stop the agent and delete the matching `.db3`, `.db3-wal`, and `.db3-shm` files for that inbox.
+
+For production, preserve the wallet key, database file, sidecar files, and optional encryption key together. Moving only the wallet key without the database creates another installation.
 
 ## Configuration & troubleshooting
 
@@ -170,6 +181,9 @@ Common issues:
 This SDK uses [libxmtp](https://github.com/xmtp/libxmtp) Python bindings for core XMTP functionality including cryptography, networking, and protocol implementation.
 
 **Minimum version**: 1.7.0-r3
+
+Runtime version metadata is exposed as `xmtp.__version__`,
+`xmtp.__bindings_version__`, and `xmtp_bindings.__version__`.
 
 ## Documentation
 

@@ -1,4 +1,6 @@
 import json
+import types
+from dataclasses import dataclass
 
 import pytest
 
@@ -52,6 +54,33 @@ class _Registry:
 
     def codec_for(self, content_type):
         return self._codecs.get(str(content_type))
+
+
+class _DecodedBody:
+    def __init__(self, kind, payload) -> None:
+        self._kind = kind
+        self._payload = payload
+
+    def __getitem__(self, index):
+        if index != 0:
+            raise IndexError
+        return self._payload
+
+    def is_TEXT(self) -> bool:
+        return self._kind == 'TEXT'
+
+    def is_MARKDOWN(self) -> bool:
+        return self._kind == 'MARKDOWN'
+
+    def is_REACTION(self) -> bool:
+        return self._kind == 'REACTION'
+
+
+@dataclass
+class _ReplyPayload:
+    reference: str
+    reference_inbox_id: str | None
+    content: object
 
 
 def test_text_codec_encode_decode() -> None:
@@ -373,6 +402,48 @@ def test_reply_codec_encode_decode() -> None:
     assert 'referenceInboxId' not in encoded_no_inbox.parameters
 
 
+def test_reply_codec_decode_browser_decoded_body_variants(monkeypatch, fake_bindings) -> None:
+    codec = ReplyCodec()
+    registry = _Registry([TextCodec(), MarkdownCodec(), ReactionCodec(), ReplyCodec()])
+
+    def decode_with(payload):
+        bindings = types.SimpleNamespace(
+            FfiReactionAction=fake_bindings.FfiReactionAction,
+            FfiReactionSchema=fake_bindings.FfiReactionSchema,
+            decode_reply=lambda _: _ReplyPayload(
+                reference='ref',
+                reference_inbox_id=None,
+                content=payload,
+            ),
+        )
+        monkeypatch.setattr('xmtp_content_type_reply._bindings', lambda: bindings)
+        return codec.decode(EncodedContent(type_id=ContentTypeReply, parameters={}, content=b''), registry)
+
+    text_reply = decode_with(_DecodedBody('TEXT', types.SimpleNamespace(content='plain text')))
+    assert text_reply.content == 'plain text'
+    assert text_reply.content_type == ContentTypeText
+
+    markdown_reply = decode_with(_DecodedBody('MARKDOWN', types.SimpleNamespace(content='**md**')))
+    assert markdown_reply.content == '**md**'
+    assert markdown_reply.content_type == ContentTypeMarkdown
+
+    reaction_payload = types.SimpleNamespace(
+        reference='msg',
+        reference_inbox_id='inbox',
+        action=fake_bindings.FfiReactionAction.ADDED,
+        content='smile',
+        schema=fake_bindings.FfiReactionSchema.UNICODE,
+    )
+    reaction_reply = decode_with(_DecodedBody('REACTION', reaction_payload))
+    assert isinstance(reaction_reply.content, Reaction)
+    assert reaction_reply.content_type == ContentTypeReaction
+
+    unknown_body = object()
+    unknown_reply = decode_with(unknown_body)
+    assert unknown_reply.content is unknown_body
+    assert str(unknown_reply.content_type) == 'unknown/unknown:0.0'
+
+
 def test_reply_codec_requires_registry() -> None:
     codec = ReplyCodec()
     reply = Reply(reference='abc', reference_inbox_id=None, content='hi', content_type=ContentTypeText)
@@ -394,7 +465,18 @@ def test_reply_codec_decode_missing_codec(monkeypatch) -> None:
     codec = ReplyCodec()
     registry = _Registry([])
 
-    payload = type('Payload', (), {'reference': 'ref', 'reference_inbox_id': None, 'content': object()})()
+    encoded = type(
+        'Encoded',
+        (),
+        {
+            'type_id': object(),
+            'parameters': {},
+            'fallback': None,
+            'compression': None,
+            'content': b'',
+        },
+    )()
+    payload = type('Payload', (), {'reference': 'ref', 'reference_inbox_id': None, 'content': encoded})()
     monkeypatch.setattr('xmtp_content_type_reply.xmtpv3.decode_reply', lambda _: payload)
     monkeypatch.setattr(
         'xmtp_content_type_reply._encoded_from_ffi',

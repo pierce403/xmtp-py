@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 from xmtp.async_stream import AsyncStream
 from xmtp.bindings import NativeBindings
 from xmtp.conversation import Conversation, Dm, Group
-from xmtp.errors import ClientNotInitializedError
+from xmtp.errors import ClientNotInitializedError, StreamError
 from xmtp.identifiers import Identifier, IdentifierKind
 from xmtp.messages import DecodedMessage
 
@@ -185,7 +185,7 @@ class Conversations:
             return None
         return self._wrap_conversation(convo)
 
-    def stream(self) -> AsyncStream[Conversation | NativeBindings.FfiSubscribeError]:
+    def stream(self) -> AsyncStream[Conversation | StreamError]:
         """Stream new conversations."""
 
         queue: asyncio.Queue[object] = asyncio.Queue()
@@ -196,21 +196,30 @@ class Conversations:
                 self,
                 conversation: NativeBindings.FfiConversation,
             ) -> None:
-                conv = self_outer._wrap_conversation(conversation)
-                loop.call_soon_threadsafe(queue.put_nowait, conv)
+                try:
+                    conv = self_outer._wrap_conversation(conversation)
+                except Exception as exc:
+                    stream_error = StreamError(
+                        "Failed to decode streamed conversation callback.",
+                        native_error=exc,
+                    )
+                    loop.call_soon_threadsafe(queue.put_nowait, stream_error)
+                else:
+                    loop.call_soon_threadsafe(queue.put_nowait, conv)
 
             def on_error(
                 self,
-                error: NativeBindings.FfiSubscribeError,
+                error: object,
             ) -> None:
-                loop.call_soon_threadsafe(queue.put_nowait, error)
+                stream_error = StreamError(str(error), native_error=error)
+                loop.call_soon_threadsafe(queue.put_nowait, stream_error)
 
             def on_close(self) -> None:
                 loop.call_soon_threadsafe(stream._end)
 
         self_outer = self
         callback = Callback()
-        stream: AsyncStream[Conversation | NativeBindings.FfiSubscribeError] = AsyncStream(queue)
+        stream: AsyncStream[Conversation | StreamError] = AsyncStream(queue)
 
         async def start() -> None:
             closer = await self._ensure().stream(callback)
@@ -225,7 +234,7 @@ class Conversations:
 
     def stream_all_messages(
         self,
-    ) -> AsyncStream[DecodedMessage[object] | NativeBindings.FfiSubscribeError]:
+    ) -> AsyncStream[DecodedMessage[object] | StreamError]:
         """Stream all messages across conversations."""
 
         queue: asyncio.Queue[object] = asyncio.Queue()
@@ -237,22 +246,29 @@ class Conversations:
                 self,
                 message: NativeBindings.FfiMessage,
             ) -> None:
-                decoded = client._decode_message(message)
-                loop.call_soon_threadsafe(queue.put_nowait, decoded)
+                try:
+                    decoded = client._decode_message(message)
+                except Exception as exc:
+                    stream_error = StreamError(
+                        "Failed to decode streamed message callback.",
+                        native_error=exc,
+                    )
+                    loop.call_soon_threadsafe(queue.put_nowait, stream_error)
+                else:
+                    loop.call_soon_threadsafe(queue.put_nowait, decoded)
 
             def on_error(
                 self,
-                error: NativeBindings.FfiSubscribeError,
+                error: object,
             ) -> None:
-                loop.call_soon_threadsafe(queue.put_nowait, error)
+                stream_error = StreamError(str(error), native_error=error)
+                loop.call_soon_threadsafe(queue.put_nowait, stream_error)
 
             def on_close(self) -> None:
                 loop.call_soon_threadsafe(stream._end)
 
         callback = Callback()
-        stream: AsyncStream[DecodedMessage[object] | NativeBindings.FfiSubscribeError] = (
-            AsyncStream(queue)
-        )
+        stream: AsyncStream[DecodedMessage[object] | StreamError] = AsyncStream(queue)
 
         async def start() -> None:
             closer = await self._ensure().stream_all_messages(callback, None)

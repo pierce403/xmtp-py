@@ -11,7 +11,7 @@ requires-python = ">=3.10"
 license = "Apache-2.0"
 dependencies = [
   "eth-account>=0.12",
-  "xmtp-bindings",
+  "xmtp-bindings==0.1.6",
   "xmtp-content-type-primitives",
   "xmtp-content-type-text",
   "xmtp-content-type-markdown",

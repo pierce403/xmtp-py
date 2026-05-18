@@ -4,15 +4,18 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import logging
 import os
 import warnings
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
+from typing import cast
 
 from xmtp import Client, ClientOptions, Conversation, DecodedMessage, Dm, Group
 from xmtp.async_stream import AsyncStream
-from xmtp.bindings import NativeBindings
+from xmtp.bindings import get_native_stream_error_types
 from xmtp.env import load_client_options_from_env, load_signer_from_env
+from xmtp.errors import StreamError
 from xmtp.signers.base import Signer
 from xmtp.types import LogLevel
 
@@ -36,6 +39,7 @@ from xmtp_agent.middleware import ErrorMiddleware, Middleware
 
 EventPayload = ClientContext | ConversationContext | MessageContext | Exception
 EventHandler = Callable[[EventPayload], Awaitable[None] | None]
+logger = logging.getLogger(__name__)
 
 
 class _ErrorRegistrar:
@@ -51,6 +55,15 @@ class _ErrorRegistrar:
         return self
 
 
+def _as_stream_error(item: object) -> StreamError | None:
+    if isinstance(item, StreamError):
+        return item
+    native_error_types = get_native_stream_error_types()
+    if native_error_types and isinstance(item, native_error_types):
+        return StreamError(str(item), native_error=item)
+    return None
+
+
 class Agent:
     """Main agent class with an event-driven API."""
 
@@ -60,12 +73,8 @@ class Agent:
         self._middlewares: list[Middleware] = []
         self._error_middlewares: list[ErrorMiddleware] = []
         self._errors = _ErrorRegistrar(self)
-        self._conversation_stream_handle: (
-            AsyncStream[Conversation | NativeBindings.FfiSubscribeError] | None
-        ) = None
-        self._message_stream_handle: (
-            AsyncStream[DecodedMessage[object] | NativeBindings.FfiSubscribeError] | None
-        ) = None
+        self._conversation_stream_handle: AsyncStream[Conversation | StreamError] | None = None
+        self._message_stream_handle: AsyncStream[DecodedMessage[object] | StreamError] | None = None
         self._conversation_stream: asyncio.Task[None] | None = None
         self._message_stream: asyncio.Task[None] | None = None
         self._running = False
@@ -180,7 +189,12 @@ class Agent:
         if self._message_stream_handle is not None:
             await self._message_stream_handle.close()
             self._message_stream_handle = None
-        tasks = [task for task in (self._conversation_stream, self._message_stream) if task]
+        current_task = asyncio.current_task()
+        tasks = [
+            task
+            for task in (self._conversation_stream, self._message_stream)
+            if task is not None and task is not current_task
+        ]
         for task in tasks:
             task.cancel()
         if tasks:
@@ -190,16 +204,15 @@ class Agent:
 
     async def _consume_conversations(self) -> None:
         try:
-            stream: AsyncStream[Conversation | NativeBindings.FfiSubscribeError] = (
-                self._client.conversations.stream()
-            )
+            stream: AsyncStream[Conversation | StreamError] = self._client.conversations.stream()
             self._conversation_stream_handle = stream
             async for item in stream:
                 if not self._running:
                     break
-                if isinstance(item, NativeBindings.FfiSubscribeError):
-                    raise AgentStreamingError(str(item))  # pragma: no cover
-                await self._handle_conversation(item)
+                stream_error = _as_stream_error(item)
+                if stream_error is not None:
+                    raise AgentStreamingError(str(stream_error)) from stream_error
+                await self._handle_conversation(cast(Conversation, item))
         except asyncio.CancelledError:
             return
         except Exception as error:
@@ -211,16 +224,17 @@ class Agent:
 
     async def _consume_messages(self) -> None:
         try:
-            stream: AsyncStream[DecodedMessage[object] | NativeBindings.FfiSubscribeError] = (
+            stream: AsyncStream[DecodedMessage[object] | StreamError] = (
                 self._client.conversations.stream_all_messages()
             )
             self._message_stream_handle = stream
             async for item in stream:
                 if not self._running:
                     break
-                if isinstance(item, NativeBindings.FfiSubscribeError):
-                    raise AgentStreamingError(str(item))  # pragma: no cover
-                await self._handle_message(item)
+                stream_error = _as_stream_error(item)
+                if stream_error is not None:
+                    raise AgentStreamingError(str(stream_error)) from stream_error
+                await self._handle_message(cast(DecodedMessage[object], item))
         except asyncio.CancelledError:
             return
         except Exception as error:
@@ -231,6 +245,10 @@ class Agent:
                 self._message_stream_handle = None
 
     async def _handle_stream_error(self, error: Exception) -> None:
+        logger.error(
+            "XMTP agent stream failed; attempting recovery.",
+            exc_info=(type(error), error, error.__traceback__),
+        )
         await self._stop_streams()
         recovered = await self._run_error_chain(error, ClientContext(self._client))
         if recovered:

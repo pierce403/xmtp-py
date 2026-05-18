@@ -7,6 +7,16 @@ class XmtpError(Exception):
     """Base class for XMTP errors."""
 
 
+class BindingCompatibilityError(XmtpError):
+    """Raised when xmtp and xmtp-bindings are not compatible."""
+
+    def __init__(self, detail: str) -> None:
+        super().__init__(
+            "xmtp-bindings is incompatible with this xmtp install. "
+            f"{detail} Install matching xmtp and xmtp-bindings versions, then retry."
+        )
+
+
 class CodecNotFoundError(XmtpError):
     """Raised when a codec is missing for a content type."""
 
@@ -64,6 +74,14 @@ class StreamInvalidRetryAttemptsError(XmtpError):
 
     def __init__(self) -> None:
         super().__init__("Stream retry attempts must be greater than 0")
+
+
+class StreamError(XmtpError):
+    """Stable Python-facing stream error wrapper."""
+
+    def __init__(self, message: str, native_error: object | None = None) -> None:
+        self.native_error = native_error
+        super().__init__(f"XMTP stream error: {message}")
 
 
 class NotImplementedXmtpError(XmtpError):

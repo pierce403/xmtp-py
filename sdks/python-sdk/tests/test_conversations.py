@@ -8,7 +8,7 @@ import pytest
 
 from xmtp.conversations import Conversations, ListConversationsOptions, _default_list_options
 from xmtp.conversation import Dm, Group
-from xmtp.errors import ClientNotInitializedError
+from xmtp.errors import ClientNotInitializedError, StreamError
 from xmtp.identifiers import Identifier, IdentifierKind
 
 
@@ -354,7 +354,8 @@ async def test_conversations_stream(fake_bindings) -> None:
     error = fake_bindings.FfiSubscribeError('boom')
     ffi.callback.on_error(error)
     item = await asyncio.wait_for(stream.__anext__(), timeout=1)
-    assert item is error
+    assert isinstance(item, StreamError)
+    assert item.native_error is error
 
     ffi.callback.on_close()
     await asyncio.sleep(0)
@@ -363,6 +364,27 @@ async def test_conversations_stream(fake_bindings) -> None:
 
     await stream.close()
     assert ffi.stream_closer.closed is True
+
+
+@pytest.mark.asyncio
+async def test_conversations_stream_wraps_callback_failures(fake_bindings) -> None:
+    dm = _FakeConversation(fake_bindings.FfiConversationType.DM)
+    group = _FakeConversation(fake_bindings.FfiConversationType.GROUP)
+    ffi = _FakeConversations(dm, group)
+    client = _FakeClient(ffi)
+    conversations = Conversations(client, ffi)
+
+    class _BrokenConversation:
+        def conversation_type(self) -> str:
+            raise RuntimeError('bad conversation')
+
+    stream = conversations.stream()
+    await asyncio.sleep(0)
+    ffi.callback.on_conversation(_BrokenConversation())
+
+    item = await asyncio.wait_for(stream.__anext__(), timeout=1)
+    assert isinstance(item, StreamError)
+    assert isinstance(item.native_error, RuntimeError)
 
 
 @pytest.mark.asyncio
@@ -388,7 +410,8 @@ async def test_conversations_stream_all_messages(fake_bindings) -> None:
     error = fake_bindings.FfiSubscribeError('boom')
     ffi.message_callback.on_error(error)
     item = await asyncio.wait_for(stream.__anext__(), timeout=1)
-    assert item is error
+    assert isinstance(item, StreamError)
+    assert item.native_error is error
 
     ffi.message_callback.on_close()
     await asyncio.sleep(0)
@@ -397,6 +420,30 @@ async def test_conversations_stream_all_messages(fake_bindings) -> None:
 
     await stream.close()
     assert ffi.message_stream_closer.closed is True
+
+
+@pytest.mark.asyncio
+async def test_conversations_stream_all_messages_wraps_decode_failures(fake_bindings) -> None:
+    dm = _FakeConversation(fake_bindings.FfiConversationType.DM)
+    group = _FakeConversation(fake_bindings.FfiConversationType.GROUP)
+    ffi = _FakeConversations(dm, group)
+
+    class _RaisingClient(_FakeClient):
+        def _decode_message(self, message: Any) -> Any:
+            raise RuntimeError('bad message')
+
+    class _Message:
+        id = b'msg'
+
+    client = _RaisingClient(ffi)
+    conversations = Conversations(client, ffi)
+    stream = conversations.stream_all_messages()
+    await asyncio.sleep(0)
+    ffi.message_callback.on_message(_Message())
+
+    item = await asyncio.wait_for(stream.__anext__(), timeout=1)
+    assert isinstance(item, StreamError)
+    assert isinstance(item.native_error, RuntimeError)
 
 
 @pytest.mark.asyncio

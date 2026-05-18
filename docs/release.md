@@ -9,8 +9,10 @@ This repo publishes two distributions:
 
 - Use PEP 440 versions (e.g. `0.1.0`, `0.1.1`, `0.2.0rc1`).
 - Keep `pyproject.toml` versions in sync for `xmtp` and `bindings/python`.
-- Update `__version__` in `sdks/python-sdk/src/xmtp/__init__.py` and
-  `sdks/agent-sdk/src/xmtp_agent/__init__.py`.
+- Keep the `xmtp` dependency on `xmtp-bindings` pinned to the exact same version.
+- Update version metadata in `sdks/python-sdk/src/xmtp/version.py`,
+  `sdks/agent-sdk/src/xmtp_agent/__init__.py`, and
+  `bindings/python/src/xmtp_bindings/__init__.py`.
 
 ## Pre-release checks (local)
 
@@ -36,8 +38,8 @@ python -m pytest sdks/python-sdk/tests/test_conversations.py -k new_dm
 Smoke test install:
 
 ```bash
-python -m venv /tmp/xmtp-smoke
-source /tmp/xmtp-smoke/bin/activate
+python -m venv .venv-smoke
+source .venv-smoke/bin/activate
 python -m pip install -U pip
 
 # Install bindings (prebuilt wheel preferred)
@@ -48,9 +50,11 @@ python -m pip install xmtp
 
 python - <<'PY'
 from xmtp import Client, ClientOptions
+from xmtp.bindings import check_binding_compatibility
 from xmtp_agent import Agent
 from xmtp_content_type_text import TextCodec
 
+check_binding_compatibility()
 ClientOptions()
 TextCodec()
 print('smoke ok')
@@ -68,9 +72,10 @@ PY
 3. Update `CHANGELOG` (if added later).
 4. Commit and push.
 5. Ensure the latest `ci.yml` workflow run on `main` is green.
-6. Tag the release: `git tag vX.Y.Z && git push origin vX.Y.Z`.
-7. GitHub Actions `Release` workflow builds and publishes to PyPI via Trusted Publishing.
-8. Verify the release on PyPI and run the smoke test in a clean environment.
+6. Confirm the release workflow builds wheels and passes the artifact smoke job.
+7. Tag the release: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+8. GitHub Actions `Release` workflow builds and publishes to PyPI via Trusted Publishing.
+9. Verify the release on PyPI and run the smoke test in a clean environment.
 
 ## TestPyPI (optional)
 

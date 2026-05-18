@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import inspect
+import logging
 import os
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, TypeVar, cast
 
 from xmtp_content_type_primitives import ContentCodec, ContentTypeId, EncodedContent
 
-from xmtp.bindings import NativeBindings
+from xmtp.bindings import NativeBindings, check_binding_compatibility, get_bindings_version
 from xmtp.conversations import Conversations
 from xmtp.env import (
     apply_rust_log_from_options,
@@ -30,8 +31,10 @@ from xmtp.preferences import Preferences
 from xmtp.signers.base import Signer, SignerType
 from xmtp.types import ClientOptions
 from xmtp.utils import coerce_db_encryption_key
+from xmtp.version import __version__ as XMTP_VERSION
 
 ContentT = TypeVar("ContentT")
+logger = logging.getLogger(__name__)
 
 _DB_ERROR_MARKERS = (
     "sqlcipher",
@@ -117,6 +120,169 @@ def _unknown_content_type() -> ContentTypeId:
 def _looks_like_db_error(error: Exception) -> bool:
     message = str(error).lower()
     return any(marker in message for marker in _DB_ERROR_MARKERS)
+
+
+def _callable_accepts_varargs(func: object) -> bool:
+    try:
+        signature = inspect.signature(cast(Callable[..., object], func))
+    except (TypeError, ValueError):
+        return True
+    return any(
+        parameter.kind == inspect.Parameter.VAR_POSITIONAL
+        for parameter in signature.parameters.values()
+    )
+
+
+def _callable_parameter_names(func: object) -> list[str] | None:
+    if _callable_accepts_varargs(func):
+        return None
+    try:
+        signature = inspect.signature(cast(Callable[..., object], func))
+    except (TypeError, ValueError):
+        return None
+    return [
+        name
+        for name, parameter in signature.parameters.items()
+        if parameter.kind
+        in {
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            inspect.Parameter.KEYWORD_ONLY,
+        }
+    ]
+
+
+async def _connect_to_backend(
+    host: str,
+    gateway_host: str | None,
+    is_secure: bool,
+    app_version: str | None,
+) -> object:
+    connect = cast(Any, NativeBindings.connect_to_backend)
+    parameter_names = _callable_parameter_names(connect)
+    legacy_args = (host, gateway_host, is_secure, None, app_version, None, None)
+    six_arg_candidates = (
+        (host, is_secure, None, app_version, None, None),
+        (host, gateway_host, is_secure, None, app_version, None),
+    )
+
+    if parameter_names is not None:
+        if "gateway_host" in parameter_names:
+            return await connect(*legacy_args[: len(parameter_names)])
+        if len(parameter_names) == 6:
+            return await connect(*six_arg_candidates[0])
+
+    try:
+        return await connect(*legacy_args)
+    except TypeError as first_error:
+        for args in six_arg_candidates:
+            try:
+                return await connect(*args)
+            except TypeError:
+                continue
+        raise first_error
+
+
+def _device_sync_mode(disabled: bool) -> object:
+    mode_enum = getattr(NativeBindings, "FfiDeviceSyncMode", None)
+    if mode_enum is None:
+        mode_enum = NativeBindings.FfiSyncWorkerMode
+    return mode_enum.DISABLED if disabled else mode_enum.ENABLED
+
+
+def _make_db_options(db_path: str | None, encryption_key: bytes | None) -> object:
+    db_options_cls = getattr(
+        NativeBindings,
+        "DbOptions",
+        getattr(NativeBindings, "FfiDbOptions", None),
+    )
+    if db_options_cls is None:
+        raise TypeError("DbOptions is unavailable in xmtp-bindings")
+
+    parameter_names = _callable_parameter_names(db_options_cls)
+    if parameter_names is not None:
+        values: dict[str, object | None] = {}
+        for name in parameter_names:
+            if name in {"db", "db_path", "path"}:
+                values[name] = db_path
+            elif name in {"db_encryption_key", "encryption_key", "key"}:
+                values[name] = encryption_key
+        if values:
+            return db_options_cls(**values)
+
+    candidates = (
+        {"db_path": db_path, "encryption_key": encryption_key},
+        {"db": db_path, "encryption_key": encryption_key},
+        {"path": db_path, "encryption_key": encryption_key},
+        {"db_path": db_path, "db_encryption_key": encryption_key},
+    )
+    for kwargs in candidates:
+        try:
+            return db_options_cls(**kwargs)
+        except TypeError:
+            continue
+    return db_options_cls(db_path, encryption_key)
+
+
+async def _create_client(
+    api: object,
+    sync_api: object,
+    db_path: str | None,
+    encryption_key: bytes | None,
+    inbox_id: str,
+    ffi_identifier: object,
+    nonce: int,
+    history_sync_url: str | None,
+    device_sync_mode: object,
+) -> object:
+    create_client = cast(Any, NativeBindings.create_client)
+    parameter_names = _callable_parameter_names(create_client)
+    legacy_args = (
+        api,
+        sync_api,
+        db_path,
+        encryption_key,
+        inbox_id,
+        ffi_identifier,
+        nonce,
+        None,
+        history_sync_url,
+        device_sync_mode,
+        None,
+        None,
+    )
+
+    if parameter_names is None:
+        return await create_client(*legacy_args)
+
+    if len(parameter_names) == 12:
+        return await create_client(*legacy_args)
+
+    db_options = _make_db_options(db_path, encryption_key)
+    values = {
+        "api": api,
+        "sync_api": sync_api,
+        "db_options": db_options,
+        "db": db_path,
+        "db_path": db_path,
+        "encryption_key": encryption_key,
+        "inbox_id": inbox_id,
+        "account_identifier": ffi_identifier,
+        "identifier": ffi_identifier,
+        "nonce": nonce,
+        "legacy_signed_private_key_proto": None,
+        "device_sync_server_url": history_sync_url,
+        "history_sync_url": history_sync_url,
+        "device_sync_mode": device_sync_mode,
+        "sync_worker_mode": device_sync_mode,
+        "allow_offline": None,
+        "fork_recovery_opts": None,
+    }
+    missing = [name for name in parameter_names if name not in values]
+    if missing:
+        raise TypeError(f"Unsupported create_client parameters: {', '.join(missing)}")
+    args = [values[name] for name in parameter_names]
+    return await create_client(*args)
 
 
 class Client:
@@ -206,6 +372,13 @@ class Client:
         if self._client is not None:
             return
 
+        check_binding_compatibility(XMTP_VERSION, NativeBindings)
+        logger.debug(
+            "Initializing XMTP client with xmtp=%s xmtp-bindings=%s",
+            XMTP_VERSION,
+            get_bindings_version() or "unknown",
+        )
+
         self._identifier = identifier
         options = self._options
         apply_rust_log_from_options(options)
@@ -213,33 +386,25 @@ class Client:
         gateway_host = options.gateway_host
         is_secure = host.startswith("https")
 
-        api = await NativeBindings.connect_to_backend(
-            host,
-            gateway_host,
-            is_secure,
-            None,
-            options.app_version,
-            None,
-            None,
-        )
+        api = await _connect_to_backend(host, gateway_host, is_secure, options.app_version)
 
         history_sync_url = options.resolved_history_sync_url()
         if history_sync_url:
-            sync_api = await NativeBindings.connect_to_backend(
+            sync_api = await _connect_to_backend(
                 history_sync_url,
                 gateway_host,
                 history_sync_url.startswith("https"),
-                None,
                 options.app_version,
-                None,
-                None,
             )
         else:
             sync_api = api
             history_sync_url = None
 
         ffi_identifier = _identifier_to_ffi(identifier)
-        inbox_id = await NativeBindings.get_inbox_id_for_identifier(api, ffi_identifier)
+        inbox_id = await cast(Any, NativeBindings.get_inbox_id_for_identifier)(
+            api,
+            ffi_identifier,
+        )
         nonce = options.nonce if options.nonce is not None else 0
         if inbox_id is None:
             inbox_id = NativeBindings.generate_inbox_id(ffi_identifier, nonce)
@@ -255,26 +420,22 @@ class Client:
 
         encryption_key = coerce_db_encryption_key(options.db_encryption_key)
 
-        device_sync_mode = (
-            NativeBindings.FfiSyncWorkerMode.DISABLED
-            if options.disable_device_sync
-            else NativeBindings.FfiSyncWorkerMode.ENABLED
-        )
+        device_sync_mode = _device_sync_mode(options.disable_device_sync)
 
         try:
-            self._client = await NativeBindings.create_client(
-                api,
-                sync_api,
-                db_path,
-                encryption_key,
-                inbox_id,
-                ffi_identifier,
-                nonce,
-                None,
-                history_sync_url,
-                device_sync_mode,
-                None,
-                None,
+            self._client = cast(
+                "NativeBindings.FfiXmtpClient",
+                await _create_client(
+                    api,
+                    sync_api,
+                    db_path,
+                    encryption_key,
+                    inbox_id,
+                    ffi_identifier,
+                    nonce,
+                    history_sync_url,
+                    device_sync_mode,
+                ),
             )
         except Exception as exc:
             if _looks_like_db_error(exc):

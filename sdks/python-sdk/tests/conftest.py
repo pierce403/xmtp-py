@@ -104,6 +104,11 @@ class FfiSyncWorkerMode(str, Enum):
     DISABLED = 'disabled'
 
 
+class FfiDeviceSyncMode(str, Enum):
+    ENABLED = 'enabled'
+    DISABLED = 'disabled'
+
+
 class FfiReactionAction(str, Enum):
     ADDED = 'added'
     REMOVED = 'removed'
@@ -214,6 +219,10 @@ def _pickle_decode(payload: bytes) -> object:
 def _install_fake_xmtp_bindings() -> None:
     xmtpv3 = types.ModuleType('xmtp_bindings.xmtpv3')
 
+    xmtpv3.FfiIdentifierKind = FfiIdentifierKind
+    xmtpv3.FfiIdentifier = FfiIdentifier
+    xmtpv3.FfiSyncWorkerMode = FfiSyncWorkerMode
+    xmtpv3.FfiDeviceSyncMode = FfiDeviceSyncMode
     xmtpv3.FfiContentTypeId = FfiContentTypeId
     xmtpv3.FfiEncodedContent = FfiEncodedContent
     xmtpv3.FfiReadReceipt = FfiReadReceipt
@@ -258,8 +267,20 @@ def _install_fake_xmtp_bindings() -> None:
 
     xmtpv3.decode_group_updated = lambda payload: payload
 
+    async def connect_to_backend(*args: object) -> object:
+        return object()
+
+    async def create_client(*args: object) -> object:
+        return object()
+
+    xmtpv3.connect_to_backend = connect_to_backend
+    xmtpv3.create_client = create_client
+    xmtpv3.get_inbox_id_for_identifier = lambda api, identifier: 'inbox'
+    xmtpv3.generate_inbox_id = lambda identifier, nonce: 'generated-inbox'
+
     xmtp_bindings = types.ModuleType('xmtp_bindings')
     xmtp_bindings.xmtpv3 = xmtpv3
+    xmtp_bindings.__version__ = '0.1.6'
 
     sys.modules['xmtp_bindings'] = xmtp_bindings
     sys.modules['xmtp_bindings.xmtpv3'] = xmtpv3
@@ -313,6 +334,7 @@ def fake_bindings(monkeypatch: pytest.MonkeyPatch):
         FfiConversationCallback=FfiConversationCallback,
         FfiMessageCallback=FfiMessageCallback,
         FfiSyncWorkerMode=FfiSyncWorkerMode,
+        FfiDeviceSyncMode=FfiDeviceSyncMode,
         FfiReactionAction=FfiReactionAction,
         FfiReactionSchema=FfiReactionSchema,
         FfiReadReceipt=FfiReadReceipt,

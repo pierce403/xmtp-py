@@ -5,8 +5,22 @@ Key management tips
 -------------------
 
 - Store private keys outside source control (env vars or a secrets manager).
-- Keep ``XMTP_DB_ENCRYPTION_KEY`` and your database path stable between runs.
+- Keep your database path stable between runs.
+- ``XMTP_DB_ENCRYPTION_KEY`` is optional; set it only for encrypted local databases,
+  and keep it stable once set.
 - Use a custom signer implementation for hardware wallets or KMS.
+
+Local database workflow
+-----------------------
+
+``db_path="auto"`` stores ``xmtp-<env>-<inbox_id>.db3`` in the current working
+directory. SQLite can also create ``.db3-wal`` and ``.db3-shm`` sidecars; keep
+or delete those files together.
+
+For development, use a dev-only ``XMTP_DB_DIRECTORY`` or ``ClientOptions.db_path``.
+To wipe a dev installation, stop the client and delete the matching database and
+sidecar files. For production, preserve the wallet key, database files, and
+optional encryption key together so the same XMTP installation is reused.
 
 Configuration & troubleshooting
 -------------------------------

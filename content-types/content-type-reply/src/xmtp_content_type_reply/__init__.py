@@ -135,6 +135,73 @@ def _encoded_from_ffi(encoded: _FfiEncodedContent) -> EncodedContent:
     )
 
 
+def _looks_like_ffi_encoded_content(content: object) -> bool:
+    return all(
+        hasattr(content, field)
+        for field in ("type_id", "parameters", "fallback", "compression", "content")
+    )
+
+
+def _is_ffi_variant(content: object, variant: str) -> bool:
+    checker = getattr(content, f"is_{variant}", None)
+    return callable(checker) and bool(checker())
+
+
+def _unknown_content_type() -> ContentTypeId:
+    return ContentTypeId(
+        authority_id="unknown",
+        type_id="unknown",
+        version_major=0,
+        version_minor=0,
+    )
+
+
+def _decoded_body_content_type(content: object) -> ContentTypeId:
+    if _is_ffi_variant(content, "TEXT"):
+        from xmtp_content_type_text import ContentTypeText
+
+        return ContentTypeText
+    if _is_ffi_variant(content, "MARKDOWN"):
+        from xmtp_content_type_markdown import ContentTypeMarkdown
+
+        return ContentTypeMarkdown
+    if _is_ffi_variant(content, "REACTION"):
+        from xmtp_content_type_reaction import ContentTypeReaction
+
+        return ContentTypeReaction
+    return _unknown_content_type()
+
+
+def _decode_decoded_body(content: object) -> object:
+    if _is_ffi_variant(content, "TEXT"):
+        return cast(Any, content)[0].content
+    if _is_ffi_variant(content, "MARKDOWN"):
+        return cast(Any, content)[0].content
+    if _is_ffi_variant(content, "REACTION"):
+        from xmtp_content_type_reaction import Reaction, ReactionAction, ReactionSchema
+
+        reaction_payload = cast(Any, content)[0]
+        bindings = cast(Any, _bindings())
+        action = (
+            ReactionAction.ADDED
+            if reaction_payload.action == bindings.FfiReactionAction.ADDED
+            else ReactionAction.REMOVED
+        )
+        schema_map = {
+            bindings.FfiReactionSchema.UNICODE: ReactionSchema.UNICODE,
+            bindings.FfiReactionSchema.SHORTCODE: ReactionSchema.SHORTCODE,
+            bindings.FfiReactionSchema.CUSTOM: ReactionSchema.CUSTOM,
+        }
+        return Reaction(
+            reference=reaction_payload.reference,
+            reference_inbox_id=reaction_payload.reference_inbox_id or None,
+            action=action,
+            content=reaction_payload.content,
+            schema=schema_map[reaction_payload.schema],
+        )
+    return content
+
+
 class ReplyCodec(ContentCodec[Reply]):
     """Codec for reply messages."""
 
@@ -174,16 +241,21 @@ class ReplyCodec(ContentCodec[Reply]):
             raise ValueError("Codec registry required to decode replies")
 
         reply_payload = _bindings().decode_reply(content.content)
-        decoded_content = _encoded_from_ffi(reply_payload.content)
-        nested_content_type = decoded_content.type_id
-        codec = registry.codec_for(nested_content_type)
-        if codec is None:
-            raise ValueError(f"Missing codec for content type {nested_content_type}")
+        if _looks_like_ffi_encoded_content(reply_payload.content):
+            decoded_content = _encoded_from_ffi(reply_payload.content)
+            nested_content_type = decoded_content.type_id
+            codec = registry.codec_for(nested_content_type)
+            if codec is None:
+                raise ValueError(f"Missing codec for content type {nested_content_type}")
+            nested_content = codec.decode(decoded_content, registry)
+        else:
+            nested_content_type = _decoded_body_content_type(reply_payload.content)
+            nested_content = _decode_decoded_body(reply_payload.content)
 
         return Reply(
             reference=reply_payload.reference,
             reference_inbox_id=reply_payload.reference_inbox_id or None,
-            content=codec.decode(decoded_content, registry),
+            content=nested_content,
             content_type=nested_content_type,
         )
 

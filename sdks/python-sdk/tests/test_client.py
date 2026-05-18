@@ -12,12 +12,18 @@ import pytest
 from xmtp import Client
 from xmtp.client import (
     _SendMessageOpts,
+    _callable_accepts_varargs,
+    _callable_parameter_names,
+    _connect_to_backend,
     _content_type_from_ffi,
+    _create_client,
     _default_send_opts,
+    _make_db_options,
     _encoded_from_ffi,
     _identifier_to_ffi,
 )
 from xmtp.errors import (
+    BindingCompatibilityError,
     ClientNotInitializedError,
     CodecNotFoundError,
     DatabaseOpenError,
@@ -419,7 +425,16 @@ async def test_client_build_initializes(fake_bindings, monkeypatch) -> None:
     fake_client = _FakeClient()
     calls: dict[str, Any] = {}
 
-    async def connect_to_backend(*args):
+    async def connect_to_backend(
+        host,
+        gateway_host,
+        is_secure,
+        client_mode,
+        app_version,
+        auth_callback,
+        auth_handle,
+    ):
+        args = (host, gateway_host, is_secure, client_mode, app_version, auth_callback, auth_handle)
         calls.setdefault('connect', []).append(args)
         return 'api'
 
@@ -541,6 +556,335 @@ async def test_client_build_with_empty_history_sync(fake_bindings) -> None:
     assert len(calls['connect']) == 1
     assert calls['create_client'][1] == 'api'
     assert calls['create_client'][8] is None
+
+
+@pytest.mark.asyncio
+async def test_client_build_connect_to_backend_six_args(fake_bindings) -> None:
+    fake_client = _FakeClient()
+    calls: dict[str, Any] = {}
+
+    async def connect_to_backend(host, is_secure, client_mode, app_version, auth_callback, auth_handle):
+        calls['connect'] = (host, is_secure, client_mode, app_version, auth_callback, auth_handle)
+        return 'api'
+
+    async def get_inbox_id_for_identifier(api, identifier):
+        return 'inbox'
+
+    async def create_client(*args):
+        calls['create_client'] = args
+        return fake_client
+
+    fake_bindings.connect_to_backend = connect_to_backend
+    fake_bindings.get_inbox_id_for_identifier = get_inbox_id_for_identifier
+    fake_bindings.generate_inbox_id = lambda identifier, nonce: 'unused'
+    fake_bindings.create_client = create_client
+
+    client = await Client.build(Identifier(IdentifierKind.ETHEREUM, '0xabc'), ClientOptions())
+
+    assert client._client is fake_client
+    assert calls['connect'][0] == ClientOptions().resolved_api_url()
+    assert calls['connect'][1] is True
+
+
+@pytest.mark.asyncio
+async def test_client_build_create_client_db_options_and_device_sync_mode(fake_bindings) -> None:
+    fake_client = _FakeClient()
+    calls: dict[str, Any] = {}
+
+    @dataclass
+    class DbOptions:
+        db_path: str | None
+        encryption_key: bytes | None
+
+    class FfiDeviceSyncMode(str, Enum):
+        ENABLED = 'enabled'
+        DISABLED = 'disabled'
+
+    async def connect_to_backend(*args):
+        return 'api'
+
+    async def get_inbox_id_for_identifier(api, identifier):
+        return 'inbox'
+
+    async def create_client(
+        api,
+        sync_api,
+        db_options,
+        inbox_id,
+        account_identifier,
+        nonce,
+        legacy_signed_private_key_proto,
+        device_sync_server_url,
+        device_sync_mode,
+        fork_recovery_opts,
+    ):
+        calls['create_client'] = (
+            api,
+            sync_api,
+            db_options,
+            inbox_id,
+            account_identifier,
+            nonce,
+            legacy_signed_private_key_proto,
+            device_sync_server_url,
+            device_sync_mode,
+            fork_recovery_opts,
+        )
+        return fake_client
+
+    fake_bindings.connect_to_backend = connect_to_backend
+    fake_bindings.get_inbox_id_for_identifier = get_inbox_id_for_identifier
+    fake_bindings.generate_inbox_id = lambda identifier, nonce: 'unused'
+    fake_bindings.create_client = create_client
+    fake_bindings.DbOptions = DbOptions
+    fake_bindings.FfiDeviceSyncMode = FfiDeviceSyncMode
+    del fake_bindings.FfiSyncWorkerMode
+
+    options = ClientOptions(
+        db_path='dev.db3',
+        db_encryption_key='0x' + '1' * 64,
+        disable_device_sync=True,
+    )
+    client = await Client.build(Identifier(IdentifierKind.ETHEREUM, '0xabc'), options)
+
+    assert client._client is fake_client
+    assert calls['create_client'][2] == DbOptions(db_path='dev.db3', encryption_key=b'\x11' * 32)
+    assert calls['create_client'][8] == FfiDeviceSyncMode.DISABLED
+
+
+@pytest.mark.asyncio
+async def test_client_build_rejects_incompatible_bindings(fake_bindings) -> None:
+    fake_bindings.connect_to_backend = lambda *args: object()
+    fake_bindings.get_inbox_id_for_identifier = lambda *args: None
+    fake_bindings.generate_inbox_id = lambda *args: 'inbox'
+
+    async def create_client(api, sync_api, db, encryption_key, inbox_id):
+        return _FakeClient()
+
+    fake_bindings.create_client = create_client
+
+    with pytest.raises(BindingCompatibilityError, match='create_client accepts 5 args'):
+        await Client.build(Identifier(IdentifierKind.ETHEREUM, '0xabc'), ClientOptions())
+
+
+def test_client_exposes_sdk_and_bindings_versions() -> None:
+    import xmtp
+
+    assert xmtp.__version__ == '0.1.6'
+    assert hasattr(xmtp, '__bindings_version__')
+
+
+def test_callable_signature_helpers_handle_uninspectable(monkeypatch) -> None:
+    import xmtp.client as client_module
+
+    def raise_signature(_func):
+        raise ValueError('no signature')
+
+    monkeypatch.setattr(client_module.inspect, 'signature', raise_signature)
+    assert _callable_accepts_varargs(object()) is True
+    assert _callable_parameter_names(object()) is None
+
+    monkeypatch.setattr(client_module, '_callable_accepts_varargs', lambda _func: False)
+    assert _callable_parameter_names(object()) is None
+
+
+@pytest.mark.asyncio
+async def test_connect_to_backend_type_error_fallbacks(fake_bindings) -> None:
+    calls: list[tuple[Any, ...]] = []
+
+    async def connect_to_backend(*args):
+        calls.append(args)
+        if len(args) == 7:
+            raise TypeError('too many args')
+        if args[1] is True:
+            raise TypeError('wrong six arg shape')
+        return 'api'
+
+    fake_bindings.connect_to_backend = connect_to_backend
+
+    result = await _connect_to_backend('host', 'gateway', True, 'app')
+
+    assert result == 'api'
+    assert len(calls) == 3
+    assert calls[-1] == ('host', 'gateway', True, None, 'app', None)
+
+
+@pytest.mark.asyncio
+async def test_connect_to_backend_reraises_original_type_error(fake_bindings) -> None:
+    original_error = TypeError('too many args')
+
+    async def connect_to_backend(*args):
+        if len(args) == 7:
+            raise original_error
+        raise TypeError('still wrong')
+
+    fake_bindings.connect_to_backend = connect_to_backend
+
+    with pytest.raises(TypeError) as exc_info:
+        await _connect_to_backend('host', 'gateway', True, 'app')
+    assert exc_info.value is original_error
+
+
+@pytest.mark.asyncio
+async def test_connect_to_backend_unknown_signature_uses_legacy_call(fake_bindings) -> None:
+    import xmtp.client as client_module
+
+    calls: list[tuple[Any, ...]] = []
+
+    class Connect:
+        __signature__ = client_module.inspect.Signature(
+            [
+                client_module.inspect.Parameter(
+                    'host',
+                    client_module.inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                ),
+                client_module.inspect.Parameter(
+                    'is_secure',
+                    client_module.inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                ),
+                client_module.inspect.Parameter(
+                    'client_mode',
+                    client_module.inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                ),
+                client_module.inspect.Parameter(
+                    'app_version',
+                    client_module.inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                ),
+                client_module.inspect.Parameter(
+                    'auth_callback',
+                    client_module.inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                ),
+            ]
+        )
+
+        async def __call__(self, *args):
+            calls.append(args)
+            return 'api'
+
+    fake_bindings.connect_to_backend = Connect()
+
+    result = await _connect_to_backend('host', 'gateway', True, 'app')
+
+    assert result == 'api'
+    assert calls == [('host', 'gateway', True, None, 'app', None, None)]
+
+
+def test_make_db_options_fallback_constructors(fake_bindings) -> None:
+    class DbOptions:
+        def __init__(self, *args, **kwargs) -> None:
+            if kwargs:
+                raise TypeError('no kwargs')
+            self.args = args
+
+    fake_bindings.DbOptions = DbOptions
+
+    options = _make_db_options('path.db3', b'key')
+
+    assert options.args == ('path.db3', b'key')
+
+
+def test_make_db_options_uses_candidate_kwargs_when_signature_has_no_known_names(
+    fake_bindings,
+) -> None:
+    class DbOptions:
+        def __init__(self, ignored=None, **kwargs) -> None:
+            self.ignored = ignored
+            self.kwargs = kwargs
+
+    fake_bindings.FfiDbOptions = DbOptions
+
+    options = _make_db_options('path.db3', b'key')
+
+    assert options.kwargs == {'db_path': 'path.db3', 'encryption_key': b'key'}
+
+
+def test_make_db_options_requires_native_class(fake_bindings) -> None:
+    if hasattr(fake_bindings, 'DbOptions'):
+        del fake_bindings.DbOptions
+    if hasattr(fake_bindings, 'FfiDbOptions'):
+        del fake_bindings.FfiDbOptions
+
+    with pytest.raises(TypeError, match='DbOptions is unavailable'):
+        _make_db_options('path.db3', None)
+
+
+@pytest.mark.asyncio
+async def test_create_client_explicit_legacy_signature(fake_bindings) -> None:
+    calls: dict[str, tuple[Any, ...]] = {}
+
+    async def create_client(
+        api,
+        sync_api,
+        db,
+        encryption_key,
+        inbox_id,
+        account_identifier,
+        nonce,
+        legacy_signed_private_key_proto,
+        device_sync_server_url,
+        device_sync_mode,
+        allow_offline,
+        fork_recovery_opts,
+    ):
+        calls['create_client'] = (
+            api,
+            sync_api,
+            db,
+            encryption_key,
+            inbox_id,
+            account_identifier,
+            nonce,
+            legacy_signed_private_key_proto,
+            device_sync_server_url,
+            device_sync_mode,
+            allow_offline,
+            fork_recovery_opts,
+        )
+        return 'client'
+
+    fake_bindings.create_client = create_client
+
+    result = await _create_client(
+        'api',
+        'sync',
+        'path.db3',
+        b'key',
+        'inbox',
+        'identifier',
+        1,
+        None,
+        fake_bindings.FfiSyncWorkerMode.DISABLED,
+    )
+
+    assert result == 'client'
+    assert calls['create_client'][2] == 'path.db3'
+
+
+@pytest.mark.asyncio
+async def test_create_client_rejects_unknown_parameters(fake_bindings) -> None:
+    @dataclass
+    class DbOptions:
+        db_path: str | None
+        encryption_key: bytes | None
+
+    async def create_client(api, sync_api, db_options, surprise):
+        return object()
+
+    fake_bindings.create_client = create_client
+    fake_bindings.DbOptions = DbOptions
+
+    with pytest.raises(TypeError, match='Unsupported create_client parameters'):
+        await _create_client(
+            'api',
+            'sync',
+            'path.db3',
+            None,
+            'inbox',
+            'identifier',
+            1,
+            None,
+            fake_bindings.FfiSyncWorkerMode.DISABLED,
+        )
 
 
 def test_client_properties_without_init() -> None:
