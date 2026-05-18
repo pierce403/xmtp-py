@@ -97,7 +97,7 @@ ruff format .               # Formatting
 - Rust logs can be muted by default via `ClientOptions.rust_log` (defaults to `off` if unset). `XMTP_RUST_LOG` overrides the filter.
 - xmtp-js node-sdk defaults `dbPath` to `xmtp-<env>-<inboxId>.db3` under the current working directory when unset; `dbPath` accepts string, null, or function. SQLite WAL mode creates `*.db3`, `*.db3-wal`, and `*.db3-shm` sidecar files.
 - `xmtp-bindings` now builds libxmtp during install via setuptools cmdclasses; requires `cargo` + `git` and honors `XMTP_LIBXMTP_*` env overrides.
-- Bindings builds default to the pinned libxmtp tag stored in `bindings/python/src/xmtp_bindings/libxmtp.ref`; override with `XMTP_LIBXMTP_REF` when intentionally updating. Current pin: `wasm-bindings-1.10.0-nightly.20260516.42c6bd1`.
+- Bindings builds default to the pinned libxmtp tag stored in `bindings/python/src/xmtp_bindings/libxmtp.ref`; override with `XMTP_LIBXMTP_REF` when intentionally updating. Pin stable semver libxmtp release tags (e.g. `v1.10.0`) unless deliberately testing an unreleased API surface. Current pin: `v1.10.0`.
 - `bindings/python/pyproject.toml` cmdclass entries must use dotted paths (e.g., `xmtp_bindings.build.BuildPy`), not `module:Class`.
 - Coverage omits `xmtp_bindings/build.py` because it is an install-time helper that is hard to exercise in unit tests.
 - Mypy strict ignores `xmtp_bindings.build` and `xmtp_bindings.xmtpv3` via `pyproject.toml` overrides; content-type `_bindings()` helpers return `Any` and use casts where needed to avoid `no-any-return`.

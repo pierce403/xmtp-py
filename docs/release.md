@@ -72,7 +72,7 @@ PY
    - `sdks/python-sdk/src/xmtp/version.py`
    - `sdks/agent-sdk/src/xmtp_agent/__init__.py`
    - `bindings/python/src/xmtp_bindings/__init__.py`
-2. Update `bindings/python/src/xmtp_bindings/libxmtp.ref` if pinning a new libxmtp commit.
+2. Update `bindings/python/src/xmtp_bindings/libxmtp.ref` if pinning a new libxmtp release. Use a stable semver tag like `v1.10.0` unless the release intentionally needs an unreleased libxmtp API.
 3. Update `CHANGELOG` (if added later).
 4. Commit and push.
 5. Ensure the latest `ci.yml` workflow run on `main` is green.
