@@ -7,7 +7,7 @@ description: >
 
 > NOTE
 > This file is generated automatically from the xmtp-py repository.
-> Generated at: 2:01 AM UTC / May 18, 2026
+> Generated at: 2:07 AM UTC / May 18, 2026
 > Included Sections:
 > - README.md
 > - sdks/python-sdk/README.md
@@ -707,7 +707,7 @@ Doc: Package version metadata.
 Exports: __version__
 
 Constants:
-- __version__ = '0.1.6'
+- __version__ = '0.1.7'
 
 ## Content Types API Reference
 

@@ -66,8 +66,12 @@ PY
 1. Bump versions (PEP 440) in:
    - `pyproject.toml`
    - `bindings/python/pyproject.toml`
-   - `sdks/python-sdk/src/xmtp/__init__.py`
+   - `sdks/python-sdk/pyproject.toml`
+   - `sdks/agent-sdk/pyproject.toml`
+   - `content-types/*/pyproject.toml`
+   - `sdks/python-sdk/src/xmtp/version.py`
    - `sdks/agent-sdk/src/xmtp_agent/__init__.py`
+   - `bindings/python/src/xmtp_bindings/__init__.py`
 2. Update `bindings/python/src/xmtp_bindings/libxmtp.ref` if pinning a new libxmtp commit.
 3. Update `CHANGELOG` (if added later).
 4. Commit and push.

@@ -1,6 +1,6 @@
 """Python bindings for libxmtp generated via UniFFI."""
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 
 try:
     from xmtp_bindings.xmtpv3 import *  # noqa: F403

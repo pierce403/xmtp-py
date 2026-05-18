@@ -670,7 +670,7 @@ async def test_client_build_rejects_incompatible_bindings(fake_bindings) -> None
 def test_client_exposes_sdk_and_bindings_versions() -> None:
     import xmtp
 
-    assert xmtp.__version__ == '0.1.6'
+    assert xmtp.__version__ == '0.1.7'
     assert hasattr(xmtp, '__bindings_version__')
 
 

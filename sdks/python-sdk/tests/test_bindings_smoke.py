@@ -16,8 +16,8 @@ from xmtp.errors import BindingCompatibilityError
 
 
 def test_bindings_startup_compatibility() -> None:
-    check_binding_compatibility('0.1.6')
-    assert get_bindings_version() == '0.1.6'
+    check_binding_compatibility('0.1.7')
+    assert get_bindings_version() == '0.1.7'
 
 
 def test_bindings_version_fallbacks(monkeypatch) -> None:
@@ -73,7 +73,7 @@ def test_binding_compatibility_errors(monkeypatch) -> None:
     module.DbOptions = object
     monkeypatch.setattr('xmtp.bindings.get_bindings_version', lambda: '0.1.5')
     with pytest.raises(BindingCompatibilityError, match='0.1.5'):
-        check_binding_compatibility('0.1.6', module=module)
+        check_binding_compatibility('0.1.7', module=module)
 
 
 def test_binding_compatibility_import_error(monkeypatch) -> None:

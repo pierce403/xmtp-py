@@ -280,7 +280,7 @@ def _install_fake_xmtp_bindings() -> None:
 
     xmtp_bindings = types.ModuleType('xmtp_bindings')
     xmtp_bindings.xmtpv3 = xmtpv3
-    xmtp_bindings.__version__ = '0.1.6'
+    xmtp_bindings.__version__ = '0.1.7'
 
     sys.modules['xmtp_bindings'] = xmtp_bindings
     sys.modules['xmtp_bindings.xmtpv3'] = xmtpv3

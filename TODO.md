@@ -51,6 +51,10 @@ Add new work items below as needed.
 
 - [x] Bump package versions to 0.1.5 before tagging
 
+## Release prep (2026-05-18)
+
+- [x] Bump package versions to 0.1.7 before tagging
+
 ## Defaults & docs (2026-01-22)
 
 - [x] Disable history sync by default in `ClientOptions` and allow env overrides to re-enable
