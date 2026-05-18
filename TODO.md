@@ -55,6 +55,7 @@ Add new work items below as needed.
 
 - [x] Bump package versions to 0.1.7 before tagging
 - [x] Pin libxmtp bindings builds to stable libxmtp release `v1.10.0`
+- [x] Bump package versions to 0.1.8 before tagging
 
 ## Defaults & docs (2026-01-22)
 

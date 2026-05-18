@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xmtp-py"
-version = "0.1.7"
+version = "0.1.8"
 description = "Unofficial Python SDK for the XMTP network."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 dependencies = [
   "eth-account>=0.12",
-  "xmtp-bindings==0.1.7",
+  "xmtp-bindings==0.1.8",
   "xmtp-content-type-primitives",
   "xmtp-content-type-text",
   "xmtp-content-type-markdown",
